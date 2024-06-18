@@ -27,7 +27,7 @@ const Signup = () => {
     e.preventDefault();
     console.log(signupData);
 
-    navigate("/signin");
+    navigate("/");
     return
 
 
@@ -37,7 +37,7 @@ const Signup = () => {
         console.log(res);
         setLoading(false);
 
-        navigate("/signin");
+        navigate("/");
       })
       .catch((err) => {
         console.log(err);
@@ -111,7 +111,7 @@ const Signup = () => {
 
         <p className="text-center mt-4">
           Already have an account?{" "}
-          <Link to="/signin" className="text-darkgreen">
+          <Link to="/" className="text-darkgreen">
             Sign In
           </Link>
         </p>

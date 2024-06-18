@@ -29,7 +29,7 @@ const Profile = () => {
 
   const handleLogout = () => {
     // localStorage.removeItem("token");
-    navigate("/signin");
+    navigate("/");
   };
 
   return (
