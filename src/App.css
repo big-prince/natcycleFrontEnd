@@ -1,0 +1,41 @@
+.form label {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.form input {
+  @apply block w-full px-3 py-3 mt-1 text-gray-700 bg-white border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm mb-4;
+}
+
+.heading {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.button {
+  @apply py-4 px-4 border shadow-sm text-sm font-medium rounded-2xl text-black bg-green block;
+}
+
+.mobileLink a.active {
+  @apply text-darkgreen font-bold;
+}
+
+
+/* scroll bar  */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 100vh;
+  background: #f4f7fa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8caca;
+  border-radius: 100vh;
+  /* border: 3px solid #edf2f7; */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
