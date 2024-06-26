@@ -29,6 +29,8 @@ const Signin = () => {
     e.preventDefault();
     console.log(signinData);
 
+    setLoading(true);
+
 
     AuthApi.signin(signinData)
       .then((res: any) => {

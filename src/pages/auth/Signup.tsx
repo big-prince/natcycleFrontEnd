@@ -28,6 +28,8 @@ const Signup = () => {
     e.preventDefault();
     console.log(signupData);
 
+    setLoading(true);
+
     AuthApi
       .signup(signupData)
       .then((res: any) => {
