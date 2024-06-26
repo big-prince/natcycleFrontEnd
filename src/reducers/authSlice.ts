@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 interface AuthState {
   token: string | null;
@@ -36,9 +37,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.user = null;
     },
-    // update only user profile info
     updateUser: (state, action: PayloadAction<AuthState["user"]>) => {
-      // console.log("updateUser action", action.payload);
       localStorage.setItem("natcycle", JSON.stringify(action.payload));
       state.user = action.payload;
     },

@@ -1,10 +1,55 @@
 import { RiCoinsFill } from "react-icons/ri";
 import { FaChevronRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useAppSelector } from "../../hooks/reduxHooks";
+import { useState, useEffect } from "react";
+import PickUpApi from "../../api/pickUpApi";
 
 const Dashboard = () => {
+  const user = useAppSelector((state) => state.auth.user);
+
+  function getTimeOfDay() {
+    const now = new Date();
+    const currentHour = now.getHours();
+  
+    if (currentHour < 12) {
+      return "Morning";
+    } else if (currentHour < 18) {
+      return "Afternoon";
+    } else {
+      return "Evening";
+    }
+  }
+
+  const [pickup, setPickup] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  console.log(pickup, loading);
+
+  const fetchUserPickups = async () => {
+    setLoading(true);
+    PickUpApi.getPickUps()
+      .then((res) => {
+        console.log(res.data);
+        setPickup(res.data.docs[0]);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchUserPickups();
+  }, []);
+
+  if (!user) return null;
+
+
   return (
-    <div>
+    <div className="mb-40">
       <div className="flex justify-between mt-6 bg-white p-4 rounded-lg">
         <div className="flex items-center">
           <RiCoinsFill className="text-lg text-green-500 mr-2" />
@@ -15,13 +60,17 @@ const Dashboard = () => {
         </div>
 
         <div>
+          <p className="text-3xl text-center font-bold text-darkgreen">0</p>
+          <p className="text-sm text-center">Birds</p>
+        </div>
+        {/* <div>
           <p className="text-2xl font-bold text-darkgreen">0.00</p>
           <p className="text-sm">Kg of CO2</p>
-        </div>
+        </div> */}
       </div>
       
       {/* mile stone */}
-      <div className="mt-6">
+      <div className="mt-6 hidden">
         <p className="text-lg font-semibold">Milestones</p>
         <div>
           <div className="bg-green h-6 w-full rounded-2xl p-1">
@@ -32,15 +81,15 @@ const Dashboard = () => {
 
       <div className="bg-green p-4 rounded-2xl mt-6">
         <p className="text-2xl font-medium">
-          Good Morning Jarvis!
+          Good  {getTimeOfDay()} {user.firstName}!
         </p>
 
-        <p className="text-4xl font-bold mt-4 mb-4">
+        <p className="text-3xl font-bold mt-4 mb-4">
           What are you recycling today?
         </p>
 
-        <div className="bg-white p-4 rounded-2xl flex justify-between items-center">
-          <p className="font-bold text-2xl">
+        <div className="bg-white p-3 rounded-2xl flex justify-between items-center ">
+          <p className="font-bold text-xl">
             Plastic Bottles
           </p>
 
@@ -57,10 +106,34 @@ const Dashboard = () => {
         </p>
 
         <div className="mt-6">
-          <Link to='/pickup' className="bg-black p-2 py-4 rounded-2xl flex items-center justify-between w-full">
+          <Link to='/pickup/book' className="bg-black p-2 py-3 rounded-2xl flex items-center justify-between w-full">
             <p className="text-lg font-semibold text-green">Recycle Now</p>
             <FaChevronRight className="text-white" />
           </Link>
+        </div>
+      </div>
+
+      <div>
+        {/* upcoming pickup */}
+        <div className="mt-6">
+          <p className="text-xl font-semibold">Upcoming Pickup</p>
+          <div className="bg-white p-4 rounded-lg mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-semibold">Plastic Bottles</h1>
+                <p>Today at 12:00 PM</p>
+                <p>12 bottles</p>
+              </div>
+              <div>
+                <p className="text-green-800 font-semibold">Completed</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* see all */}
+        <div className="mt-2 text-center">
+          <Link to="/pickup/all" className="text-darkgreen font-bold">See all</Link>
         </div>
       </div>
     </div>

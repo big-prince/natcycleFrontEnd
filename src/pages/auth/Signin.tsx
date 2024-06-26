@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import Logo from "../../assets/logo.png";
 import HomeIllustration from "../../assets/homeIllustration.png";
 import { Link, useNavigate } from "react-router-dom";
-import authApi from "../../api/authApi";
 import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
+import AuthApi from "../../api/authApi";
 
 const Signin = () => {
   const dispatch = useAppDispatch();
@@ -28,24 +29,22 @@ const Signin = () => {
     e.preventDefault();
     console.log(signinData);
 
-    navigate("/home");
-    return
 
-    authApi
-      .login(signinData)
-      .then((res) => {
+    AuthApi.signin(signinData)
+      .then((res: any) => {
         console.log(res);
-        setLoading(false);
+        
+        // setLoading(false);
 
         const payload = {
-          token: res.data.token!,
-          user: res.data.user!,
+          token: res.token,
+          user: res.user,
         };
         dispatch(login(payload));
 
-        navigate("/account/dashboard");
+        navigate("/home");
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.log(err);
         setLoading(false);
         setError(err.response.data);

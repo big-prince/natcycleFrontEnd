@@ -2,45 +2,41 @@ import { FaUser } from "react-icons/fa";
 import { GoSignOut } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdSettings } from "react-icons/io";
+import UpdateProfilePicture from "../components/UpdateProfilePicture";
+import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
+import { IoNotifications } from "react-icons/io5";
+import AuthApi from "../../../api/authApi";
+import { toast } from "react-toastify";
 
-const tempImage =
-  "https://vignette2.wikia.nocookie.net/naruto/images/1/12/La_Promesa_de_Naruto.png/revision/latest?cb=20110825232746&path-prefix=es";
-
-// const ProfileLinks = [
-//   {
-//     title: "Profile",
-//     icon: <FaUser />,
-//     link: "/dashboard/profile",
-//   },
-//   {
-//     title: "Settings",
-//     icon: <IoMdSettings />,
-//     link: "/dashboard/profile/settings",
-//   },
-//   {
-//     title: "Logout",
-//     icon: <GoSignOut />,
-//     link: "/",
-//   },
-// ];
+const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const handleLogout = () => {
     // localStorage.removeItem("token");
-    navigate("/");
+    AuthApi.signout().then((res) => {
+      console.log(res);
+      dispatch({ type: "LOGOUT" });
+      navigate("/");
+    }).then((err) => {
+      console.log(err);
+      toast.error("An error occurred. Please try again");
+    });
   };
+
+  const user = useAppSelector((state) => state.auth.user);
 
   return (
     <div>
       <div className="p-4 rounded-2xl mt-6">
         <div className="text-center items-center">
-          <img
-            className="w-20  h-20 m-auto  rounded-full"
-            src={tempImage}
-            alt="User"
-          />
+          <div>
+            <UpdateProfilePicture
+              oldPicture={user.profilePicture.url || tempImage}
+            />
+          </div>
           <div className="ml-4">
             <h1 className="text-xl font-semibold mt-4">John Doe</h1>
             <p className="text-sm">
@@ -55,26 +51,37 @@ const Profile = () => {
         <ul className="space-y-2">
           <li className="hidden">
             <Link
-              to="/dashboard/profile"
+              to="/locations"
               className="flex items-center space-x-2 p-4 rounded-2xl"
             >
               <FaUser />
               <span>Profile</span>
             </Link>
           </li>
+
+          <li className="">
+            <Link
+              to="/locations"
+              className="flex items-center space-x-2 p-4 rounded-2xl"
+            >
+              <IoNotifications />
+              <span>Locations</span>
+            </Link>
+          </li>
+
           <li>
             <Link
-              to="/dashboard/profile/settings"
+              to="/profile/update-profile"
               className="flex items-center space-x-2 p-4 rounded-2xl"
             >
               <IoMdSettings />
-              <span>Settings</span>
+              <span>Update Profile</span>
             </Link>
           </li>
           <li>
             <p
               onClick={() => handleLogout()}
-              className="flex items-center space-x-2 p-4 rounded-2xl text-red-500 border-2 border-red-50"
+              className="flex items-center space-x-2 p-4 rounded-2xl text-red-500 border-2 border-red-50 cursor-pointer"
             >
               <GoSignOut />
               <span>Logout</span>

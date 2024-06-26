@@ -1,51 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from "./api";
-import {LoginPayload, SigninPayload} from "../types";
 
-const authApi = {
-  // register a new user
-  register: async (signinPayload: SigninPayload) => {
-    const response = await api.post("/auth/signup", signinPayload);
-    return response;
+const AuthApi = {
+  signup: async (body: any) => {
+    const response: any = await api.post("/auth/signup", body);
+    return response.data;
   },
 
-  // login a user
-  login: async (loginPayload : LoginPayload) => {
-    const response = await api.post("/auth/signin", loginPayload);
-    return response;
+  signin: async (body: any) => {
+    const response: any = await api.post("/auth/signin", body);
+    return response.data;
   },
 
-  verifyEmail: async (body: any) => {
-    const response = await api.post("/auth/verify-email", body);
-    return response;
+  signout: async () => {
+    const response = await api.get("/auth/signout");
+    return response.data;
   },
 
-  // logout a user
-  logout: async () => {
-    const response = await api.post("/auth/signout");
-    return response;
+  forgottenPassword: async (body: any) => {
+    const response = await api.post("/auth/forgotten-password", body);
+    return response.data;
   },
-
-  // get current user
-  getCurrentUser: async () => {
-    const response = await api.get("/auth/user");
-    return response;
-  },
-
-  changePassword: async (body: any) => {
-    const response = await api.post("/auth/change-password", body);
-    return response;
-  },
-
-  requestOtp: async (body: any) => {
-    const response = await api.post("/auth/request-otp", body);
-    return response;
-  },
-
-  verifyOtp: async (body: any) => {
-    const response = await api.post("/auth/verify-otp", body);
-    return response;
+  
+  resetPassword: async (body: any) => {
+    const response = await api.post("/auth/reset-password", body);
+    return response.data;
   },
 };
 
-export default authApi;
+export default AuthApi;

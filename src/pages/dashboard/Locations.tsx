@@ -1,15 +1,87 @@
-import AddLocation from "./components/AddLocation"
+import { useEffect, useState } from "react";
+import LocationApi from "../../api/locationApi";
+import AddLocation from "./components/AddLocation";
+import Loading from "./components/Loading";
+import { FaTrash } from "react-icons/fa";
 
 const Locations = () => {
+  const [loading, setLoading] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [notify, setNotify] = useState(false);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    LocationApi.getLocations()
+      .then((res) => {
+        console.log(res.data);
+        setLocations(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [notify]);
+
+  const handleDelete = (id: string) => {
+    LocationApi.deleteLocation(id)
+      .then((res) => {
+        console.log(res);
+        setNotify(true);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
+
   return (
     <div>
-      <div className="flex justify-between items-center mt-8">
-        <h2 className="text-2xl font-bold">Locations</h2>
+      <div className="flex justify-between items-center mt-6">
+        <h2 className="text-2xl font-semibold">Locations</h2>
 
-        <AddLocation />
+        <AddLocation setNotify={setNotify} />
+      </div>
+
+      <div>
+        {locations.map((location: any) => (
+          <div
+            key={location._id}
+            className="bg-white p-4 rounded-lg shadow-md mt-4"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-semibold">{location.name}</h3>
+                <p className="text-gray-500">{location.address}</p>
+                <p className="text-gray-700 text-sm">{location.state}</p>
+              </div>
+              <div>
+                <button className="bg-primary text-white px-4 py-2 rounded-lg hidden">
+                  Edit
+                </button>
+                <button className="text-red-500 px-4 py-2 rounded-lg text-sm"
+                  onClick={() => handleDelete(location._id)}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {
+          loading && (
+            <Loading />
+          )
+        }
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Locations
+export default Locations;

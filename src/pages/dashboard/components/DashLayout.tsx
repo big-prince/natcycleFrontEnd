@@ -1,26 +1,22 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import Logo from "../../../assets/logo.png";
 import MobileNav from "./MobileNav";
-
-const tempImage =
-  "https://vignette2.wikia.nocookie.net/naruto/images/1/12/La_Promesa_de_Naruto.png/revision/latest?cb=20110825232746&path-prefix=es";
+import { useAppSelector } from "../../../hooks/reduxHooks";
+import { IoNotifications } from "react-icons/io5";
 
 const DashLayout = () => {
+  const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
+  if (!user) navigate("/");
+
   return (
-    <div className="max-w-[450px] m-auto relative h-screen px-4">
+    <div className="max-w-[450px] m-auto relative px-4">
       <div className="flex justify-between items-center mt-8">
-        <img className="w-56 object-cover" src={Logo} alt="NatCycle Logo" />
+        <img className="h-10 object-cover" src={Logo} alt="NatCycle Logo" />
 
         <div className="flex items-center">
-          <Link to="/profile">
-            <img
-              className="w-12 h-12 rounded-full"
-              src={tempImage}
-              alt="User"
-            />
-            <div className="ml-4 hidden">
-              <h1 className="text-xl font-bold">John Doe</h1>
-            </div>
+          <Link to="/notifications" className="text-2xl mr-4">
+            <IoNotifications className="text-2xl mr-4" />
           </Link>
         </div>
       </div>

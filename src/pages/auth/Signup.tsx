@@ -1,7 +1,8 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { SetStateAction, useState } from "react";
 import Logo from "../../assets/logo.png";
 import { Link, useNavigate } from "react-router-dom";
-import authApi from "../../api/authApi";
+import AuthApi from "../../api/authApi";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -27,19 +28,14 @@ const Signup = () => {
     e.preventDefault();
     console.log(signupData);
 
-    navigate("/");
-    return
-
-
-    authApi
-      .login(signupData)
-      .then((res) => {
+    AuthApi
+      .signup(signupData)
+      .then((res: any) => {
         console.log(res);
         setLoading(false);
-
         navigate("/");
       })
-      .catch((err) => {
+      .catch((err: { response: { data: SetStateAction<string>; }; }) => {
         console.log(err);
         setLoading(false);
         setError(err.response.data);
@@ -61,9 +57,8 @@ const Signup = () => {
       <div className="max-w-[450px] m-auto">
         <h1 className="heading mb-6 mt-8 text-center">Create An Account</h1>
         {error && (
-          <div className="alert">
+          <div className="bg-red-100 flex items-center p-2 mb-3 rounded-lg text-sm font-medium">
             <p>{error}</p>
-            <button onClick={() => setError("")}>X</button>
           </div>
         )}
         <form className="form" onSubmit={handleFormSubmit}>

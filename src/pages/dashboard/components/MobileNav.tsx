@@ -1,7 +1,7 @@
 import { GoHome } from "react-icons/go";
-import { IoLocationSharp } from "react-icons/io5";
 import { LuLeafyGreen } from "react-icons/lu";
 import { NavLink } from "react-router-dom";
+import { useAppSelector } from "../../../hooks/reduxHooks";
 
 const linkList = [
   {
@@ -13,27 +13,35 @@ const linkList = [
     icon: <LuLeafyGreen className="m-auto" />,
     name: "Impact",
     link: "/Impact",
-  },{
-    icon: <IoLocationSharp className="m-auto" />,
-    name: "Locations",
-    link: "/locations",
   },
 ];
 
 const MobileNav = () => {
+  const user = useAppSelector((state) => state.auth.user);
+  const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
+
   return (
-    <div className="absolute bottom-10 bg-bg rounded-2xl py-2 w-full left-0">
-      <div className="flex justify-between w-full mobileLink">
+    <div className="fixed bottom-6 bg-bg rounded-2xl py-2 w-full left-0">
+      <div className="flex justify-around w-full mobileLink items-center">
         {linkList.map((link, index) => (
           <NavLink
             key={index}
             to={link.link}
-            className="text-center p-2 w-full"
+            className="text-center"
           >
             <p className="text-xl">{link.icon}</p>
             <p className="text-xs">{link.name}</p>
           </NavLink>
         ))}
+        <NavLink to="/profile">
+          <div className="w-full">
+            <img
+              className="w-10 h-10 rounded-full object-cover"
+              src={user.profilePicture.url || tempImage}
+              alt="User"
+            />
+          </div>
+        </NavLink>
       </div>
     </div>
   );

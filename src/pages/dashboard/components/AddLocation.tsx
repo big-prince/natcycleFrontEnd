@@ -2,21 +2,37 @@ import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
+import LocationApi from "../../../api/locationApi";
 
-const AddLocation = () => {
+const AddLocation = ({ setNotify }: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // new location
   const [newLocation, setNewLocation] = useState({
-    location: "",
+    name: "",
     address: "",
+    state: "",
   });
+
+  // const handleChange = (e: any) => {
+  //   setNewLocation({
+  //     ...newLocation,
+  //     [e.target.name]: e.target.value,
+  //   });
+  // };
 
   const addLocation = () => {
     console.log(newLocation);
 
-    // close modal
-    setIsModalOpen(false);
+    LocationApi.createLocation(newLocation)
+      .then((res) => {
+        console.log(res);
+        setNotify(true);
+        setIsModalOpen(false);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   return (
@@ -60,11 +76,11 @@ const AddLocation = () => {
                     type="text"
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="Enter location e.g home, office, etc."
-                    value={newLocation.location}
+                    value={newLocation.name}
                     onChange={(e) =>
                       setNewLocation({
                         ...newLocation,
-                        location: e.target.value,
+                        name: e.target.value,
                       })
                     }
                   />
@@ -74,6 +90,7 @@ const AddLocation = () => {
                   <label className="text-sm font-medium">Address</label>
                   <input
                     type="text"
+                    name="address"
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="Enter address"
                     value={newLocation.address}
@@ -86,7 +103,24 @@ const AddLocation = () => {
                   />
                 </div>
 
-                <div className="bg-black p-4 py-4 rounded-2xl flex items-center justify-between w-full mt-6"
+                <div className="mt-6">
+                  <label className="text-sm font-medium">State</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    placeholder="Enter state"
+                    name="state"
+                    value={newLocation.state}
+                    onChange={(e) =>
+                      setNewLocation({
+                        ...newLocation,
+                        state: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="bg-black p-4 py-4 rounded-2xl flex items-center justify-between w-full mt-6 cursor-pointer"
                   onClick={() => addLocation()}
                 >
                   <p className="text-lg font-semibold text-green">Add Location</p>
