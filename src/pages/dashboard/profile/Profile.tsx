@@ -38,9 +38,11 @@ const Profile = () => {
             />
           </div>
           <div className="ml-4">
-            <h1 className="text-xl font-semibold mt-4">John Doe</h1>
+            <h1 className="text-xl font-semibold mt-4">
+              {user.firstName} {user.lastName}
+            </h1>
             <p className="text-sm">
-              <span className="font-normal">samueladeyemi244@gmaill.com</span>
+              <span className="font-normal">{user.email}</span>
               <span> </span>
             </p>
           </div>

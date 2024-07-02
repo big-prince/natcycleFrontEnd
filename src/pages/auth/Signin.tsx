@@ -6,12 +6,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
 import AuthApi from "../../api/authApi";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 
 const Signin = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [signinData, setSigninData] = useState({
     email: "",
@@ -25,17 +27,20 @@ const Signin = () => {
     });
   };
 
+  const togglePassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log(signinData);
 
     setLoading(true);
 
-
     AuthApi.signin(signinData)
       .then((res: any) => {
         console.log(res);
-        
+
         // setLoading(false);
 
         const payload = {
@@ -55,14 +60,18 @@ const Signin = () => {
         setLoading(false);
         setTimeout(() => {
           setError("");
-        }, 3000);
+        }, 4000);
       });
   };
 
   return (
     <div className="px-4">
       <div>
-        <img className="w-56 m-auto mt-16 mb-6" src={Logo} alt="NatCycle Logo" />
+        <img
+          className="w-56 m-auto mt-16 mb-6"
+          src={Logo}
+          alt="NatCycle Logo"
+        />
       </div>
 
       <div className="md:block">
@@ -77,7 +86,7 @@ const Signin = () => {
         <h1 className="heading mb-6 mt-8 text-center">Welcome Back! Sign In</h1>
 
         {error && (
-          <div className="alert">
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 flex justify-between">
             <p>{error}</p>
             <button onClick={() => setError("")}>X</button>
           </div>
@@ -91,13 +100,19 @@ const Signin = () => {
             onChange={handleChange}
             autoComplete="on"
           />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={signinData.password}
-            onChange={handleChange}
-          />
+          <div className="flex items-center">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={signinData.password}
+              onChange={handleChange}
+            />
+            <span onClick={togglePassword} className="cursor-pointer -ml-8 mb-2">
+              {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+            </span>
+          </div>
+
           <button
             className="button bg-green w-full"
             type="submit"

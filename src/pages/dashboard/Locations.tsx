@@ -3,6 +3,8 @@ import LocationApi from "../../api/locationApi";
 import AddLocation from "./components/AddLocation";
 import Loading from "./components/Loading";
 import { FaTrash } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 const Locations = () => {
   const [loading, setLoading] = useState(false);
@@ -18,6 +20,7 @@ const Locations = () => {
       })
       .catch((err) => {
         console.log(err);
+        toast.error("Error fetching locations");
       })
       .finally(() => {
         setLoading(false);
@@ -37,11 +40,10 @@ const Locations = () => {
       .catch((err) => {
         console.log(err);
       });
-  }
-
+  };
 
   return (
-    <div>
+    <>
       <div className="flex justify-between items-center mt-6">
         <h2 className="text-2xl font-semibold">Locations</h2>
 
@@ -64,7 +66,8 @@ const Locations = () => {
                 <button className="bg-primary text-white px-4 py-2 rounded-lg hidden">
                   Edit
                 </button>
-                <button className="text-red-500 px-4 py-2 rounded-lg text-sm"
+                <button
+                  className="text-red-500 px-4 py-2 rounded-lg text-sm"
                   onClick={() => handleDelete(location._id)}
                 >
                   <FaTrash />
@@ -74,13 +77,31 @@ const Locations = () => {
           </div>
         ))}
 
-        {
-          loading && (
-            <Loading />
-          )
-        }
+        {loading && <Loading />}
       </div>
-    </div>
+
+      <div className="mt-6">
+        <p className="text-xl font-semibold">Upcoming Pickup</p>
+        <div className="bg-white p-4 rounded-lg mt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-semibold">Plastic Bottles</h1>
+              <p>Today at 12:00 PM</p>
+              <p>12 bottles</p>
+            </div>
+            <div>
+              <p className="text-green-800 font-semibold">Completed</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2 text-center">
+        <Link to="/pickup/all" className="text-darkgreen font-bold">
+          See all
+        </Link>
+      </div>
+    </>
   );
 };
 

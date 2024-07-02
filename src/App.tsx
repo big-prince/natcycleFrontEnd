@@ -13,9 +13,10 @@ import UpdateProfile from "./pages/dashboard/profile/UpdateProfile";
 import "react-toastify/dist/ReactToastify.css";
 import UserPickups from "./pages/dashboard/pickup/UserPickups";
 import BookPickup from "./pages/dashboard/pickup/BookPickup";
-import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLayout from "./pages/admin/components/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminPickups from "./pages/admin/AdminPickups";
 
 const App = () => {
   return (
@@ -32,7 +33,7 @@ const App = () => {
           draggable
           pauseOnHover
           theme="light"
-         />
+        />
         <Routes>
           <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<Signin />} />
@@ -54,7 +55,8 @@ const App = () => {
           <Route path="/admin/login" element={<AdminLogin />} />
 
           <Route path="/admin" element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/pickups" element={<AdminPickups />} />
           </Route>
 
           <Route path="*" element={<h1>Not Found</h1>} />

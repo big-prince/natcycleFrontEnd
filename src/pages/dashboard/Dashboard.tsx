@@ -50,7 +50,7 @@ const Dashboard = () => {
 
   return (
     <div className="mb-40">
-      <div className="flex justify-between mt-6 bg-white p-4 rounded-lg">
+      <div className="flex justify-between mt-6 bg-white p-4 rounded-lg shadow-md">
         <div className="flex items-center">
           <RiCoinsFill className="text-lg text-green-500 mr-2" />
           <div>
@@ -67,6 +67,21 @@ const Dashboard = () => {
           <p className="text-2xl font-bold text-darkgreen">0.00</p>
           <p className="text-sm">Kg of CO2</p>
         </div> */}
+      </div>
+      <div className="mt-6">
+        <p className="text-lg font-semibold">Milestone</p>
+        <div>
+          <div className="bg-green h-6 w-full rounded-2xl p-1">
+            <div className="bg-black h-4 w-1/6 rounded-2xl">
+              <p className="text-white text-xs text-right pr-2">20</p>
+            </div>
+          </div>
+          {/* number */}
+          <div className="flex justify-between">
+            <p className="text-sm">0</p>
+            <p className="text-sm">100</p>
+          </div>
+        </div>
       </div>
       
       {/* mile stone */}
@@ -110,30 +125,6 @@ const Dashboard = () => {
             <p className="text-lg font-semibold text-green">Recycle Now</p>
             <FaChevronRight className="text-white" />
           </Link>
-        </div>
-      </div>
-
-      <div>
-        {/* upcoming pickup */}
-        <div className="mt-6">
-          <p className="text-xl font-semibold">Upcoming Pickup</p>
-          <div className="bg-white p-4 rounded-lg mt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-semibold">Plastic Bottles</h1>
-                <p>Today at 12:00 PM</p>
-                <p>12 bottles</p>
-              </div>
-              <div>
-                <p className="text-green-800 font-semibold">Completed</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* see all */}
-        <div className="mt-2 text-center">
-          <Link to="/pickup/all" className="text-darkgreen font-bold">See all</Link>
         </div>
       </div>
     </div>

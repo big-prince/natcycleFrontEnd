@@ -3,6 +3,7 @@ import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
 import LocationApi from "../../../api/locationApi";
+import { toast } from "react-toastify";
 
 const AddLocation = ({ setNotify }: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,6 +33,7 @@ const AddLocation = ({ setNotify }: any) => {
       })
       .catch((err) => {
         console.log(err);
+        toast.error("Error adding location");
       });
   }
 

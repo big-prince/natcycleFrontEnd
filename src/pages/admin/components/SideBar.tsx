@@ -1,39 +1,22 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { MdMenuBook, MdWork } from "react-icons/md";
-import { HiBuildingOffice2 } from "react-icons/hi2";
+import { MdWork } from "react-icons/md";
 // import LogoIcon from "../../assets/logo/logo-icon.png";
 import LogoWhite from "../../../assets/logo.png";
 import { HiMiniUsers } from "react-icons/hi2";
-import { IoIosSettings } from "react-icons/io";
 import { IoLogOut } from "react-icons/io5";
 import { logout } from "../../../reducers/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 
 const Links = [
   {
-    title: "Jobs",
-    icon: <MdWork />,
-    path: "/admin/jobs",
-  },
-  {
-    title: "Companies",
-    icon: <HiBuildingOffice2 />,
-    path: "/admin/companies",
-  },
-  {
     title: "Users",
     icon: <HiMiniUsers />,
     path: "/admin/users",
   },
   {
-    title: "Blogs",
-    icon: <MdMenuBook />,
-    path: "/admin/blogs",
-  },
-  {
-    title: "Management",
-    icon: <IoIosSettings />,
-    path: "/admin/management",
+    title: "Pickups",
+    icon: <MdWork />,
+    path: "/admin/pickups",
   },
 ];
 
@@ -92,7 +75,7 @@ const SideBar = () => {
           <div className="flex">
             <img
               className="w-10 h-10 object-contain rounded-full mr-2"
-              src={user?.profilePicture?.url }
+              src={user?.profilePicture?.url}
               alt="Profile Picture"
             />
 

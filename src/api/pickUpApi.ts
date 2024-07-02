@@ -17,10 +17,25 @@ const PickUpApi = {
     return response.data
   },
 
-  deletePickUp: async (id: string) => {
+  cancelPickUp: async (id: string) => {
     const response = await api.delete(`/pickup/${id}`)
     return response.data
   },
+
+  adminGetPickUps: async (query?: any) => {
+    const response = await api.get('/pickup/admin', { params: query })
+    return response.data
+  },
+
+  adminCompletePickUp: async (id: string) => {
+    const response = await api.put(`/pickup/complete/${id}`)
+    return response.data
+  },
+
+  adminDeletePickUp: async (id: string) => {
+    const response = await api.delete(`/pickup/delete/${id}`)
+    return response.data
+  }
 }
 
 export default PickUpApi

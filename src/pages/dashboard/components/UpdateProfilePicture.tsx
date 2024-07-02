@@ -42,6 +42,8 @@ const UpdateProfilePicture = ({ oldPicture }: Props) => {
   };
 
   const uploadImage = async (base64EncodedImage: string) => {
+    if (!base64EncodedImage) return;
+  
     setLoading(true);
     try {
       const res = await ProfileApi.updateProfileImage({
@@ -67,7 +69,7 @@ const UpdateProfilePicture = ({ oldPicture }: Props) => {
       {/* upload button */}
       <div className="flex items-center justify-center w-full mb-4">
         <label className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm cursor-pointer hover:bg-gray-50">
-          <span>Select an Image</span>
+          <span>Select new image</span>
           <input
             type="file"
             className="hidden"
@@ -81,14 +83,14 @@ const UpdateProfilePicture = ({ oldPicture }: Props) => {
           <button
             onClick={handleImageUpload}
             disabled={loading}
-            className="px-4 py-2 mr-4 text-sm font-medium text-white rounded-md shadow-sm bg-blue-600 hover:bg-primary-light"
+            className="px-4 py-2 mr-4 text-sm font-medium text-white rounded-md shadow-sm bg-blue-600"
           >
             {loading ? "Uploading..." : "Save"}
           </button>
         )}
 
         {saved && (
-          <p className="px-4 py-2 mr-4 text-sm font-medium text-white rounded-md shadow-sm bg-primary hover:bg-primary-light">
+          <p className="px-4 py-2 mr-4 text-sm font-medium text-white rounded-md shadow-sm bg-blue-600">
             Saved!
           </p>
         )}

@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import PickUpApi from "../../../api/pickUpApi";
 import { FaLocationDot } from "react-icons/fa6";
+import PickupPopover from "../components/PickupPopover";
 
 const UserPickups = () => {
   const [userPickups, setUserPickups] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const [notify, setNotify] = useState('');
 
   const fetchUserPickups = async () => {
     setLoading(true);
@@ -23,7 +27,7 @@ const UserPickups = () => {
 
   useEffect(() => {
     fetchUserPickups();
-  }, []);
+  }, [notify]);
 
   return (
     <div>
@@ -39,7 +43,8 @@ const UserPickups = () => {
           </select>
         </div>
       </div>
-      <div>
+
+      <div className="mb-40">
         {loading ? (
           <p>Loading...</p>
         ) : (
@@ -47,23 +52,25 @@ const UserPickups = () => {
             {userPickups.map((pickup: any) => (
               <div
                 key={pickup._id}
-                className="border p-4 my-2 rounded-lg flex justify-between"
+                className="border p-4 my-2 rounded-lg flex justify-between relative"
               >
+                <div className="absolute right-2">
+                  <PickupPopover id={pickup._id} setNotify={setNotify} />
+                </div>
                 <div>
                   <h1 className="text-lg font-semibold">{pickup.itemType}</h1>
-                  <p className="text-sm">
-                    {new Date(pickup.scheduledDate).toLocaleDateString()} at{" "}
+                  <p className="text-sm mt-1">
+                    {new Date(pickup.scheduledDate).toLocaleDateString()} <br />
                     {pickup.scheduledTimeStart} - {pickup.scheduledTimeEnd}
                   </p>
-                  {/* <p>{pickup.description}</p> */}
                   <p className="flex items-center font-medium mt-2">
                     <FaLocationDot className="text-green-800 text-sm" />
                     {pickup.location.name}
                   </p>
                 </div>
-                <div>
+                <div className="mt-2">
                   <div className="text-center">
-                    <h3 className=" text-3xl text-darkgreen">
+                    <h3 className=" text-2xl text-darkgreen">
                       {pickup.points_earned}
                     </h3>
                     <p className="text-xs font-light">Pts Earned</p>

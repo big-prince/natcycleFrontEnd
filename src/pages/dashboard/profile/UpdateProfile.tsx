@@ -13,6 +13,7 @@ const UpdateProfile = () => {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    impactMeasurement: "trees",
   });
 
   useEffect(() => {
@@ -24,6 +25,7 @@ const UpdateProfile = () => {
           firstName: res.data.firstName,
           lastName: res.data.lastName,
           email: res.data.email,
+          impactMeasurement: res.data.impactMeasurement,
         });
 
         dispatch(updateUser(res.data));
@@ -60,7 +62,7 @@ const UpdateProfile = () => {
       <form className=" p-4 rounded-lg" onSubmit={handleSubmit}>
         <p className="text-lg font-semibold">Update Profile</p>
         <div className="mt-4">
-          <label className="text-sm">First Name</label>
+          <label className="text-base font-medium">First Name</label>
           <input
             type="text"
             name="firstName"
@@ -71,7 +73,7 @@ const UpdateProfile = () => {
         </div>
 
         <div className="mt-4">
-          <label className="text-sm">Last Name</label>
+          <label className="text-base font-medium">Last Name</label>
           <input
             type="text"
             name="lastName"
@@ -82,14 +84,32 @@ const UpdateProfile = () => {
         </div>
 
         <div className="mt-4">
-          <label className="text-sm">Email</label>
+          <label className="text-base font-medium">Email</label>
           <input
             type="email"
             name="email"
             value={userDetails.email}
             onChange={handleChange}
+            disabled={true}
             className="w-full p-2 border border-gray-300 rounded-lg"
           />
+        </div>
+
+        <div className="mt-4">
+          <label className="text-base font-medium">Impact Measurement</label>
+          <p className="text-xs">
+            How do you want to measure your impact on the environment?{" "}
+          </p>
+
+          <select name="" id=""
+            className="w-full p-2 border border-gray-300 rounded-lg"
+          >
+            <option value="trees">Trees Planted</option>
+            <option value="carbon">Carbon Footprint</option>
+            <option value="water">Water Footprint</option>
+            <option value="birds">Birds Saved</option>
+          </select>
+          
         </div>
 
         <div className="mt-8">

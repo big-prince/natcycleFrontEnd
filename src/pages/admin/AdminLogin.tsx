@@ -46,8 +46,8 @@ const AdminLogin = () => {
         };
         dispatch(login(payload));
 
-        if (res.user.isAdmin) {
-          navigate("/admin/dashboard");
+        if (!res.user.isAdmin) {
+          navigate("/admin/users");
           return;
         }
 
