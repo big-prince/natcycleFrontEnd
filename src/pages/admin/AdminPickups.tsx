@@ -22,7 +22,7 @@ type Pickup = {
 
 const AdminPickups = () => {
   const [pickups, setPickups] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [notify, setNotify] = useState(false);
 
   const fetchPickups = async () => {
@@ -53,6 +53,20 @@ const AdminPickups = () => {
     setIsModalOpen(true);
   };
 
+  const handleDeletePickup = (pickup: Pickup) => {
+    const confirm = window.confirm("Are you sure you want to delete this pickup?");
+    if (!confirm) return;
+
+    PickUpApi.adminDeletePickUp(pickup._id)
+      .then((res) => {
+        console.log(res.data);
+        setNotify(true);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -63,7 +77,8 @@ const AdminPickups = () => {
 
       {/* cards not tables */}
       <div className="grid grid-cols-1 gap-4">
-        {pickups &&
+        {!loading &&
+          pickups &&
           pickups.map((pickup: Pickup) => (
             <div
               key={pickup._id}
@@ -101,7 +116,9 @@ const AdminPickups = () => {
                   Complete Pickup
                 </button>
 
-                <button className="btn underline text-green-900 font-medium block mt-4">
+                <button className="btn underline text-green-900 font-medium block mt-4"
+                  onClick={() => handleDeletePickup(pickup)}
+                >
                   Delete Pickup
                 </button>
               </div>
@@ -109,12 +126,14 @@ const AdminPickups = () => {
           ))}
       </div>
 
-      <AdminPickupModal
-        isModalOpen={isModalOpen}
-        setIsModalOpen={setIsModalOpen}
-        pickup={selectedPickup}
-        setNotify={setNotify}
-      />
+      {selectedPickup && (
+        <AdminPickupModal
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          pickup={selectedPickup}
+          setNotify={setNotify}
+        />
+      )}
     </div>
   );
 };

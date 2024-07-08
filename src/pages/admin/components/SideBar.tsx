@@ -50,7 +50,7 @@ const SideBar = () => {
 
       <div className="adminLink">
         {Links.map((link, index) => (
-          <div>
+          <div key={index}>
             {user.role === "superadmin" || link.title !== "Management" ? (
               <>
                 <NavLink
@@ -82,7 +82,7 @@ const SideBar = () => {
             <div>
               <p>
                 {user?.firstName} {user?.lastName} <br />
-                <p className="text-xs text-gray-400">{user?.role}</p>
+                <span className="text-xs text-gray-400">{user?.role}</span>
               </p>
               <p className="text-xs text-gray-400 hidden">{user?.email}</p>
             </div>

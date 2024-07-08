@@ -27,8 +27,8 @@ const PickUpApi = {
     return response.data
   },
 
-  adminCompletePickUp: async (id: string) => {
-    const response = await api.put(`/pickup/complete/${id}`)
+  adminCompletePickUp: async (id: string, body: any) => {
+    const response = await api.put(`/pickup/complete/${id}` , body)
     return response.data
   },
 

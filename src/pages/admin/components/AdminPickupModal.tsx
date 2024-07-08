@@ -1,5 +1,8 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { useState } from "react";
+import PickUpApi from "../../../api/pickUpApi";
+import { toast } from "react-toastify";
+import { FaTimes } from "react-icons/fa";
 
 type PickupModalProps = {
   isModalOpen;
@@ -16,6 +19,31 @@ const AdminPickupModal = ({
 }: PickupModalProps) => {
   const [pointsEarned, setPointsEarned] = useState(0);
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!pointsEarned) {
+      return;
+    }
+
+    setLoading(true);
+
+    PickUpApi.adminCompletePickUp(pickup._id, { pointsEarned, status })
+      .then((res) => {
+        console.log(res.data);
+        setNotify(true);
+        setIsModalOpen(false);
+        toast.success("Pickup completed successfully");
+        setLoading(false);
+        setPointsEarned(0);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error("Error completing pickup");
+      });
+  };
 
   return (
     <div>
@@ -30,17 +58,35 @@ const AdminPickupModal = ({
         <AlertDialog.Content className="general_modal">
           <div className="bg-white p-4 rounded-md">
             <div>
-              <h1 className="text-lg font-semibold">Complete Pickup</h1>
-              <p className="text-sm">
-                {pickup.user.firstName} {pickup.user.lastName}
-              </p>
-              <p className="text-sm">{pickup.user.email}</p>
+              <h1 className="text-lg font-semibold border-b-2">
+                Complete Pickup
+              </h1>
+
+              <div>
+                <AlertDialog.AlertDialogCancel className="absolute top-7 right-6">
+                  <FaTimes />
+                </AlertDialog.AlertDialogCancel>
+              </div>
             </div>
-            <form className="flex flex-col gap-4">
+
+            <div className="flex gap-5 my-4">
+              <div>
+                <p className="font-medium">
+                  {pickup.user.firstName} {pickup.user.lastName}
+                </p>
+                <p className="text-xs">Full name</p>
+              </div>
+              <div>
+                <p className="font-medium">{pickup.user.email}</p>
+                <p className="text-xs">User Email</p>
+              </div>
+            </div>
+
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div>
                 <label
                   htmlFor="pointsEarned"
-                  className="text-sm font-semibold block"
+                  className="text-sm font-medium block"
                 >
                   Points Earned
                 </label>
@@ -48,21 +94,21 @@ const AdminPickupModal = ({
                 <input
                   type="number"
                   id="pointsEarned"
-                  className="p-2 border border-gray-300 rounded-md"
+                  className="p-2 border text-sm border-gray-300 rounded-md"
                   value={pointsEarned}
                   onChange={(e) => setPointsEarned(Number(e.target.value))}
                 />
               </div>
 
-              <div>
-                <label htmlFor="status" className="text-sm font-semibold block">
+              <div className="hidden">
+                <label htmlFor="status" className="text-sm font-medium block">
                   Status
                 </label>
                 <select
                   id="status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-md"
+                  className="p-2 border text-sm border-gray-300 rounded-md"
                 >
                   <option value="pending">Pending</option>
                   <option value="completed">Completed</option>
@@ -80,15 +126,11 @@ const AdminPickupModal = ({
                   Cancel
                 </button>
                 <button
-                  type="button"
+                  type="submit"
+                  disabled={loading}
                   className="btn bg-green-500 p-3 rounded-lg text-white"
-                  onClick={() => {
-                    // complete pickup
-                    setIsModalOpen(false);
-                    setNotify('Pickup completed successfully');
-                  }}
                 >
-                  Complete Pickup
+                  {loading ? "Loading..." : "Complete Pickup"}
                 </button>
               </div>
             </form>

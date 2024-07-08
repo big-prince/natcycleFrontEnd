@@ -1,12 +1,16 @@
 import { RiCoinsFill } from "react-icons/ri";
 import { FaChevronRight } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { useAppSelector } from "../../hooks/reduxHooks";
+import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
 import { useState, useEffect } from "react";
-import PickUpApi from "../../api/pickUpApi";
+import ProfileApi from "../../api/profile.Api";
+import { updateUser } from "../../reducers/authSlice";
 
 const Dashboard = () => {
-  const user = useAppSelector((state) => state.auth.user);
+  const localUser = useAppSelector((state) => state.auth.user);
+  const dispatch = useAppDispatch();
+
+  const [user, setUser] = useState(localUser);
 
   function getTimeOfDay() {
     const now = new Date();
@@ -19,34 +23,25 @@ const Dashboard = () => {
     } else {
       return "Evening";
     }
-  }
-
-  const [pickup, setPickup] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  console.log(pickup, loading);
-
-  const fetchUserPickups = async () => {
-    setLoading(true);
-    PickUpApi.getPickUps()
-      .then((res) => {
-        console.log(res.data);
-        setPickup(res.data.docs[0]);
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
+  }  
 
   useEffect(() => {
-    fetchUserPickups();
+    const fetchUser = async () => {
+      ProfileApi.getProfile()
+        .then((res) => {
+          console.log(res.data, 'new data');
+          dispatch(updateUser(res.data));
+          setUser(res.data);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+
+    fetchUser();
   }, []);
 
   if (!user) return null;
-
 
   return (
     <div className="mb-40">
@@ -60,7 +55,9 @@ const Dashboard = () => {
         </div>
 
         <div>
-          <p className="text-3xl text-center font-bold text-darkgreen">0</p>
+          <p className="text-3xl text-center font-bold text-darkgreen">
+            {user.points}
+          </p>
           <p className="text-sm text-center">Birds</p>
         </div>
         {/* <div>

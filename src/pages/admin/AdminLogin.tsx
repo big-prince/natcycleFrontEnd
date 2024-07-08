@@ -5,6 +5,7 @@ import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import AuthApi from "../../api/authApi";
+import { toast } from "react-toastify";
 
 type IPayload = {
   token: string;
@@ -40,18 +41,18 @@ const AdminLogin = () => {
         console.log(res);
         setLoading(false);
 
+        if (!res.user.isAdmin) {
+          toast.error("You are not authorized to access this page");
+          return
+        }
+
         const payload: IPayload = {
           token: res.token!,
           user: res.user!,
         };
         dispatch(login(payload));
 
-        if (!res.user.isAdmin) {
-          navigate("/admin/users");
-          return;
-        }
-
-        navigate("/account/home");
+        navigate("/admin/users");
       })
       .catch((err) => {
         console.log(err);

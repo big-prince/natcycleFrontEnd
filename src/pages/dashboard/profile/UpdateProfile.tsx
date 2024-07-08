@@ -13,7 +13,7 @@ const UpdateProfile = () => {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    impactMeasurement: "trees",
+    impactMeasurement: user.impactMeasurement,
   });
 
   useEffect(() => {
@@ -35,7 +35,7 @@ const UpdateProfile = () => {
       });
   }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
     setUserDetails({
       ...userDetails,
       [e.target.name]: e.target.value,
@@ -101,8 +101,10 @@ const UpdateProfile = () => {
             How do you want to measure your impact on the environment?{" "}
           </p>
 
-          <select name="" id=""
+          <select name="impactMeasurement" id=""
             className="w-full p-2 border border-gray-300 rounded-lg"
+            value={userDetails.impactMeasurement}
+            onChange={handleChange}
           >
             <option value="trees">Trees Planted</option>
             <option value="carbon">Carbon Footprint</option>

@@ -2,14 +2,20 @@ import { LuLeafyGreen } from "react-icons/lu";
 import { PiRecycleDuotone } from "react-icons/pi";
 import { PiTrashThin } from "react-icons/pi";
 import { Link } from "react-router-dom";
+import { useAppSelector } from "../../hooks/reduxHooks";
 
 const Impact = () => {
+  const localUser = useAppSelector((state) => state.auth.user);
+  console.log(localUser);
+
   return (
     <div>
       <div className="flex justify-between bg-black text-white p-4 rounded-lg mt-6">
         <div className="text-center">
           <LuLeafyGreen className="text-lg text-yellow-500 m-auto" />
-          <p className="text-4xl py-2">0</p>
+          <p className="text-4xl py-2">
+            {localUser.points ? localUser.points : 0}
+          </p>
           Earned
         </div>
         <div className="text-center">
