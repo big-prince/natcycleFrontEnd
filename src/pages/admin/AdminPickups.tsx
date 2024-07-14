@@ -89,7 +89,13 @@ const AdminPickups = () => {
                   {pickup.user.firstName} {pickup.user.lastName}
                 </p>
                 <p className="text-sm">{pickup.user.email}</p>
+                <p className="text-sm">
+                  {
+                    new Date(pickup.createdAt).toDateString()
+                  }
+                </p>
               </div>
+
               <div>
                 <p className="text-sm">
                   {pickup.location.name} - {pickup.location.address}

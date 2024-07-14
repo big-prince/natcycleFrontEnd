@@ -47,3 +47,13 @@ export type Pickup = {
 }
 
 export type { LoginPayload };
+
+export type IBadge = {
+  _id: string;
+  name: string;
+  description: string;
+  image: {
+    public_id: string;
+    url: string;
+  }
+}

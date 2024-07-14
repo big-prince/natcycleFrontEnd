@@ -71,7 +71,7 @@ const UserPickups = () => {
                 <div className="mt-2">
                   <div className="text-center">
                     <h3 className=" text-2xl text-darkgreen">
-                      {pickup.points_earned}
+                      {pickup.pointsEarned}
                     </h3>
                     <p className="text-xs font-light">Pts Earned</p>
                   </div>

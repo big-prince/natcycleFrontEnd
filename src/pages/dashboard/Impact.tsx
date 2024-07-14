@@ -3,10 +3,35 @@ import { PiRecycleDuotone } from "react-icons/pi";
 import { PiTrashThin } from "react-icons/pi";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../../hooks/reduxHooks";
+import { useEffect, useState } from "react";
+import ReferModal from "./components/ReferModal";
+import PickUpApi from "../../api/pickUpApi";
 
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   console.log(localUser);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [userPickups, setUserPickups] = useState([]);
+
+  const fetchUserPickups = async () => {
+    PickUpApi.getPickUps()
+      .then((res) => {
+        console.log(res.data);
+        setUserPickups(res.data.docs);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+      .finally(() => {
+        console.log('page loaded');
+      });
+  };
+
+  useEffect(() => {
+    fetchUserPickups();
+  }, []);
 
   return (
     <div>
@@ -20,13 +45,17 @@ const Impact = () => {
         </div>
         <div className="text-center">
           <PiRecycleDuotone className="text-lg text-green-500 m-auto" />
-          <p className="text-4xl py-2">0</p>
+          <p className="text-4xl py-2">
+          {localUser.points ? localUser.totalItemsCollected : 0}
+          </p>
           Recycled
         </div>
         <div className="text-center">
           <Link to="/pickup/all">
           <PiTrashThin className="text-lg text-white m-auto" />
-          <p className="text-4xl py-2">0</p>
+          <p className="text-4xl py-2">
+          {userPickups.length}
+          </p>
           Collections
           </Link>
         </div>
@@ -60,7 +89,9 @@ const Impact = () => {
             <p className="text-sm">Earn 100 points</p>
           </div>
           <div>
-            <button className="bg-darkgreen text-white p-4 rounded-2xl">Go</button>
+            <button className="bg-darkgreen text-white p-4 rounded-2xl"
+              onClick={() => setIsModalOpen(true)}
+            >Go</button>
           </div>
         </div>
       </div>
@@ -80,6 +111,10 @@ const Impact = () => {
         </div>
       </div>
 
+      <ReferModal
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
+      />
     </div>
   );
 };

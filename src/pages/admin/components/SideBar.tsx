@@ -6,6 +6,7 @@ import { HiMiniUsers } from "react-icons/hi2";
 import { IoLogOut } from "react-icons/io5";
 import { logout } from "../../../reducers/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
+import { SlBadge } from "react-icons/sl";
 
 const Links = [
   {
@@ -17,6 +18,11 @@ const Links = [
     title: "Pickups",
     icon: <MdWork />,
     path: "/admin/pickups",
+  },
+  {
+    title: "Badges",
+    icon: <SlBadge />,
+    path: "/admin/badges",
   },
 ];
 

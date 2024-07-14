@@ -56,7 +56,7 @@ const Dashboard = () => {
 
         <div>
           <p className="text-3xl text-center font-bold text-darkgreen">
-            {user.points}
+            {user.pointsEarned}
           </p>
           <p className="text-sm text-center">Birds</p>
         </div>

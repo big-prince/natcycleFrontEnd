@@ -18,6 +18,9 @@ const AdminPickupModal = ({
   setNotify,
 }: PickupModalProps) => {
   const [pointsEarned, setPointsEarned] = useState(0);
+  const [itemsCount, setItemsCount] = useState(0);
+
+
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +33,13 @@ const AdminPickupModal = ({
 
     setLoading(true);
 
-    PickUpApi.adminCompletePickUp(pickup._id, { pointsEarned, status })
+    const payload  = {
+      pointsEarned,
+      itemsCount,
+      status: "completed",
+    }
+
+    PickUpApi.adminCompletePickUp(pickup._id, payload)
       .then((res) => {
         console.log(res.data);
         setNotify(true);
@@ -38,10 +47,12 @@ const AdminPickupModal = ({
         toast.success("Pickup completed successfully");
         setLoading(false);
         setPointsEarned(0);
+        setItemsCount(0);
       })
       .catch((err) => {
         console.log(err);
-        toast.error("Error completing pickup");
+        toast.error(err.response.data.message || "An error occurred");
+        setLoading(false);
       });
   };
 
@@ -97,6 +108,19 @@ const AdminPickupModal = ({
                   className="p-2 border text-sm border-gray-300 rounded-md"
                   value={pointsEarned}
                   onChange={(e) => setPointsEarned(Number(e.target.value))}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="itemsCount" className="text-sm font-medium block">
+                  Items Count
+                </label>
+                <input
+                  type="number"
+                  id="itemsCount"
+                  className="p-2 border text-sm border-gray-300 rounded-md"
+                  value={itemsCount}
+                  onChange={(e) => setItemsCount(Number(e.target.value))}
                 />
               </div>
 

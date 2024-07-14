@@ -27,6 +27,7 @@
     "react-otp-input": "^3.1.1",
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.20.1",
+    "react-share": "^5.1.0",
     "react-toastify": "^10.0.5",
     "react-ts-tradingview-widgets": "^1.2.3",
     "swiper": "^11.0.7"

@@ -17,6 +17,7 @@ import AdminLayout from "./pages/admin/components/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPickups from "./pages/admin/AdminPickups";
+import AdminBadges from "./pages/admin/AdminBadges";
 
 const App = () => {
   return (
@@ -57,6 +58,7 @@ const App = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/pickups" element={<AdminPickups />} />
+            <Route path="/admin/badges" element={<AdminBadges />} />
           </Route>
 
           <Route path="*" element={<h1>Not Found</h1>} />
