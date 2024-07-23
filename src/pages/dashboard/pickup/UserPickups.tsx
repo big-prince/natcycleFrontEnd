@@ -52,7 +52,7 @@ const UserPickups = () => {
             {userPickups.map((pickup: any) => (
               <div
                 key={pickup._id}
-                className="border p-4 my-2 rounded-lg flex justify-between relative"
+                className="border p-4 my-2 rounded-lg flex justify-between relative shadow-sm"
               >
                 <div className="absolute right-2">
                   <PickupPopover id={pickup._id} setNotify={setNotify} />

@@ -4,6 +4,7 @@ import { FaTimes } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
 import LocationApi from "../../../api/locationApi";
 import { toast } from "react-toastify";
+import Utils from "../../../utils";
 
 const AddLocation = ({ setNotify }: any) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +22,8 @@ const AddLocation = ({ setNotify }: any) => {
   //     [e.target.name]: e.target.value,
   //   });
   // };
+
+  const us_states = Utils.us_states
 
   const addLocation = () => {
     console.log(newLocation);
@@ -107,7 +110,7 @@ const AddLocation = ({ setNotify }: any) => {
 
                 <div className="mt-6">
                   <label className="text-sm font-medium">State</label>
-                  <input
+                  {/* <input
                     type="text"
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     placeholder="Enter state"
@@ -119,7 +122,24 @@ const AddLocation = ({ setNotify }: any) => {
                         state: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+                  <select
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    value={newLocation.state}
+                    onChange={(e) =>
+                      setNewLocation({
+                        ...newLocation,
+                        state: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select State</option>
+                    {
+                      us_states.map((state, index) => (
+                        <option key={index} value={state}>{state}</option>
+                      ))
+                    }
+                  </select>
                 </div>
 
                 <div className="bg-black p-4 py-4 rounded-2xl flex items-center justify-between w-full mt-6 cursor-pointer"

@@ -46,7 +46,7 @@ const SideBar = () => {
     <div className="p-4 pl-0 fixed top-0 bg-black w-72 h-full">
       <div className="mb-6 flex items-center">
         <Link
-          to="/admin/jobs"
+          to="/admin/users"
           className="p-3 font-medium text-3xl text-center text-white"
         >
           <img className="h-14" src={LogoWhite} alt="Logo" />

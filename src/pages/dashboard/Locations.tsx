@@ -82,7 +82,7 @@ const Locations = () => {
 
       <div className="mt-6">
         <p className="text-xl font-semibold">Upcoming Pickup</p>
-        <div className="bg-white p-4 rounded-lg mt-4">
+        <div className="bg-white p-4 rounded-lg mt-4 shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-semibold">Plastic Bottles</h1>

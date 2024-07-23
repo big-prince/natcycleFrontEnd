@@ -55,6 +55,9 @@ const Notifications = () => {
               <div>
                 <h1 className="font-semibold mb-1">{notification.title}</h1>
                 <p className="text-sm">{notification.message}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(notification.createdAt).toDateString()}
+                </p>
               </div>
               <div className="hidden">
                 <button className="bg-primary text-white px-4 py-2 rounded-lg">

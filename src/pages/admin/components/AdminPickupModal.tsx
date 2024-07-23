@@ -80,7 +80,7 @@ const AdminPickupModal = ({
               </div>
             </div>
 
-            <div className="flex gap-5 my-4">
+            <div className="flex gap-6 my-4 text-sm">
               <div>
                 <p className="font-medium">
                   {pickup.user.firstName} {pickup.user.lastName}
@@ -88,6 +88,19 @@ const AdminPickupModal = ({
                 <p className="text-xs">Full name</p>
               </div>
               <div>
+                <p className="font-medium">{pickup.user.email}</p>
+                <p className="text-xs">User Email</p>
+              </div>
+            </div>
+
+            <div className="flex gap-6 my-4 text-sm">
+              <div>
+                <p className="font-medium">
+                {new Date(pickup.scheduledDate).toLocaleDateString()}
+                </p>
+                <p className="text-xs">Pickup Date</p>
+              </div>
+              <div className="hidden">
                 <p className="font-medium">{pickup.user.email}</p>
                 <p className="text-xs">User Email</p>
               </div>

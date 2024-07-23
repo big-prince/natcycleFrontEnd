@@ -149,7 +149,8 @@ const BookPickup = () => {
           >
             <option value="0-50">0-50</option>
             <option value="50-100">50-100</option>
-            <option value="More">More</option>
+            <option value="100-200">100-200</option>
+            <option value="200-300">200-300</option>
           </select>
         </div>
 

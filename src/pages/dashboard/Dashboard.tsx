@@ -58,7 +58,11 @@ const Dashboard = () => {
           <p className="text-3xl text-center font-bold text-darkgreen">
             {user.pointsEarned}
           </p>
-          <p className="text-sm text-center">Birds</p>
+          <p className="text-sm text-center">
+            {
+              user.impactMeasurement
+            }
+          </p>
         </div>
         {/* <div>
           <p className="text-2xl font-bold text-darkgreen">0.00</p>

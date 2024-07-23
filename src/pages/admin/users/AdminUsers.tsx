@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import UsersApi from "../../api/usersApi";
+import UsersApi from "../../../api/usersApi";
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);

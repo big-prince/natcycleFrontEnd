@@ -15,9 +15,14 @@ import UserPickups from "./pages/dashboard/pickup/UserPickups";
 import BookPickup from "./pages/dashboard/pickup/BookPickup";
 import AdminLayout from "./pages/admin/components/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
-import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUsers from "./pages/admin/users/AdminUsers";
 import AdminPickups from "./pages/admin/AdminPickups";
 import AdminBadges from "./pages/admin/AdminBadges";
+import UserDetails from "./pages/admin/users/UserDetails";
+import PickupLogin from "./pages/pickups/PickupLogin";
+import PickupList from "./pages/pickups/PickupList";
+import PickupLayout from "./pages/pickups/PickupLayout";
+import PickupProfile from "./pages/pickups/PickupProfile";
 
 const App = () => {
   return (
@@ -57,8 +62,21 @@ const App = () => {
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/users/:id" element={<UserDetails />} />
+
             <Route path="/admin/pickups" element={<AdminPickups />} />
             <Route path="/admin/badges" element={<AdminBadges />} />
+
+          </Route>
+          
+
+          {/* the pickup side of things */}
+          <Route path="/admin/pickup/login" element={<PickupLogin />} />
+
+          <Route path="/admin/pickup" element={<PickupLayout />}>
+            <Route path="/admin/pickup/pickups" element={<PickupList />} />
+            <Route path="/admin/pickup/profile" element={<PickupProfile />} />
+            <Route path="/admin/pickup/settings" element={<PickupProfile />} />
           </Route>
 
           <Route path="*" element={<h1>Not Found</h1>} />

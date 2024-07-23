@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import Logo from "../../../assets/logo.png";
+import Logo from "../../../assets/logo/Group 202@2x.png";
 import MobileNav from "./MobileNav";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { IoNotifications } from "react-icons/io5";
@@ -25,7 +25,9 @@ const DashLayout = () => {
 
       <Outlet />
 
-      <MobileNav />
+      <div className="p-8">
+        <MobileNav />
+      </div>
     </div>
   );
 };

@@ -11,7 +11,7 @@ type Props = {
 const ReferModal = ({ isModalOpen, setIsModalOpen }: Props) => {
   const localUser = useAppSelector((state) => state.auth.user);
 
-  const referralLink = `https://nat-cycle.vercel.app/signup?referral=${localUser._id}`;
+  const referralLink = `https://nat-cycle.vercel.app/signup?referral=${localUser.referralId}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);

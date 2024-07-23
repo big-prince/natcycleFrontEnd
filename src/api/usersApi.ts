@@ -30,6 +30,11 @@ const UsersApi = {
   deleteUser: async (id: string) => {
     const response = await api.delete(`/profile/${id}`);
     return response.data;
+  },
+
+  getReferrals: async (id: string) => {
+    const response = await api.get(`/profile/referrals/${id}`);
+    return response.data;
   }
 };
 

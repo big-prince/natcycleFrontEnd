@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SetStateAction, useState } from "react";
 import Logo from "../../assets/logo.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthApi from "../../api/authApi";
 
 const Signup = () => {
+  const [searchParams] = useSearchParams();
+
+  const [referralId] = useState(searchParams.get("referral") );
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,12 +30,18 @@ const Signup = () => {
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(signupData);
 
+    
+    const data = {
+      ...signupData,
+      referralId,
+    };
+    console.log(data);
+    // return
+    
     setLoading(true);
-
     AuthApi
-      .signup(signupData)
+      .signup(data)
       .then((res: any) => {
         console.log(res);
         setLoading(false);
