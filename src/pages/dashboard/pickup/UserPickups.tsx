@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import PickUpApi from "../../../api/pickUpApi";
 import { FaLocationDot } from "react-icons/fa6";
 import PickupPopover from "../components/PickupPopover";
+// import PickupMap from "../../pickups/components/PickupMap";
 
 const UserPickups = () => {
   const [userPickups, setUserPickups] = useState([]);
@@ -43,6 +44,7 @@ const UserPickups = () => {
           </select>
         </div>
       </div>
+
 
       <div className="mb-40">
         {loading ? (

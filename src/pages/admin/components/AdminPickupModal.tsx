@@ -3,11 +3,34 @@ import { useState } from "react";
 import PickUpApi from "../../../api/pickUpApi";
 import { toast } from "react-toastify";
 import { FaTimes } from "react-icons/fa";
+import { IUser } from "../../../types";
+
+type IPickup = {
+  _id: string;
+  createdAt: string;
+  itemType: string;
+  itemsCount: number;
+  description: string;
+  location: {
+    _id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  pointsEarned: number;
+  scheduledDate: string;
+  scheduledTimeEnd: string;
+  scheduledTimeStart: string;
+  status: string;
+  updatedAt: string;
+  user: IUser;
+}
 
 type PickupModalProps = {
   isModalOpen;
   setIsModalOpen;
-  pickup;
+  pickup: IPickup;
   setNotify;
 };
 
@@ -17,7 +40,13 @@ const AdminPickupModal = ({
   pickup,
   setNotify,
 }: PickupModalProps) => {
-  const [pointsEarned, setPointsEarned] = useState(0);
+  // const recyclablesWithPoints: { item: string; points: number }[] = [
+  //   { item: "Plastic Bottles", points: 10 },
+  //   { item: "Fabric", points: 5 },
+  //   { item: "Glass", points: 8 },
+  //   { item: "Mixed", points: 2 },
+  // ];
+
   const [itemsCount, setItemsCount] = useState(0);
 
 
@@ -27,14 +56,14 @@ const AdminPickupModal = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!pointsEarned) {
+    if (!itemsCount) {
+      alert("Please enter the items count");
       return;
     }
 
     setLoading(true);
 
     const payload  = {
-      pointsEarned,
       itemsCount,
       status: "completed",
     }
@@ -46,7 +75,7 @@ const AdminPickupModal = ({
         setIsModalOpen(false);
         toast.success("Pickup completed successfully");
         setLoading(false);
-        setPointsEarned(0);
+        // setPointsEarned(0);
         setItemsCount(0);
       })
       .catch((err) => {
@@ -107,7 +136,7 @@ const AdminPickupModal = ({
             </div>
 
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <div>
+              {/* <div>
                 <label
                   htmlFor="pointsEarned"
                   className="text-sm font-medium block"
@@ -122,11 +151,11 @@ const AdminPickupModal = ({
                   value={pointsEarned}
                   onChange={(e) => setPointsEarned(Number(e.target.value))}
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label htmlFor="itemsCount" className="text-sm font-medium block">
-                  Items Count
+                  {pickup.itemType} Count
                 </label>
                 <input
                   type="number"

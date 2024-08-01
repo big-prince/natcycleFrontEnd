@@ -1,11 +1,54 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, FormEvent } from "react";
 import { FaChevronRight } from "react-icons/fa";
 import LocationApi from "../../../api/locationApi";
 import PickUpApi from "../../../api/pickUpApi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const BookPickup = () => {
+  const [searchParams] = useSearchParams();
+  const [itemType] = useState(searchParams.get("item") || "Plastic Bottles");
+
+  const recyclables = ["Plastic Bottles", "Fabric", "Glass", "Mixed"];
+
+  const [pickUpForm, setPickUpForm] = useState({
+    itemType: itemType,
+    location: "",
+    date: "",
+    timeStart: "",
+    timeEnd: "",
+    description: "",
+  });
+
+  const question =  [
+    "How many bottles do you want to recycle? in kg",
+    "How many fabric do you want to recycle? in kg",
+    "How many glass do you want to recycle? in kg",
+    "How many mixed items do you want to recycle?",
+    "How many fabric do you want to recycle? in kg",
+
+  ]
+
+  const [itemQuestion, setItemQuestion] = useState(question[0]);
+
+  useEffect(() => {
+    switch (pickUpForm.itemType) {
+      case "Plastic Bottles":
+        setItemQuestion(question[0]);
+        break;
+      case "Fabric":
+        setItemQuestion(question[1]);
+        break;
+      case "Glass":
+        setItemQuestion(question[2]);
+        break;
+      case "Mixed":
+        setItemQuestion(question[3]);
+        break;
+    }
+  }, [itemType, pickUpForm.itemType]);
+
   const navigate = useNavigate();
 
   const [locations, setLocations] = useState([]);
@@ -27,16 +70,15 @@ const BookPickup = () => {
   };
 
   useEffect(() => {
+    setPickUpForm({
+      ...pickUpForm,
+      itemType: itemType,
+    })
+
     fetchLocations();
   }, []);
 
-  const [pickUpForm, setPickUpForm] = useState({
-    location: "",
-    date: "",
-    timeStart: "",
-    timeEnd: "",
-    description: "",
-  });
+  
 
   const handleChange = (e: any) => {
     setPickUpForm({
@@ -58,13 +100,30 @@ const BookPickup = () => {
       })
       .catch((err) => {
         console.log(err);
-      });
+      }); 
   };
 
   return (
     <div>
       <form onSubmit={bookPickup}>
         <h2 className="text-2xl font-bold mt-8">Book a Pickup</h2>
+
+        <div className="mt-6">
+          <label className="font-semibold">Item Type</label>
+          <select
+            name="itemType"
+            onChange={handleChange}
+            required
+            className="w-full p-2 border border-gray-300 rounded-lg"
+            value={pickUpForm.itemType}
+          >
+            {recyclables.map((recyclable) => (
+              <option key={recyclable} value={recyclable}>
+                {recyclable}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* select location */}
         <div className="mt-6">
@@ -137,21 +196,16 @@ const BookPickup = () => {
         {/* how many bottles do you want to recycle */}
         <div className="mt-6">
           <label className="text-sm">
-            How many bottles do you want to recycle?
+            {itemQuestion} (in kg)
           </label>
-          {/* select drop down for 0-50 50-100 and more */}
-          <select
+          <input
+            type="number"
             className="w-full p-2 border border-gray-300 rounded-lg"
             name="description"
             onChange={handleChange}
             required
             value={pickUpForm.description}
-          >
-            <option value="0-50">0-50</option>
-            <option value="50-100">50-100</option>
-            <option value="100-200">100-200</option>
-            <option value="200-300">200-300</option>
-          </select>
+          />
         </div>
 
         <button

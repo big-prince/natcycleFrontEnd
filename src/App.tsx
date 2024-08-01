@@ -23,6 +23,9 @@ import PickupLogin from "./pages/pickups/PickupLogin";
 import PickupList from "./pages/pickups/PickupList";
 import PickupLayout from "./pages/pickups/PickupLayout";
 import PickupProfile from "./pages/pickups/PickupProfile";
+// import AdminReward from "./pages/admin/AdminReward";
+import AdminRewards from "./pages/admin/AdminRewards";
+import UserRewards from "./pages/dashboard/reward/UserRewards";
 
 const App = () => {
   return (
@@ -56,6 +59,8 @@ const App = () => {
             <Route path="impact" element={<Impact />} />
             <Route path="locations" element={<Locations />} />
             <Route path="notifications" element={<Notifications />} />
+
+            <Route path="rewards" element={<UserRewards />} />
           </Route>
 
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -66,9 +71,8 @@ const App = () => {
 
             <Route path="/admin/pickups" element={<AdminPickups />} />
             <Route path="/admin/badges" element={<AdminBadges />} />
-
+            <Route path="/admin/rewards" element={<AdminRewards />} />
           </Route>
-          
 
           {/* the pickup side of things */}
           <Route path="/admin/pickup/login" element={<PickupLogin />} />

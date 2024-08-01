@@ -1,25 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import PickUpApi from "../../api/pickUpApi";
-import { ILocation, IUser } from "../../types";
+import { IUser } from "../../types";
 import AdminPickupModal from "../admin/components/AdminPickupModal";
+import PickupMap from "./components/PickupMap";
 
 type Pickup = {
+  _id: string;
   createdAt: string;
-  description: string;
   itemType: string;
-  location: ILocation;
+  itemsCount: number;
+  location: {
+    _id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  description: string;
   pointsEarned: number;
-  points_earned: number;
   scheduledDate: string;
   scheduledTimeEnd: string;
   scheduledTimeStart: string;
   status: string;
   updatedAt: string;
   user: IUser;
-  __v: number;
-  _id: string;
-};
+}
 
 const PickupList = () => {
   const [pickups, setPickups] = useState([]);
@@ -84,6 +90,8 @@ const PickupList = () => {
 
   return (
     <div className="px-4">
+      {pickups.length > 0 && <PickupMap userPickups={pickups} />}
+
       {/* date select */}
       <div className="flex justify-between">
         <div className="flex justify-between items-center mb-4 text-darkgreen font-bold text-sm">

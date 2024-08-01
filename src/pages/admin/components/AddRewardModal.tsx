@@ -1,8 +1,9 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
-import BadgeApi from "../../../api/badgeApi";
 import { toast } from "react-toastify";
+import RewardApi from "../../../api/rewardApi";
+
 
 type Props = {
   isModalOpen: boolean;
@@ -10,11 +11,16 @@ type Props = {
   setNotify: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
-  const [badgeName, setBadgeName] = useState("");
+const AddRewardModal = ({
+  isModalOpen,
+  setIsModalOpen,
+  setNotify,
+}: Props) => {
+  const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pointsRequired, setPointsRequired] = useState(0);
 
   const readFile = (file: Blob | string) => {
     return new Promise((resolve, reject) => {
@@ -29,20 +35,21 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
     e.preventDefault();
 
     if (image) {
-      const badgeImage = await readFile(image);
+      const rewardImage = await readFile(image);
 
       const payload = {
-        name: badgeName,
-        image: badgeImage,
+        name: rewardName,
+        image: rewardImage,
         description,
-      };
-
+        pointsRequired
+      }
+      
       setLoading(true);
-      BadgeApi.createBadge(payload)
+      RewardApi.adminCreateReward(payload)
         .then((response) => {
           console.log(response);
           setLoading(false);
-          setBadgeName("");
+          setRewardName("");
           setImage(null);
           setIsModalOpen(false);
           setNotify(true);
@@ -50,7 +57,7 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
         .catch((error) => {
           console.error(error);
           setLoading(false);
-          toast.error(error.response.data.message);
+          toast.error(error.response.data.message)
         });
     }
   };
@@ -69,7 +76,7 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
           <div className="general_modal_content p-4">
             <div className="flex justify-between items-center mb-6">
               <AlertDialog.Title className="font-medium text-2xl">
-                Add New Badge
+                Add New Reward
               </AlertDialog.Title>
 
               <AlertDialog.AlertDialogCancel>
@@ -81,36 +88,30 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
               <div>
                 <form action="" onSubmit={handleSubmit}>
                   <div className="mb-4">
-                    <label
-                      htmlFor="badgeName"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Badge Name
+                    <label htmlFor="rewardName" className="block text-sm font-medium text-gray-700">
+                      Reward Name
                     </label>
                     <input
                       type="text"
-                      name="badgeName"
-                      id="badgeName"
-                      placeholder="Badge Name"
+                      name="rewardName"
+                      id="rewardName"
+                      placeholder="Reward Name"
                       className="mt-1 p-2 w-full border border-gray-300 rounded-md"
-                      value={badgeName}
-                      onChange={(e) => setBadgeName(e.target.value)}
+                      value={rewardName}
+                      onChange={(e) => setRewardName(e.target.value)}
                       required
                     />
                   </div>
 
                   <div className="mb-4">
-                    <label
-                      htmlFor="badgeName"
-                      className="block text-sm font-medium text-gray-700"
-                    >
+                    <label htmlFor="rewardName" className="block text-sm font-medium text-gray-700">
                       Description
                     </label>
                     <input
                       type="text"
                       name="description"
                       id="description"
-                      placeholder="Badge Name"
+                      placeholder="Reward Name"
                       className="mt-1 p-2 w-full border border-gray-300 rounded-md"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -119,20 +120,33 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
                   </div>
 
                   <div className="mb-4">
-                    <label
-                      htmlFor="image"
-                      className="block text-sm font-medium text-gray-700"
-                    >
+                    <label htmlFor="image" className="block text-sm font-medium text-gray-700">
                       Image
                     </label>
                     <input
-                      accept="image/*"
                       type="file"
+                      accept="image/*"
                       name="image"
                       id="image"
                       placeholder="Image"
                       className="mt-1 p-2 w-full border border-gray-300 rounded-md"
                       onChange={(e) => setImage(e.target.files![0])}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="points" className="block text-sm font-medium text-gray-700">
+                      Points Required
+                    </label>
+                    <input
+                      type="number"
+                      name="points"
+                      id="points"
+                      placeholder="Points Required"
+                      className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                      value={pointsRequired}
+                      onChange={(e) => setPointsRequired(parseInt(e.target.value))}
                       required
                     />
                   </div>
@@ -143,7 +157,9 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
                       disabled={loading}
                       className="bg-green-400 text-white p-2 rounded-lg w-full"
                     >
-                      {loading ? "Loading..." : "Add Badge"}
+                      {
+                        loading ? "Loading..." : "Add Reward"
+                      }
                     </button>
                   </div>
                 </form>
@@ -163,7 +179,7 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
         </AlertDialog.Content>
       </AlertDialog.Root>
     </div>
-  );
-};
+  )
+}
 
-export default AddBadgeModal;
+export default AddRewardModal

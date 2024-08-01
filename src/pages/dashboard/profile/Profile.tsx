@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { IoNotifications } from "react-icons/io5";
 import AuthApi from "../../../api/authApi";
 import { toast } from "react-toastify";
+import { TiGift } from "react-icons/ti";
 
 const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
 
@@ -68,6 +69,16 @@ const Profile = () => {
             >
               <IoNotifications />
               <span>Locations</span>
+            </Link>
+          </li>
+
+          <li className="">
+            <Link
+              to="/rewards"
+              className="flex items-center space-x-2 p-4 rounded-2xl"
+            >
+              <TiGift />
+              <span>Rewards</span>
             </Link>
           </li>
 

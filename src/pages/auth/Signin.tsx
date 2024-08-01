@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import Logo from "../../assets/logo.png";
-import HomeIllustration from "../../assets/homeIllustration.png";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
 import AuthApi from "../../api/authApi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
+import Illustration from '../../assets/signup.png';
+import FullLogo from '../../assets/logo/Group 202@2x.png';
 
 const Signin = () => {
   const dispatch = useAppDispatch();
@@ -56,12 +56,6 @@ const Signin = () => {
         setLoading(false);
         setError(err.response.data);
       })
-      .finally(() => {
-        setLoading(false);
-        setTimeout(() => {
-          setError("");
-        }, 4000);
-      });
   };
 
   return (
@@ -69,7 +63,7 @@ const Signin = () => {
       <div>
         <img
           className="w-56 m-auto mt-16 mb-6"
-          src={Logo}
+          src={FullLogo}
           alt="NatCycle Logo"
         />
       </div>
@@ -77,7 +71,7 @@ const Signin = () => {
       <div className="md:block">
         <img
           className="h-60 m-auto object-cover"
-          src={HomeIllustration}
+          src={Illustration}
           alt="NatCycle Illustration"
         />
       </div>

@@ -39,7 +39,7 @@ const Impact = () => {
         <div className="text-center">
           <LuLeafyGreen className="text-lg text-yellow-500 m-auto" />
           <p className="text-4xl py-2">
-            {localUser.points ? localUser.points : 0}
+            {localUser.pointsEarned ? localUser.pointsEarned : 0}
           </p>
           Earned
         </div>

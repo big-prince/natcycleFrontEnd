@@ -1,23 +1,28 @@
 import { useState, useEffect } from "react";
 import PickUpApi from "../../api/pickUpApi";
-import { ILocation, IUser } from "../../types";
+import { IUser } from "../../types";
 import AdminPickupModal from "./components/AdminPickupModal";
 
-type Pickup = {
+type IPickup = {
+  _id: string;
   createdAt: string;
-  description: string;
   itemType: string;
-  location: ILocation;
+  itemsCount: number;
+  description: string;
+  location: {
+    _id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
   pointsEarned: number;
-  points_earned: number;
   scheduledDate: string;
   scheduledTimeEnd: string;
   scheduledTimeStart: string;
   status: string;
   updatedAt: string;
   user: IUser;
-  __v: number;
-  _id: string;
 };
 
 const AdminPickups = () => {
@@ -45,15 +50,15 @@ const AdminPickups = () => {
   }, [notify]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPickup, setSelectedPickup] = useState<Pickup | null>(null);
+  const [selectedPickup, setSelectedPickup] = useState<IPickup | null>(null);
 
-  const handleOpenModal = (pickup: Pickup) => {
+  const handleOpenModal = (pickup: IPickup) => {
     console.log(pickup);
     setSelectedPickup(pickup);
     setIsModalOpen(true);
   };
 
-  const handleDeletePickup = (pickup: Pickup) => {
+  const handleDeletePickup = (pickup: IPickup) => {
     const confirm = window.confirm("Are you sure you want to delete this pickup?");
     if (!confirm) return;
 
@@ -79,7 +84,7 @@ const AdminPickups = () => {
       <div className="grid grid-cols-1 gap-4">
         {!loading &&
           pickups &&
-          pickups.map((pickup: Pickup) => (
+          pickups.map((pickup: IPickup) => (
             <div
               key={pickup._id}
               className="bg-white rounded-md shadow-md p-4 text-sm flex justify-between gap-4"

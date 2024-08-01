@@ -1,21 +1,23 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import LocationApi from "../../api/locationApi";
-import AddLocation from "./components/AddLocation";
+// import AddLocation from "./components/AddLocation";
 import Loading from "./components/Loading";
 import { FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
+import NewLocationDropdown from "./components/NewLocationDropdown";
 
 const Locations = () => {
   const [loading, setLoading] = useState(false);
   const [locations, setLocations] = useState([]);
-  const [notify, setNotify] = useState(false);
 
   const fetchNotifications = async () => {
     setLoading(true);
     LocationApi.getLocations()
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
         setLocations(res.data);
       })
       .catch((err) => {
@@ -29,13 +31,12 @@ const Locations = () => {
 
   useEffect(() => {
     fetchNotifications();
-  }, [notify]);
+  }, []);
 
   const handleDelete = (id: string) => {
     LocationApi.deleteLocation(id)
-      .then((res) => {
-        console.log(res);
-        setNotify(true);
+      .then((_) => {
+        fetchNotifications();
       })
       .catch((err) => {
         console.log(err);
@@ -47,7 +48,11 @@ const Locations = () => {
       <div className="flex justify-between items-center mt-6">
         <h2 className="text-2xl font-semibold">Locations</h2>
 
-        <AddLocation setNotify={setNotify} />
+        {/* <AddLocation setNotify={setNotify} /> */}
+      </div>
+
+      <div>
+        <NewLocationDropdown fetchNotifications={fetchNotifications} />
       </div>
 
       <div>
@@ -60,7 +65,11 @@ const Locations = () => {
               <div>
                 <h3 className="text-xl font-semibold">{location.name}</h3>
                 <p className="text-gray-500">{location.address}</p>
-                <p className="text-gray-700 text-sm">{location.state}</p>
+
+                <div className="flex">
+                  <p className="text-zinc-800 text-sm mr-2">{location.city}</p>
+                  <p className="text-gray-700 text-sm font-medium">{location.state}</p>
+                </div>
               </div>
               <div>
                 <button className="bg-primary text-white px-4 py-2 rounded-lg hidden">

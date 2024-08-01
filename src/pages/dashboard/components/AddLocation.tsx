@@ -110,19 +110,7 @@ const AddLocation = ({ setNotify }: any) => {
 
                 <div className="mt-6">
                   <label className="text-sm font-medium">State</label>
-                  {/* <input
-                    type="text"
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    placeholder="Enter state"
-                    name="state"
-                    value={newLocation.state}
-                    onChange={(e) =>
-                      setNewLocation({
-                        ...newLocation,
-                        state: e.target.value,
-                      })
-                    }
-                  /> */}
+
                   <select
                     className="w-full p-2 border border-gray-300 rounded-lg"
                     value={newLocation.state}
