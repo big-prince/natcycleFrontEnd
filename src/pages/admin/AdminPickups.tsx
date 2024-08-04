@@ -20,7 +20,7 @@ type IPickup = {
   scheduledDate: string;
   scheduledTimeEnd: string;
   scheduledTimeStart: string;
-  status: string;
+  status: 'pending'| 'completed' | 'cancelled';
   updatedAt: string;
   user: IUser;
 };
@@ -93,7 +93,7 @@ const AdminPickups = () => {
                 <p className="text-sm">
                   {pickup.user.firstName} {pickup.user.lastName}
                 </p>
-                <p className="text-sm">{pickup.user.email}</p>
+                <p className="text-sm hidden">{pickup.user.email}</p>
                 <p className="text-sm">
                   {
                     new Date(pickup.createdAt).toDateString()
@@ -101,24 +101,31 @@ const AdminPickups = () => {
                 </p>
               </div>
 
-              <div>
+              <div className="w-[200px]">
                 <p className="text-sm">
-                  {pickup.location.name} - {pickup.location.address}
+                  {pickup.location.address}
                 </p>
                 <p className="text-sm">
                   {new Date(pickup.scheduledDate).toLocaleDateString()} -{" "}
                   {pickup.scheduledTimeStart} to {pickup.scheduledTimeEnd}
                 </p>
               </div>
+
               <div>
                 <p className="text-sm">
-                  {pickup.itemType} - {pickup.description}
+                  Item Type: {pickup.itemType} - {pickup.description}
                 </p>
                 <p className="text-sm">Points Earned: {pickup.pointsEarned}</p>
+                <p className="text-sm">Confirmed Items Count: {pickup.itemsCount}</p>
               </div>
+
               <div>
-                <p className="text-sm">Status: {pickup.status}</p>
+                {/* <p className="text-sm">Status: {pickup.status}</p> */}
+                <span className={`text-sm font-medium ${pickup.status === 'pending' ? 'text-rose-700' : 'text-green-800'}`}>
+                  {pickup.status}
+                </span>
               </div>
+
               <div className="">
                 <button
                   className="btn underline text-green-900 font-medium block cursor-pointer"

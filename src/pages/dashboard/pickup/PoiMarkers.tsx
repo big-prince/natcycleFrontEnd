@@ -9,7 +9,7 @@ const PoiMarkers = (props: {pois: Poi[]}) => {
         <AdvancedMarker
           key={poi.key}
           position={poi.location}>
-        <Pin background={'#FBBC04'} glyphColor={'#000'} borderColor={'#000'} />
+        <Pin background={'#204C27'} glyphColor={'#D3FF5D'} borderColor={'#C8ECEE'} />
         </AdvancedMarker>
       ))}
     </>

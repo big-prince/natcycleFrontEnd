@@ -1,17 +1,5 @@
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-
-type IReward = {
-  image: {
-    public_id: string;
-    url: string;
-  };
-  _id: string;
-  name: string;
-  description: string;
-  pointsRequired: number;
-  // Optional property for future compatibility
-  __v?: number; // Add a question mark (?) to make it optional
-};
+import { IReward } from "../../../types";
 
 type cardProps = {
   reward: IReward;
@@ -33,6 +21,7 @@ const UserRewardCard = ({ reward }: cardProps) => {
           <h3 className="text-lg font-semibold">{reward.name}</h3>
           <p className="text-sm my-1">{reward.description}</p>
           <p className="text-sm">Points: {reward.pointsRequired}</p>
+          <p className="text-sm text-gray-400">Sponsor: {reward.sponsorName || 'NatCycle'}</p>
         </div>
 
         {/* dialog instead */}

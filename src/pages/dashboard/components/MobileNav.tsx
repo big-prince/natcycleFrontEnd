@@ -21,7 +21,7 @@ const MobileNav = () => {
   const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
 
   return (
-    <div className="fixed bottom-6 w-full left-0 px-4">
+    <div className="fixed bottom-6 w-full left-0 px-4 z-[3000]">
       <div className="bg-bg rounded-2xl py-4">
         <div className="flex justify-around w-full mobileLink items-center">
           {linkList.map((link, index) => (

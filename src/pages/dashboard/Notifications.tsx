@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Loading from "./components/Loading";
+import CoolLoading from "./components/Loading";
 import notificationApi from "../../api/notificationApi";
 
 const Notifications = () => {
@@ -43,7 +43,7 @@ const Notifications = () => {
 
       {loading ? (
         <p className="text-center">
-          <Loading />
+          <CoolLoading />
         </p>
       ) : (
         <div>

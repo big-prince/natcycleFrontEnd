@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import LocationApi from "../../api/locationApi";
 // import AddLocation from "./components/AddLocation";
-import Loading from "./components/Loading";
+import CoolLoading from "./components/Loading";
 import { FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -86,7 +86,7 @@ const Locations = () => {
           </div>
         ))}
 
-        {loading && <Loading />}
+        {loading && <CoolLoading />}
       </div>
 
       <div className="mt-6">

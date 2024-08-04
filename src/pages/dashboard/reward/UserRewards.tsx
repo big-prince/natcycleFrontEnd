@@ -3,19 +3,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import RewardApi from "../../../api/rewardApi";
 import UserRewardCard from "../components/UserRewardCard";
 import Loading from "../../../components/Loading";
-
-type IReward = {
-  image: {
-    public_id: string;
-    url: string;
-  };
-  _id: string;
-  name: string;
-  description: string;
-  pointsRequired: number;
-  // Optional property for future compatibility
-  __v?: number; // Add a question mark (?) to make it optional
-};
+import { IReward } from "../../../types";
 
 const UserRewards = () => {
   const [rewards, setRewards] = useState<IReward[]>([]);
@@ -80,7 +68,7 @@ const UserRewards = () => {
             )
           }
           <div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {rewards.map((reward, index) => (
                 <div key={index} className="">
                   <UserRewardCard reward={reward} />

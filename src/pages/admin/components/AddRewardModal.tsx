@@ -21,6 +21,8 @@ const AddRewardModal = ({
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [pointsRequired, setPointsRequired] = useState(0);
+  const [sponsorName, setSponsorName] = useState("");
+  const [sponsorLink, setSponsorLink] = useState("");
 
   const readFile = (file: Blob | string) => {
     return new Promise((resolve, reject) => {
@@ -41,7 +43,9 @@ const AddRewardModal = ({
         name: rewardName,
         image: rewardImage,
         description,
-        pointsRequired
+        pointsRequired,
+        sponsorName,
+        sponsorLink,
       }
       
       setLoading(true);
@@ -72,7 +76,7 @@ const AddRewardModal = ({
       >
         <AlertDialog.Overlay className="general_modal_overlay" />
 
-        <AlertDialog.Content className="general_modal">
+        <AlertDialog.Content className="general_modal h-[600px]">
           <div className="general_modal_content p-4">
             <div className="flex justify-between items-center mb-6">
               <AlertDialog.Title className="font-medium text-2xl">
@@ -107,16 +111,15 @@ const AddRewardModal = ({
                     <label htmlFor="rewardName" className="block text-sm font-medium text-gray-700">
                       Description
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       name="description"
                       id="description"
-                      placeholder="Reward Name"
+                      placeholder="Description"
                       className="mt-1 p-2 w-full border border-gray-300 rounded-md"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       required
-                    />
+                    ></textarea>
                   </div>
 
                   <div className="mb-4">
@@ -148,6 +151,37 @@ const AddRewardModal = ({
                       value={pointsRequired}
                       onChange={(e) => setPointsRequired(parseInt(e.target.value))}
                       required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="sponsorName" className="block text-sm font-medium text-gray-700">
+                      Sponsor Name
+                    </label>
+                    <input
+                      type="text"
+                      name="sponsorName"
+                      id="sponsorName"
+                      placeholder="Sponsor Name"
+                      className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                      value={sponsorName}
+                      onChange={(e) => setSponsorName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4 hidden">
+                    <label htmlFor="sponsorLink" className="block text-sm font-medium text-gray-700">
+                      Sponsor Link (optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="sponsorLink"
+                      id="sponsorLink"
+                      placeholder="Sponsor Link"
+                      className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                      value={sponsorLink}
+                      onChange={(e) => setSponsorLink(e.target.value)}
                     />
                   </div>
 

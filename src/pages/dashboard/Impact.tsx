@@ -6,6 +6,7 @@ import { useAppSelector } from "../../hooks/reduxHooks";
 import { useEffect, useState } from "react";
 import ReferModal from "./components/ReferModal";
 import PickUpApi from "../../api/pickUpApi";
+import RewardSwiper from "./components/RewardSwiper";
 
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
@@ -25,7 +26,7 @@ const Impact = () => {
         console.log(err);
       })
       .finally(() => {
-        console.log('page loaded');
+        console.log("page loaded");
       });
   };
 
@@ -46,17 +47,15 @@ const Impact = () => {
         <div className="text-center">
           <PiRecycleDuotone className="text-lg text-green-500 m-auto" />
           <p className="text-4xl py-2">
-          {localUser.points ? localUser.totalItemsCollected : 0}
+            {localUser.points ? localUser.totalItemsCollected : 0}
           </p>
           Recycled
         </div>
         <div className="text-center">
           <Link to="/pickup/all">
-          <PiTrashThin className="text-lg text-white m-auto" />
-          <p className="text-4xl py-2">
-          {userPickups.length}
-          </p>
-          Collections
+            <PiTrashThin className="text-lg text-white m-auto" />
+            <p className="text-4xl py-2">{userPickups.length}</p>
+            Collections
           </Link>
         </div>
       </div>
@@ -76,24 +75,36 @@ const Impact = () => {
           </div>
         </div>
       </div>
-      
 
-      {/* challenge */}
-      {/* invite 2 friends */}
       <div className="mt-6">
         <p className="text-lg font-semibold mb-4">Challenges</p>
-        
+
         <div className="flex justify-between border-1 p-4 rounded-md shadow-md">
           <div>
             <p className="text-lg font-semibold">Invite 2 Friends</p>
             <p className="text-sm">Earn 100 points</p>
           </div>
           <div>
-            <button className="bg-darkgreen text-white p-4 rounded-2xl"
+            <button
+              className="bg-darkgreen text-white p-4 rounded-2xl"
               onClick={() => setIsModalOpen(true)}
-            >Go</button>
+            >
+              Go
+            </button>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <div className="flex justify-between">
+          <p className="text-lg font-semibold">Rewards</p>
+          <Link to="/rewards">
+            <button className="underline text-darkgreen p-4 rounded-2xl">
+              View All
+            </button>
+          </Link>
+        </div>
+        <RewardSwiper />
       </div>
 
       {/* badges */}
@@ -111,10 +122,7 @@ const Impact = () => {
         </div>
       </div>
 
-      <ReferModal
-        isModalOpen={isModalOpen}
-        setIsModalOpen={setIsModalOpen}
-      />
+      <ReferModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
     </div>
   );
 };

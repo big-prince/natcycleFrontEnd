@@ -57,3 +57,16 @@ export type IBadge = {
     url: string;
   }
 }
+
+export type IReward = {
+  image: {
+    public_id: string;
+    url: string;
+  };
+  _id: string;
+  name: string;
+  description: string;
+  pointsRequired: number;
+  sponsorName: string;
+  sponsorLink: string;
+};
