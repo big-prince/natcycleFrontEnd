@@ -26,6 +26,7 @@ import PickupProfile from "./pages/pickups/PickupProfile";
 // import AdminReward from "./pages/admin/AdminReward";
 import AdminRewards from "./pages/admin/AdminRewards";
 import UserRewards from "./pages/dashboard/reward/UserRewards";
+import PickupDetails from "./pages/pickups/PickupDetails";
 
 const App = () => {
   return (
@@ -79,6 +80,7 @@ const App = () => {
 
           <Route path="/admin/pickup" element={<PickupLayout />}>
             <Route path="/admin/pickup/pickups" element={<PickupList />} />
+            <Route path="/admin/pickup/pickup/:id" element={<PickupDetails />} />
             <Route path="/admin/pickup/profile" element={<PickupProfile />} />
             <Route path="/admin/pickup/settings" element={<PickupProfile />} />
           </Route>

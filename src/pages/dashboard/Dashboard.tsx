@@ -66,12 +66,10 @@ const Dashboard = () => {
           </p>
           <p className="text-sm text-center">{user.impactMeasurement}</p>
         </div>
-        {/* <div>
-          <p className="text-2xl font-bold text-darkgreen">0.00</p>
-          <p className="text-sm">Kg of CO2</p>
-        </div> */}
       </div>
-      <div className="mt-6">
+      
+      <div>
+        <div className="mt-6">
         <p className="text-lg font-semibold">Milestone</p>
         <div>
           <div className="bg-green h-6 w-full rounded-2xl p-1">
@@ -86,6 +84,11 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+    </div>
+
+      {/* break down */}
+      
+      
 
       {/* mile stone */}
       <div className="mt-6 hidden">

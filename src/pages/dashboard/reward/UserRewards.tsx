@@ -56,7 +56,7 @@ const UserRewards = () => {
            ${selectedTab === "mine" ? "border-b-2 border-primary" : ""}`}
             value="mine"
           >
-            Mine
+            Redeemed
             <span className="text-xs font-bold ml-2 text-primary"></span>
           </Tabs.Trigger>
         </Tabs.List>

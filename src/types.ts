@@ -22,11 +22,22 @@ export type ILocation = {
 }
 
 export type IUser = {
-  impactMeasurement: string;
-  _id: string;
-  firstName: string;
-  lastName: string;
+  carbonUnits: number;
+  createdAt: string; // Date string in ISO 8601 format (e.g., "2024-06-26T12:36:08.043Z")
   email: string;
+  firstName: string;
+  impactMeasurement: string; // Measurement unit (e.g., "birds")
+  isAdmin: boolean;
+  isBlocked: boolean;
+  lastName: string;
+  point: number;
+  pointsEarned: number;
+  profilePicture?: { // Optional profile picture object
+    public_id: string;
+    url: string;
+  };
+  referralId: string;
+  totalItemsCollected: number;
 }
 
 export type Pickup = {
@@ -70,3 +81,25 @@ export type IReward = {
   sponsorName: string;
   sponsorLink: string;
 };
+
+export type IPickup = {
+  _id: string;
+  createdAt: string;
+  itemType: string;
+  itemsCount: number;
+  location: {
+    _id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+  };
+  description: string;
+  pointsEarned: number;
+  scheduledDate: Date;
+  scheduledTimeEnd: string;
+  scheduledTimeStart: string;
+  status: string;
+  updatedAt: string;
+  user: IUser;
+}

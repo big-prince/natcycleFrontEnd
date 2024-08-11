@@ -21,14 +21,13 @@ const BookPickup = () => {
     description: "",
   });
 
-  const question =  [
-    "How many bottles do you want to recycle? in kg",
-    "How many fabric do you want to recycle? in kg",
+  const question = [
+    "How many bottles do you want to recycle?",
+    "How much fabric do you want to recycle? in kg",
     "How many glass do you want to recycle? in kg",
     "How many mixed items do you want to recycle?",
     "How many fabric do you want to recycle? in kg",
-
-  ]
+  ];
 
   const [itemQuestion, setItemQuestion] = useState(question[0]);
 
@@ -73,12 +72,10 @@ const BookPickup = () => {
     setPickUpForm({
       ...pickUpForm,
       itemType: itemType,
-    })
+    });
 
     fetchLocations();
   }, []);
-
-  
 
   const handleChange = (e: any) => {
     setPickUpForm({
@@ -100,7 +97,7 @@ const BookPickup = () => {
       })
       .catch((err) => {
         console.log(err);
-      }); 
+      });
   };
 
   return (
@@ -195,9 +192,7 @@ const BookPickup = () => {
 
         {/* how many bottles do you want to recycle */}
         <div className="mt-6">
-          <label className="text-sm">
-            {itemQuestion} (in kg)
-          </label>
+          <label className="text-sm">{itemQuestion}</label>
           <input
             type="number"
             className="w-full p-2 border border-gray-300 rounded-lg"

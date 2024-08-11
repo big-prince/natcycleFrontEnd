@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import PickUpApi from "../../api/pickUpApi";
 import { IUser } from "../../types";
 import AdminPickupModal from "./components/AdminPickupModal";
+import PickupMap from "../pickups/components/PickupMap";
 
 type IPickup = {
   _id: string;
@@ -77,6 +78,8 @@ const AdminPickups = () => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="admin_page_heading">All Pickups</h3>
       </div>
+
+      {pickups.length > 0 && <PickupMap userPickups={pickups} />}
 
       {loading ? <p className="my-4 font-bold">Loading...</p> : ""}
 

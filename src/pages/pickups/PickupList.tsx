@@ -4,6 +4,7 @@ import PickUpApi from "../../api/pickUpApi";
 import { IUser } from "../../types";
 import AdminPickupModal from "../admin/components/AdminPickupModal";
 import PickupMap from "./components/PickupMap";
+import { Link } from "react-router-dom";
 
 type Pickup = {
   _id: string;
@@ -58,22 +59,6 @@ const PickupList = () => {
     console.log(pickup);
     setSelectedPickup(pickup);
     setIsModalOpen(true);
-  };
-
-  const handleDeletePickup = (pickup: Pickup) => {
-    const confirm = window.confirm(
-      "Are you sure you want to delete this pickup?"
-    );
-    if (!confirm) return;
-
-    PickUpApi.adminDeletePickUp(pickup._id)
-      .then((res) => {
-        console.log(res.data);
-        setNotify(true);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
   };
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -171,12 +156,12 @@ const PickupList = () => {
                   Complete Pickup
                 </button>
 
-                <button
-                  className="btn text-green-900 font-medium block border-2 rounded-full p-2"
-                  onClick={() => handleDeletePickup(pickup)}
-                >
-                  Delete Pickup
-                </button>
+                {/* view details button */}
+                <Link to={`/admin/pickup/pickup/${pickup?._id}`}>
+                  <button className="btn text-green-900 font-medium block border-2 rounded-full p-2">
+                    View Details
+                  </button>
+                </Link>
               </div>
             </div>
           ))}

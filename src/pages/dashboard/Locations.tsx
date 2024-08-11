@@ -8,6 +8,7 @@ import { FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import NewLocationDropdown from "./components/NewLocationDropdown";
+import { FaPlus } from "react-icons/fa6";
 
 const Locations = () => {
   const [loading, setLoading] = useState(false);
@@ -43,16 +44,34 @@ const Locations = () => {
       });
   };
 
+  const [showDropdown, setShowDropdown] = useState("");
+
   return (
     <>
-      <div className="flex justify-between items-center mt-6">
-        <h2 className="text-2xl font-semibold">Locations</h2>
+      <div className="flex justify-between mt-4 mb-2">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold">Locations</h2>
+        </div>
 
-        {/* <AddLocation setNotify={setNotify} /> */}
+        <div>
+          <button
+            className="font-bold text-black px-4 py-2 rounded-lg flex items-center"
+            onClick={() => {
+              setShowDropdown("item-1");
+            }}
+          >
+            <FaPlus className="mr-2" />
+            Add Location
+          </button>
+        </div>
       </div>
 
       <div>
-        <NewLocationDropdown fetchNotifications={fetchNotifications} />
+        <NewLocationDropdown
+          showDropdown={showDropdown}
+          setShowDropdown={setShowDropdown}
+          fetchNotifications={fetchNotifications}
+        />
       </div>
 
       <div>
@@ -68,7 +87,9 @@ const Locations = () => {
 
                 <div className="flex">
                   <p className="text-zinc-800 text-sm mr-2">{location.city}</p>
-                  <p className="text-gray-700 text-sm font-medium">{location.state}</p>
+                  <p className="text-gray-700 text-sm font-medium">
+                    {location.state}
+                  </p>
                 </div>
               </div>
               <div>

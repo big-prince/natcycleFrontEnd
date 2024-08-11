@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Accordion from "@radix-ui/react-accordion";
 import { useEffect, useState } from "react";
-import { FaPlus } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import LocationApi from "../../../api/locationApi";
 import { BiChevronDown } from "react-icons/bi";
@@ -35,10 +34,12 @@ interface Place {
   };
 }
 
-const NewLocationDropdown = ({ fetchNotifications }: any) => {
+const NewLocationDropdown = ({
+  fetchNotifications,
+  showDropdown,
+  setShowDropdown,
+}: any) => {
   const [loading, setLoading] = useState(false);
-
-  const [showDropdown, setShowDropdown] = useState("");
 
   const [query, setQuery] = useState("");
 
@@ -72,9 +73,10 @@ const NewLocationDropdown = ({ fetchNotifications }: any) => {
     console.log(place);
     setGoogleApiResults([]);
 
-    setAddress(place.formattedAddress);
 
     // setLocationName(`${place.displayName.text} - ${place.formattedAddress}`);
+    // setQuery(`${place.displayName.text} - ${place.formattedAddress}`);
+
     setQuery(`${place.displayName.text} - ${place.formattedAddress}`);
 
     setAddress(`${place.displayName.text} - ${place.formattedAddress}`);
@@ -154,6 +156,15 @@ const NewLocationDropdown = ({ fetchNotifications }: any) => {
 
   // listen to input changes and call google api after 1 second
   useEffect(() => {
+    // don't api again if user selects a result
+    if (city) return;
+
+
+    if (!query) {
+      setGoogleApiResults([]);
+      return;
+    }
+
     const timer = setTimeout(() => {
       callGoogleApi(query);
     }, 1000);
@@ -167,14 +178,17 @@ const NewLocationDropdown = ({ fetchNotifications }: any) => {
         type="single"
         collapsible
         value={showDropdown}
-        onValueChange={(value) => setShowDropdown(value)}
+        onValueChange={(value) => {
+          setShowDropdown(value);
+          console.log(value);
+        }}
       >
         <Accordion.Item
-          key="1"
+          // key="1"
           className="border-b border-gray-200"
           value="item-1"
         >
-          <Accordion.Trigger className="w-full">
+          <Accordion.Trigger className="w-full hidden">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium">Add New Location</h3>
               <p className="text-3xl">
@@ -183,7 +197,7 @@ const NewLocationDropdown = ({ fetchNotifications }: any) => {
             </div>
           </Accordion.Trigger>
 
-          <Accordion.Content className="bg-white p-2">
+          <Accordion.Content className="bg-white">
             <form className="w-full">
               <div className="flex flex-col">
                 <div className="mt-6">
@@ -198,24 +212,24 @@ const NewLocationDropdown = ({ fetchNotifications }: any) => {
                   />
                 </div>
 
-                <div className="">
-                <label className="text-sm font-medium">Location</label>
+                <div className="mt-2">
+                  <label className="text-sm font-medium">Address</label>
 
                   <div className="flex items-center">
                     <input
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Enter location"
-                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      placeholder="Search for location"
+                      className="w-full p-2 border border-gray-300 rounded-lg pr-10"
                     />
                     <FaSearchLocation
                       onClick={() => callGoogleApi(query)}
-                      className="text-2xl text-gray-400 cursor-pointer -ml-8"
+                      className="text-2xl text-darkgreen cursor-pointer -ml-8"
                     />
                   </div>
 
-                  <div className="mt-4 absolute bg-white">
+                  <div className="mt-4 absolute bg-white min-w-3/4">
                     {googleApiResults &&
                       googleApiResults.map((place: Place) => (
                         <div
@@ -287,12 +301,18 @@ const NewLocationDropdown = ({ fetchNotifications }: any) => {
                 </div>
                 <button
                   disabled={loading}
-                  className="w-full text-darkgreen border-darkgreen border-2 rounded-lg p-2 mt-4 flex justify-center items-center"
+                  className="w-full border-darkgreen bg-black text-white border-2 rounded-lg p-2 mt-4 flex justify-center items-center"
                   onClick={() => addLocation()}
                 >
-                    {loading ? "Adding location..." : "Add Location"}
-                  
-                  <FaPlus className="text-white" />
+                  {loading ? "Adding location..." : "Submit Location"}
+                </button>
+
+                {/* cancel button */}
+                <button
+                  className="w-full text-red-400  border-darkgreen border-2 rounded-lg p-2 mt-4 flex justify-center items-center"
+                  onClick={() => setShowDropdown("")}
+                >
+                  Cancel
                 </button>
               </div>
             </form>
