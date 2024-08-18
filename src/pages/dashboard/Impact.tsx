@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
 import ReferModal from "./components/ReferModal";
 import PickUpApi from "../../api/pickUpApi";
 import RewardSwiper from "./components/RewardSwiper";
+import Milestone from "./components/Milestone";
 
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
-  console.log(localUser);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -33,33 +33,6 @@ const Impact = () => {
   useEffect(() => {
     fetchUserPickups();
   }, []);
-
-  const mileStoneNumbers = [
-    {
-      level: 1,
-      pointsRange: [0, 100],
-    },
-    {
-      lever: 2,
-      pointsRange: [101, 250],
-    },
-    {
-      level: 3,
-      pointsRange: [251, 500],
-    },
-    {
-      level: 4,
-      pointsRange: [501, 1000],
-    },
-    {
-      level: 5,
-      pointsRange: [1001, 2000],
-    },
-  ]
-
-  const currentMilestone = mileStoneNumbers.find((milestone) => {
-    return localUser.pointsEarned >= milestone.pointsRange[0] && localUser.pointsEarned <= milestone.pointsRange[1];
-  });
 
   return (
     <div>
@@ -88,33 +61,7 @@ const Impact = () => {
       </div>
 
       <div>
-        <div className="mt-6">
-          <p className="text-lg font-semibold">Milestone</p>
-          {/* <div>
-            <div className="bg-green h-6 w-full rounded-2xl p-1">
-              <div className="bg-black h-4 w-1/6 rounded-2xl">
-                <p className="text-white text-xs text-right pr-2">20</p>
-              </div>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-sm">0</p>
-              <p className="text-sm">100</p>
-            </div>
-          </div> */}
-          <div>
-            <div className="bg-green h-6 w-full rounded-2xl p-1">
-              <div className="bg-black h-4 w-[20%] rounded-2xl">
-                <p className="text-white text-xs text-right pr-2">
-                  {currentMilestone?.pointsRange[1]}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-between">
-              <p className="text-sm">{currentMilestone?.pointsRange[0]}</p>
-              <p className="text-sm">{currentMilestone?.pointsRange[1]}</p>
-            </div>
-          </div>
-        </div>
+        <Milestone />
 
         <div className="mt-6">
           <p className="text-lg font-semibold">Breakdown</p>
@@ -129,13 +76,13 @@ const Impact = () => {
             <div className="bg-bg p-4 rounded-lg shadow-md">
               <p className="font-medium text-sm">Fabric</p>
               <p className="text-3xl font-medium text-darkgreen">
-                5<span className="text-sm pl-[2px]">Units</span>
+                5<span className="text-sm pl-[2px]">Kg</span>
               </p>
             </div>
             <div className="bg-bg p-4 rounded-lg shadow-md">
               <p className="font-medium text-sm">Glass</p>
               <p className="text-3xl font-medium text-darkgreen">
-                3<span className="text-sm pl-[2px]">Units</span>
+                3<span className="text-sm pl-[2px]">Kg</span>
               </p>
             </div>
             <div className="bg-bg p-4 rounded-lg shadow-md">

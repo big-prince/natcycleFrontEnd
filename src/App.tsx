@@ -27,6 +27,7 @@ import PickupProfile from "./pages/pickups/PickupProfile";
 import AdminRewards from "./pages/admin/AdminRewards";
 import UserRewards from "./pages/dashboard/reward/UserRewards";
 import PickupDetails from "./pages/pickups/PickupDetails";
+import VerifyEmail from "./pages/auth/VerifyEmail";
 
 const App = () => {
   return (
@@ -47,6 +48,7 @@ const App = () => {
         <Routes>
           <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<Signin />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           <Route path="/" element={<DashLayout />}>
             <Route path="home" element={<Dashboard />} />

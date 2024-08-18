@@ -3,11 +3,21 @@ import Logo from "../../../assets/logo/Group 202@2x.png";
 import MobileNav from "./MobileNav";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { IoNotifications } from "react-icons/io5";
+import { useEffect } from "react";
 
 const DashLayout = () => {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
-  if (!user) navigate("/");
+  
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="max-w-[450px] m-auto relative px-4">

@@ -14,6 +14,7 @@ const UpdateProfile = () => {
     lastName: user.lastName,
     email: user.email,
     impactMeasurement: user.impactMeasurement,
+    phoneNumber: user.phoneNumber,
   });
 
   useEffect(() => {
@@ -26,6 +27,7 @@ const UpdateProfile = () => {
           lastName: res.data.lastName,
           email: res.data.email,
           impactMeasurement: res.data.impactMeasurement,
+          phoneNumber: res.data.phoneNumber
         });
 
         dispatch(updateUser(res.data));
@@ -111,7 +113,18 @@ const UpdateProfile = () => {
             <option value="water">Water Footprint</option>
             <option value="birds">Birds Saved</option>
           </select>
-          
+        </div>
+
+        <div className="mt-4">
+          <label className="text-base font-medium">Phone Number</label>
+          <p className="text-xs">Enter your phone number</p>
+          <input
+            type="text"
+            name="phoneNumber"
+            value={userDetails.phoneNumber}
+            onChange={handleChange}
+            className="w-full p-2 border border-gray-300 rounded-lg"
+          />
         </div>
 
         <div className="mt-8">

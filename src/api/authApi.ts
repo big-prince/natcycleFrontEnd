@@ -17,6 +17,16 @@ const AuthApi = {
     return response.data;
   },
 
+  verifyEmail: async (body: any) => {
+    const response = await api.post("/auth/verify-email", body);
+    return response
+  },
+
+  requestOtp: async () => {
+    const response = await api.get("/auth/request-otp");
+    return response.data;
+  },
+
   forgottenPassword: async (body: any) => {
     const response = await api.post("/auth/forgotten-password", body);
     return response.data;

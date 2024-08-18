@@ -7,6 +7,7 @@ import { updateUser } from "../../reducers/authSlice";
 import { FaEarthAmericas } from "react-icons/fa6";
 // import * as Select from '@radix-ui/react-select';
 import * as RadioGroup from "@radix-ui/react-radio-group";
+import Milestone from "./components/Milestone";
 
 const Dashboard = () => {
   const localUser = useAppSelector((state) => state.auth.user);
@@ -62,33 +63,30 @@ const Dashboard = () => {
 
         <div>
           <p className="text-3xl text-center font-bold text-darkgreen">
-            {user.pointsEarned}
+            {user.carbonUnits}
           </p>
           <p className="text-sm text-center">{user.impactMeasurement}</p>
         </div>
       </div>
-      
-      <div>
-        <div className="mt-6">
-        <p className="text-lg font-semibold">Milestone</p>
-        <div>
-          <div className="bg-green h-6 w-full rounded-2xl p-1">
-            <div className="bg-black h-4 w-1/6 rounded-2xl">
-              <p className="text-white text-xs text-right pr-2">20</p>
+
+      {!user.phoneNumber && (
+        <Link to="/profile/update-profile">
+          <div className="bg-bg p-4 rounded-lg mt-6 border-l-4 border-darkgreen">
+            <p className="text-darkgreen text-lg font-semibold">
+              Update your phone number to get notified when your pickup is
+              scheduled{" "}
+            </p>
+
+            <div className="text-darkgreen underline mt-4 inline-block">
+              Update Phone Number
             </div>
           </div>
-          {/* number */}
-          <div className="flex justify-between">
-            <p className="text-sm">0</p>
-            <p className="text-sm">100</p>
-          </div>
-        </div>
-      </div>
-    </div>
+        </Link>
+      )}
 
-      {/* break down */}
-      
-      
+      <div>
+        <Milestone />
+      </div>
 
       {/* mile stone */}
       <div className="mt-6 hidden">
@@ -118,7 +116,9 @@ const Dashboard = () => {
             >
               <RadioGroup.Item value={recyclable} className="w-full">
                 <div className="bg-white p-3 rounded-2xl flex justify-between items-center w-full">
-                  <p className="font-bold md:text-xl w-full text-left">{recyclable}</p>
+                  <p className="font-bold md:text-xl w-full text-left">
+                    {recyclable}
+                  </p>
                   <RadioGroup.Indicator>
                     <div className="bg-darkgreen h-6 w-6 rounded-full flex items-center justify-center">
                       <p className="text-white">✔</p>

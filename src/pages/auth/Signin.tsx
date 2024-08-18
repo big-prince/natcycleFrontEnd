@@ -5,8 +5,8 @@ import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
 import AuthApi from "../../api/authApi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
-import Illustration from '../../assets/signup.png';
-import FullLogo from '../../assets/logo/Group 202@2x.png';
+import Illustration from "../../assets/signup.png";
+import FullLogo from "../../assets/logo/Group 202@2x.png";
 
 const Signin = () => {
   const dispatch = useAppDispatch();
@@ -39,15 +39,16 @@ const Signin = () => {
 
     AuthApi.signin(signinData)
       .then((res: any) => {
-        console.log(res);
-
-        // setLoading(false);
-
         const payload = {
           token: res.token,
           user: res.user,
         };
         dispatch(login(payload));
+
+        if (!res.user.isEmailVerified) {
+          navigate("/verify-email");
+          return;
+        }
 
         navigate("/home");
       })
@@ -55,7 +56,7 @@ const Signin = () => {
         console.log(err);
         setLoading(false);
         setError(err.response.data);
-      })
+      });
   };
 
   return (
@@ -102,7 +103,10 @@ const Signin = () => {
               value={signinData.password}
               onChange={handleChange}
             />
-            <span onClick={togglePassword} className="cursor-pointer -ml-8 mb-2">
+            <span
+              onClick={togglePassword}
+              className="cursor-pointer -ml-8 mb-2"
+            >
               {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
             </span>
           </div>
