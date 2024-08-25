@@ -13,7 +13,7 @@ const Dashboard = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
 
-  const recyclables = ["Plastic Bottles", "Fabric", "Glass", "Mixed"];
+  const recyclables = ["plastic", "fabric", "glass", "mixed"];
   const [selectedRecyclable, setSelectedRecyclable] =
     useState("Plastic Bottles");
 
@@ -51,8 +51,8 @@ const Dashboard = () => {
   if (!user) return null;
 
   return (
-    <div className="mb-40">
-      <div className="flex justify-between mt-6 bg-white p-4 rounded-lg shadow-md">
+    <div className="mb-20">
+      <div className="flex justify-between mt-6 bg-white p-4 rounded-lg box_shadow">
         <div className="flex items-center">
           <FaEarthAmericas className="text-lg text-green-500 mr-2" />
           <div>
@@ -98,7 +98,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="bg-green p-4 rounded-2xl mt-6">
+      <div className="bg-green p-4 rounded-2xl mt-6 box_shadow">
         <p className="text-2xl font-medium">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
@@ -117,7 +117,8 @@ const Dashboard = () => {
               <RadioGroup.Item value={recyclable} className="w-full">
                 <div className="bg-white p-3 rounded-2xl flex justify-between items-center w-full">
                   <p className="font-bold md:text-xl w-full text-left">
-                    {recyclable}
+                    {/* {recyclable} */}
+                    {recyclable.charAt(0).toUpperCase() + recyclable.slice(1)}
                   </p>
                   <RadioGroup.Indicator>
                     <div className="bg-darkgreen h-6 w-6 rounded-full flex items-center justify-center">

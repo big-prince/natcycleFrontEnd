@@ -2,14 +2,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthApi from "../../api/authApi";
-import { useAppDispatch } from "../../hooks/reduxHooks";
+// import { useAppDispatch } from "../../hooks/reduxHooks";
 import FullLogo from "../../assets/logo/Group 202@2x.png";
 import Illustration from "../../assets/signup.png";
-import { updateUser } from "../../reducers/authSlice";
+// import { updateUser } from "../../reducers/authSlice";
 import { toast } from "react-toastify";
 
 const VerifyEmail = () => {
-  const dispatch = useAppDispatch();
+  // const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ const VerifyEmail = () => {
 
         setLoading(false);
 
-        dispatch(updateUser(res.data));
+        // dispatch(updateUser(res.data));
 
         navigate("/home");
       })

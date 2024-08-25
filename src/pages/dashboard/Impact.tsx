@@ -9,12 +9,40 @@ import PickUpApi from "../../api/pickUpApi";
 import RewardSwiper from "./components/RewardSwiper";
 import Milestone from "./components/Milestone";
 
+const recyclablesWithPoints = [
+  { item: 'plastic', points: 10 },
+  { item: 'fabric', points: 5 },
+  { item: 'glass', points: 8 },
+  { item: 'mixed', points: 2 }
+]
+
+type IItemsCount = {
+  fabric: number;
+  glass: number;
+  mixed: number;
+  plastic: number;
+}
+
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
+
+  const itemsCount: IItemsCount = localUser?.itemsCount;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [userPickups, setUserPickups] = useState([]);
+
+  // calculate point for each recyclable
+  const calculatePoints = (item: string) => {
+    const itemObj = recyclablesWithPoints.find((i) => i.item === item);
+    const userItemCount = itemsCount[item];
+
+    if (!itemObj) return 0;
+
+    return itemObj.points * userItemCount;
+  };
+
+  console.log(calculatePoints("plastic"));
 
   const fetchUserPickups = async () => {
     PickUpApi.getPickUps()
@@ -35,7 +63,7 @@ const Impact = () => {
   }, []);
 
   return (
-    <div>
+    <div className="mb-16">
       <div className="flex justify-between bg-black text-white p-4 rounded-lg mt-6">
         <div className="text-center">
           <LuLeafyGreen className="text-lg text-yellow-500 m-auto" />
@@ -66,30 +94,81 @@ const Impact = () => {
         <div className="mt-6">
           <p className="text-lg font-semibold">Breakdown</p>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-bg p-4 rounded-lg shadow-md">
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Plastic Bottles</p>
-              <p className="text-3xl font-medium text-darkgreen">
-                12
-                <span className="text-sm pl-[2px]">Units</span>
-              </p>
+
+              <div className="flex justify-between mt-2">
+                <div>
+                  <p className="text-3xl font-medium text-darkgreen">
+                    {itemsCount?.plastic || 0}
+                    <span className="text-sm pl-[2px]">Units</span>
+                  </p>
+                </div>
+
+                <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
+                    {calculatePoints("plastic")}
+                    <span className="text-xs pl-[2px]">CU</span>
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="bg-bg p-4 rounded-lg shadow-md">
+
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Fabric</p>
-              <p className="text-3xl font-medium text-darkgreen">
-                5<span className="text-sm pl-[2px]">Kg</span>
-              </p>
+              <div className="flex justify-between mt-2">
+                <div>
+                  <p className="text-3xl font-medium text-darkgreen">
+                    {itemsCount?.fabric || 0}
+                    <span className="text-sm pl-[2px]">Lb</span>
+                  </p>
+                </div>
+
+                  <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
+                    {calculatePoints("fabric")|| 0}
+                    <span className="text-xs pl-[2px]">CU</span>
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="bg-bg p-4 rounded-lg shadow-md">
+
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Glass</p>
-              <p className="text-3xl font-medium text-darkgreen">
-                3<span className="text-sm pl-[2px]">Kg</span>
-              </p>
+              <div className="flex justify-between mt-2">
+                <div>
+                  <p className="text-3xl font-medium text-darkgreen">
+                    {itemsCount?.glass || 0}
+                    <span className="text-sm pl-[2px]">Lb</span>
+                  </p>
+                </div>
+
+                  <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
+                    {calculatePoints("glass") || 0}
+                    <span className="text-xs pl-[2px]">CU</span>
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="bg-bg p-4 rounded-lg shadow-md">
+
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Mixed</p>
-              <p className="text-3xl font-medium text-darkgreen">
-                2<span className="text-sm pl-[2px]">Units</span>
-              </p>
+              <div className="flex justify-between mt-2">
+                <div>
+                  <p className="text-3xl font-medium text-darkgreen">
+                    {itemsCount?.mixed || 0}
+                    <span className="text-sm pl-[2px]">Units</span>
+                  </p>
+                </div>
+
+                  <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
+                    {calculatePoints("mixed") || 0 }
+                    <span className="text-xs pl-[2px]">CU</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -98,7 +177,7 @@ const Impact = () => {
       <div className="mt-6">
         <p className="text-lg font-semibold mb-4">Challenges</p>
 
-        <div className="flex justify-between border-1 p-4 rounded-md shadow-md">
+        <div className="flex justify-between border-1 p-4 rounded-md box_shadow">
           <div>
             <p className="text-lg font-semibold">Invite 2 Friends</p>
             <p className="text-sm">Earn 100 points</p>

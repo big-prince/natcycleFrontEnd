@@ -27,14 +27,14 @@ const AuthApi = {
     return response.data;
   },
 
-  forgottenPassword: async (body: any) => {
-    const response = await api.post("/auth/forgotten-password", body);
-    return response.data;
+  forgotPassword: async (email: string) => {
+    const response = await api.post("/auth/forgot-password", { email });
+    return response;
   },
-  
+
   resetPassword: async (body: any) => {
     const response = await api.post("/auth/reset-password", body);
-    return response.data;
+    return response;
   },
 };
 

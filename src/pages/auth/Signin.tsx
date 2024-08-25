@@ -111,8 +111,13 @@ const Signin = () => {
             </span>
           </div>
 
+          {/* forgot password */}
+          <Link to="/forgot-password" className="text-primary text-sm pb-4 underline">
+            Forgot Password?
+          </Link>
+
           <button
-            className="button bg-green w-full"
+            className="button bg-green w-full block mt-2"
             type="submit"
             disabled={loading}
           >

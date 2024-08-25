@@ -28,6 +28,7 @@ import AdminRewards from "./pages/admin/AdminRewards";
 import UserRewards from "./pages/dashboard/reward/UserRewards";
 import PickupDetails from "./pages/pickups/PickupDetails";
 import VerifyEmail from "./pages/auth/VerifyEmail";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 const App = () => {
   return (
@@ -49,6 +50,7 @@ const App = () => {
           <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<Signin />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           <Route path="/" element={<DashLayout />}>
             <Route path="home" element={<Dashboard />} />

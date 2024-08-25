@@ -69,3 +69,8 @@
 .special_button {
   @apply bg-black p-2 py-3 rounded-2xl flex items-center justify-between w-full
 }
+
+/* nice box shadow in css */
+.box_shadow {
+  box-shadow: 2px 0 10px 0 rgba(90, 89, 89, 0.1);
+}

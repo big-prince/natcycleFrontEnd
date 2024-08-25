@@ -8,9 +8,9 @@ import { toast } from "react-toastify";
 
 const BookPickup = () => {
   const [searchParams] = useSearchParams();
-  const [itemType] = useState(searchParams.get("item") || "Plastic Bottles");
+  const [itemType] = useState(searchParams.get("item") || "plastic");
 
-  const recyclables = ["Plastic Bottles", "Fabric", "Glass", "Mixed"];
+  const recyclables = ["plastic", "fabric", "glass", "mixed"];
 
   const [pickUpForm, setPickUpForm] = useState({
     itemType: itemType,
@@ -33,16 +33,16 @@ const BookPickup = () => {
 
   useEffect(() => {
     switch (pickUpForm.itemType) {
-      case "Plastic Bottles":
+      case "plastic":
         setItemQuestion(question[0]);
         break;
-      case "Fabric":
+      case "fabric":
         setItemQuestion(question[1]);
         break;
-      case "Glass":
+      case "glass":
         setItemQuestion(question[2]);
         break;
-      case "Mixed":
+      case "mixed":
         setItemQuestion(question[3]);
         break;
     }
@@ -116,7 +116,11 @@ const BookPickup = () => {
           >
             {recyclables.map((recyclable) => (
               <option key={recyclable} value={recyclable}>
-                {recyclable}
+                {/* {recyclable} */}
+                {
+                  recyclable.charAt(0).toUpperCase() +
+                    recyclable.slice(1)
+                }
               </option>
             ))}
           </select>
