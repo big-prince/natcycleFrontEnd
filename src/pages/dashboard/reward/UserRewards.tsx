@@ -7,6 +7,7 @@ import { IReward } from "../../../types";
 
 const UserRewards = () => {
   const [rewards, setRewards] = useState<IReward[]>([]);
+  const [userRewards, setUserRewards] = useState<IReward[]>([]);
 
   const fetchRewards = () => {
     setLoading(true);
@@ -19,11 +20,28 @@ const UserRewards = () => {
       .catch((error) => {
         console.error(error);
         setLoading(false);
+        // close modal
       });
   };
 
+  const fetchUserRewards = () => {
+    setLoading(true);
+    RewardApi.userGetRewards()
+      .then((response) => {
+        console.log(response.data);
+        setLoading(false);
+        setUserRewards(response.data.data);
+      })
+      .catch((error) => {
+        console.error(error);
+        setLoading(false);
+      });
+  };
+
+
   useEffect(() => {
     fetchRewards();
+    fetchUserRewards();
   }, []);
 
   const [loading, setLoading] = useState(false);
@@ -71,15 +89,28 @@ const UserRewards = () => {
             <div className="grid grid-cols-1 gap-4">
               {rewards.map((reward, index) => (
                 <div key={index} className="">
-                  <UserRewardCard reward={reward} />
+                  <UserRewardCard reward={reward} isUserReward={false} />
                 </div>
               ))}
             </div>
           </div>
         </Tabs.Content>
 
-        <Tabs.Content className="TabsContent" value="sentTab">
-          <div></div>
+        <Tabs.Content className="TabsContent" value="mine">
+          {
+            loading && (
+              <Loading />
+            )
+          }
+          <div>
+            <div className="grid grid-cols-1 gap-4">
+              {userRewards.map((reward, index) => (
+                <div key={index} className="">
+                  <UserRewardCard reward={reward} isUserReward={true} />
+                </div>
+              ))}
+            </div>
+          </div>
         </Tabs.Content>
       </Tabs.Root>
     </div>

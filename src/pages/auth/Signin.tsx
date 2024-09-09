@@ -94,6 +94,7 @@ const Signin = () => {
             value={signinData.email}
             onChange={handleChange}
             autoComplete="on"
+            required
           />
           <div className="flex items-center">
             <input
@@ -102,6 +103,7 @@ const Signin = () => {
               placeholder="Password"
               value={signinData.password}
               onChange={handleChange}
+              required
             />
             <span
               onClick={togglePassword}

@@ -8,6 +8,8 @@ import { FaEarthAmericas } from "react-icons/fa6";
 // import * as Select from '@radix-ui/react-select';
 import * as RadioGroup from "@radix-ui/react-radio-group";
 import Milestone from "./components/Milestone";
+import { FaRegCircle } from "react-icons/fa";
+
 
 const Dashboard = () => {
   const localUser = useAppSelector((state) => state.auth.user);
@@ -125,6 +127,13 @@ const Dashboard = () => {
                       <p className="text-white">✔</p>
                     </div>
                   </RadioGroup.Indicator>
+
+                  {/* show empty  */}
+                  {/* <FaRegCircleCheck className="text-green-500 text-2xl" /> */}
+
+                  {selectedRecyclable !== recyclable && (
+                    <FaRegCircle className="text-green-500 text-2xl" />
+                  )}
                 </div>
               </RadioGroup.Item>
             </RadioGroup.Root>
