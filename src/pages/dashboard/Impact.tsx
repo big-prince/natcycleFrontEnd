@@ -68,16 +68,16 @@ const Impact = () => {
         <div className="text-center">
           <LuLeafyGreen className="text-lg text-yellow-500 m-auto" />
           <p className="text-4xl py-2">
-            {localUser.pointsEarned ? localUser.pointsEarned : 0}
+            {localUser.carbonUnits ? localUser.carbonUnits : 0}
           </p>
-          Earned
+          C Units
         </div>
         <div className="text-center">
           <PiRecycleDuotone className="text-lg text-green-500 m-auto" />
           <p className="text-4xl py-2">
-            {localUser.points ? localUser.totalItemsCollected : 0}
+            {localUser.pointsEarned ? localUser.pointsEarned : 0}
           </p>
-          Recycled
+          Points
         </div>
         <div className="text-center">
           <Link to="/pickup/all">
@@ -94,7 +94,7 @@ const Impact = () => {
         <div className="mt-6">
           <p className="text-lg font-semibold">Breakdown</p>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-bg p-4 rounded-lg box_shadow">
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Plastic Bottles</p>
 
               <div className="flex justify-between mt-2">
@@ -105,8 +105,8 @@ const Impact = () => {
                   </p>
                 </div>
 
-                <div className="bg-green p-2 rounded-lg font-bold">
-                  <p className="text-sm text-darkgreen">
+                <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
                     {calculatePoints("plastic")}
                     <span className="text-xs pl-[2px]">CU</span>
                   </p>
@@ -114,7 +114,7 @@ const Impact = () => {
               </div>
             </div>
 
-            <div className="bg-bg p-4 rounded-lg box_shadow">
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Fabric</p>
               <div className="flex justify-between mt-2">
                 <div>
@@ -124,8 +124,8 @@ const Impact = () => {
                   </p>
                 </div>
 
-                  <div className="bg-green p-2 rounded-lg font-bold">
-                  <p className="text-sm text-dark">
+                  <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
                     {calculatePoints("fabric")|| 0}
                     <span className="text-xs pl-[2px]">CU</span>
                   </p>
@@ -133,7 +133,7 @@ const Impact = () => {
               </div>
             </div>
 
-            <div className="bg-bg p-4 rounded-lg box_shadow">
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Glass</p>
               <div className="flex justify-between mt-2">
                 <div>
@@ -143,8 +143,8 @@ const Impact = () => {
                   </p>
                 </div>
 
-                  <div className="bg-green p-2 rounded-lg font-bold">
-                  <p className="text-sm text-dark">
+                  <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
                     {calculatePoints("glass") || 0}
                     <span className="text-xs pl-[2px]">CU</span>
                   </p>
@@ -152,7 +152,7 @@ const Impact = () => {
               </div>
             </div>
 
-            <div className="bg-bg p-4 rounded-lg box_shadow">
+            <div className="bg-green p-4 rounded-lg box_shadow">
               <p className="font-medium text-sm">Mixed</p>
               <div className="flex justify-between mt-2">
                 <div>
@@ -162,8 +162,8 @@ const Impact = () => {
                   </p>
                 </div>
 
-                  <div className="bg-green p-2 rounded-lg font-bold">
-                  <p className="text-sm text-dark">
+                  <div className="bg-black p-2 rounded-lg font-bold">
+                  <p className="text-sm text-white">
                     {calculatePoints("mixed") || 0 }
                     <span className="text-xs pl-[2px]">CU</span>
                   </p>

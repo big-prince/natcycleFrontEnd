@@ -101,5 +101,6 @@ export type IPickup = {
   scheduledTimeStart: string;
   status: string;
   updatedAt: string;
+  completedAt: string;
   user: IUser;
 }

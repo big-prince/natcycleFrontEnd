@@ -11,7 +11,6 @@ const UserDetails = () => {
 
   //get id from url params
   const { id } = useParams();
-  console.log(id);
 
   useEffect(() => {
     setLoading(true);
@@ -33,7 +32,7 @@ const UserDetails = () => {
   useEffect(() => {
     UsersApi.getReferrals(id!)
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
         setReferredUsers(res.data);
       })
       .catch((err) => {
@@ -47,9 +46,7 @@ const UserDetails = () => {
         {`${user?.firstName} ${user?.lastName}`} Details
       </h2>
 
-      {
-        loading && <p className="text-lg font-light my-8">Loading...</p>
-      }
+      {loading && <p className="text-lg font-light my-8">Loading...</p>}
 
       <div className="bg-white rounded-md shadow-md p-4">
         {/* basic info */}
@@ -58,7 +55,10 @@ const UserDetails = () => {
             {/* profile picture */}
             <div className="mb-4">
               <img
-                src={user?.profilePicture?.url || "https://i.pinimg.com/564x/65/25/a0/6525a08f1df98a2e3a545fe2ace4be47.jpg"}
+                src={
+                  user?.profilePicture?.url ||
+                  "https://i.pinimg.com/564x/65/25/a0/6525a08f1df98a2e3a545fe2ace4be47.jpg"
+                }
                 alt="profile"
                 className="rounded-full object-cover"
                 style={{ width: "100px", height: "100px" }}
@@ -89,13 +89,6 @@ const UserDetails = () => {
               </div> */}
             </div>
 
-            <div className="md:flex mb-4">
-              <div className="mb-4 md:mb-0">
-                <p className="font-bold text-black mr-4">{user?.pointsEarned}</p>
-                <p className="text-gray-500 text-xs">Points Earned</p>
-              </div>
-            </div>
-
             {/* date joined and verification status */}
             <div className="flex mb-4">
               <div className="">
@@ -104,6 +97,57 @@ const UserDetails = () => {
                 </p>
                 <p className="text-gray-500 text-xs">Date Joined</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* user dashboard data */}
+        <h2 className="text-xl mb-4 text-darkgreen font-semibold">Users Stats</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">{user?.pointsEarned}</p>
+              <p className="text-gray-500 text-xs">Points Earned</p>
+            </div>
+          </div>
+
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">{user?.carbonUnits}</p>
+              <p className="text-gray-500 text-xs">Carbon Units</p>
+            </div>
+          </div>
+
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">{user?.totalItemsCollected}</p>
+              <p className="text-gray-500 text-xs">Items Recycled</p>
+            </div>
+          </div>
+        </div>
+
+        <h2 className="text-xl mb-4 text-darkgreen font-semibold">Items Count</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">{user?.pointsEarned}</p>
+              <p className="text-gray-500 text-xs">Points Earned</p>
+            </div>
+          </div>
+
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">{user?.carbonUnits}</p>
+              <p className="text-gray-500 text-xs">Carbon Units</p>
+            </div>
+          </div>
+
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">{user?.totalItemsCollected}</p>
+              <p className="text-gray-500 text-xs">Items Recycled</p>
             </div>
           </div>
         </div>
@@ -122,23 +166,22 @@ const UserDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {referredUsers && referredUsers.map((user) => (
-                  <tr key={user._id}>
-                    <td>{referredUsers.indexOf(user) + 1}</td>
-                    <td>
-                      <Link
-                        to={`/admin/users/${user._id}`}
-                        className="text-blue-500"
-                      >
-                        {user.firstName} {user.lastName}
-                      </Link>
-                    </td>
-                    <td>{user.email}</td>
-                    <td>
-                      {new Date(user.createdAt).toLocaleString()}
+                {referredUsers &&
+                  referredUsers.map((user) => (
+                    <tr key={user._id}>
+                      <td>{referredUsers.indexOf(user) + 1}</td>
+                      <td>
+                        <Link
+                          to={`/admin/users/${user._id}`}
+                          className="text-blue-500"
+                        >
+                          {user.firstName} {user.lastName}
+                        </Link>
                       </td>
-                  </tr>
-                ))}
+                      <td>{user.email}</td>
+                      <td>{new Date(user.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

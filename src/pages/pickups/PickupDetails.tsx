@@ -178,7 +178,7 @@ const PickupDetails = () => {
 
               <div className="mb-4">
                 <p className="text-xl font-medium">
-                  {new Date(pickup.scheduledDate).toDateString()}
+                  {new Date(pickup.scheduledDate).toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-700">Created At</p>
               </div>
@@ -187,6 +187,15 @@ const PickupDetails = () => {
                 <p className="text-xl font-bold">{pickup?.status}</p>
                 <p className="text-sm text-gray-700">Status</p>
               </div>
+
+              {pickup.status === 'completed' && (
+                <div className="mb-4">
+                  <p className="text-xl font-medium">
+                    {new Date(pickup.completedAt).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-700">Completed At</p>
+                </div>
+              )}
 
               {/* scheduled period */}
               <div className="mb-4">

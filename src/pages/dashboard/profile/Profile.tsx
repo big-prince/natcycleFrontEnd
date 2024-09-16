@@ -1,7 +1,7 @@
 import { FaUser } from "react-icons/fa";
 import { GoSignOut } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
-import { IoMdSettings } from "react-icons/io";
+import { IoMdSettings, IoMdSwitch } from "react-icons/io";
 import UpdateProfilePicture from "../components/UpdateProfilePicture";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { IoNotifications } from "react-icons/io5";
@@ -91,6 +91,19 @@ const Profile = () => {
               <span>Update Profile</span>
             </Link>
           </li>
+
+          {/* if user is admin show switch to collector link */}
+          {user.isAdmin && (
+            <li>
+              <Link
+                to="/admin/pickup/pickups"
+                className="flex items-center space-x-2 p-4 rounded-2xl text-darkgreen"
+              >
+                <IoMdSwitch />
+                <span>Switch to Collector</span>
+              </Link>
+            </li>
+          )}
           <li>
             <p
               onClick={() => handleLogout()}
