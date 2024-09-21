@@ -104,7 +104,7 @@ const UserDetails = () => {
         {/* user dashboard data */}
         <h2 className="text-xl mb-4 text-darkgreen font-semibold">Users Stats</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
               <p className="font-bold text-black mr-4">{user?.pointsEarned}</p>
@@ -127,27 +127,27 @@ const UserDetails = () => {
           </div>
         </div>
 
-        <h2 className="text-xl mb-4 text-darkgreen font-semibold">Items Count</h2>
+        <h2 className="text-xl mb-2 text-darkgreen font-semibold">Items Count</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.pointsEarned}</p>
-              <p className="text-gray-500 text-xs">Points Earned</p>
+              <p className="font-bold text-black mr-4">{user?.itemsCount.plastic}</p>
+              <p className="text-gray-500 text-xs">Plastic</p>
             </div>
           </div>
 
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.carbonUnits}</p>
-              <p className="text-gray-500 text-xs">Carbon Units</p>
+              <p className="font-bold text-black mr-4">{user?.itemsCount.fabric}</p>
+              <p className="text-gray-500 text-xs">Fabric</p>
             </div>
           </div>
 
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.totalItemsCollected}</p>
-              <p className="text-gray-500 text-xs">Items Recycled</p>
+              <p className="font-bold text-black mr-4">{user?.itemsCount.glass}</p>
+              <p className="text-gray-500 text-xs">Glass</p>
             </div>
           </div>
         </div>

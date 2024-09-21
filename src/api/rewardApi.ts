@@ -33,6 +33,14 @@ const RewardApi = {
   async userGetRewards() {
     return await api.get("/reward/user");
   },
+
+  async adminGetRedeemedAwards() {
+    return await api.get("/reward/admin/redeemed");
+  },
+
+  async adminUpdateRedeemedStatus(id: string, status: any) {
+    return await api.put(`/reward/admin/${id}/update/${status}`);
+  }
 };
 
 export default RewardApi;

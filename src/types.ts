@@ -22,6 +22,7 @@ export type ILocation = {
 }
 
 export type IUser = {
+  _id: string;
   carbonUnits: number;
   createdAt: string; // Date string in ISO 8601 format (e.g., "2024-06-26T12:36:08.043Z")
   email: string;
@@ -70,6 +71,7 @@ export type IBadge = {
 }
 
 export type IReward = {
+  status: string;
   image: {
     public_id: string;
     url: string;
@@ -103,4 +105,5 @@ export type IPickup = {
   updatedAt: string;
   completedAt: string;
   user: IUser;
+  completedBy: string;
 }

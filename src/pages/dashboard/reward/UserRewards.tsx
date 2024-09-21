@@ -28,7 +28,7 @@ const UserRewards = () => {
     setLoading(true);
     RewardApi.userGetRewards()
       .then((response) => {
-        console.log(response.data);
+        console.log('user rewards', response.data)
         setLoading(false);
         setUserRewards(response.data.data);
       })

@@ -197,6 +197,17 @@ const PickupDetails = () => {
                 </div>
               )}
 
+              {
+                pickup.status === 'completed' && (
+                  <div className="mb-4">
+                    <p className="text-xl font-medium">
+                      {pickup.completedBy || 'N/A'}
+                    </p>
+                    <p className="text-sm text-gray-700">Completed By</p>
+                  </div>
+                )
+              }
+
               {/* scheduled period */}
               <div className="mb-4">
                 <p className="text-xl font-medium">

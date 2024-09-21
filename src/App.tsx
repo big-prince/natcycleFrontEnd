@@ -29,6 +29,7 @@ import UserRewards from "./pages/dashboard/reward/UserRewards";
 import PickupDetails from "./pages/pickups/PickupDetails";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import AdminRedeemedRewards from "./pages/admin/AdminRedeemedRewards";
 
 const App = () => {
   return (
@@ -77,6 +78,7 @@ const App = () => {
             <Route path="/admin/pickups" element={<AdminPickups />} />
             <Route path="/admin/badges" element={<AdminBadges />} />
             <Route path="/admin/rewards" element={<AdminRewards />} />
+            <Route path="/admin/redeemed" element={<AdminRedeemedRewards />} />
           </Route>
 
           {/* the pickup side of things */}

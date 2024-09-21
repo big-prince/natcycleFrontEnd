@@ -7,7 +7,7 @@ import { IoLogOut } from "react-icons/io5";
 import { logout } from "../../../reducers/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { SlBadge } from "react-icons/sl";
-import { TiGift } from "react-icons/ti";
+import { TiAnchorOutline, TiGift } from "react-icons/ti";
 
 const Links = [
   {
@@ -29,6 +29,11 @@ const Links = [
     title: "Rewards",
     icon: <TiGift />,
     path: "/admin/rewards",
+  },
+  {
+    title: "Redeemed Rewards",
+    icon: <TiAnchorOutline />,
+    path: "/admin/redeemed",
   },
 ];
 
