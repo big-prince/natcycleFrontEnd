@@ -10,7 +10,21 @@ const BookPickup = () => {
   const [searchParams] = useSearchParams();
   const [itemType] = useState(searchParams.get("item") || "plastic");
 
-  const recyclables = ["plastic", "fabric", "glass", "mixed"];
+  const recyclables = ["plastic", "fabric", "glass", "paper"];
+
+  const [items, setItems] = useState({
+    plastic: 0,
+    fabric: 0,
+    glass: 0,
+    paper: 0,
+  });
+
+  const handleItemChange = (e: any) => {
+    setItems({
+      ...items,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const [pickUpForm, setPickUpForm] = useState({
     itemType: itemType,
@@ -103,11 +117,11 @@ const BookPickup = () => {
   return (
     <div>
       <form onSubmit={bookPickup}>
-        <h2 className="text-2xl font-bold mt-8">Book a Pickup</h2>
+        <h2 className="text-2xl font-bold mt-8 text-darkgreen">Book a Pickup</h2>
 
-        <div className="mt-6">
-          <label className="font-semibold">Item Type</label>
-          <select
+        <div className="mt-4">
+          <label className="font-semibold pb-4">Enter Quantity of Items</label>
+          {/* <select
             name="itemType"
             onChange={handleChange}
             required
@@ -116,14 +130,62 @@ const BookPickup = () => {
           >
             {recyclables.map((recyclable) => (
               <option key={recyclable} value={recyclable}>
-                {/* {recyclable} */}
                 {
                   recyclable.charAt(0).toUpperCase() +
                     recyclable.slice(1)
                 }
               </option>
             ))}
-          </select>
+          </select> */}
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div className="flex items-center gap-2">
+              <label className="font-medium">Glass</label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                name="glass"
+                onChange={handleItemChange}
+                required
+                value={items.glass}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="font-medium">Plastic</label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                name="plastic"
+                onChange={handleItemChange}
+                required
+                value={items.plastic}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="font-medium">Fabric</label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                name="fabric"
+                onChange={handleItemChange}
+                required
+                value={items.fabric}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="font-medium">Paper</label>
+              <input
+                type="number"
+                className="w-full p-2 border border-gray-300 rounded-lg"
+                name="paper"
+                onChange={handleItemChange}
+                required
+                value={items.paper}
+              />
+            </div>
+          </div>
         </div>
 
         {/* select location */}
@@ -195,7 +257,7 @@ const BookPickup = () => {
         </div>
 
         {/* how many bottles do you want to recycle */}
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <label className="text-sm">{itemQuestion}</label>
           <input
             type="number"
@@ -205,7 +267,7 @@ const BookPickup = () => {
             required
             value={pickUpForm.description}
           />
-        </div>
+        </div> */}
 
         <button
           type="submit"

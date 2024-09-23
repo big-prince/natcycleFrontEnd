@@ -122,25 +122,25 @@ const Dashboard = () => {
                     {/* {recyclable} */}
                     {recyclable.charAt(0).toUpperCase() + recyclable.slice(1)}
                   </p>
-                  <RadioGroup.Indicator>
+                  {/* <RadioGroup.Indicator>
                     <div className="bg-darkgreen h-6 w-6 rounded-full flex items-center justify-center">
                       <p className="text-white">✔</p>
                     </div>
-                  </RadioGroup.Indicator>
+                  </RadioGroup.Indicator> */}
 
                   {/* show empty  */}
                   {/* <FaRegCircleCheck className="text-green-500 text-2xl" /> */}
 
-                  {selectedRecyclable !== recyclable && (
+                  {/* {selectedRecyclable !== recyclable && (
                     <FaRegCircle className="text-green-500 text-2xl" />
-                  )}
+                  )} */}
                 </div>
               </RadioGroup.Item>
             </RadioGroup.Root>
           ))}
         </div>
 
-        <p className="mt-4 text-gray-500">Metals Paper Glass coming soon</p>
+        {/* <p className="mt-4 text-gray-500">Metals Paper Glass coming soon</p> */}
 
         <div className="mt-6">
           <Link
