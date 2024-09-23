@@ -8,7 +8,7 @@ import { FaEarthAmericas } from "react-icons/fa6";
 // import * as Select from '@radix-ui/react-select';
 import * as RadioGroup from "@radix-ui/react-radio-group";
 import Milestone from "./components/Milestone";
-import { FaRegCircle } from "react-icons/fa";
+// import { FaRegCircle } from "react-icons/fa";
 
 
 const Dashboard = () => {

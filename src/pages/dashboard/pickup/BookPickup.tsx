@@ -10,7 +10,7 @@ const BookPickup = () => {
   const [searchParams] = useSearchParams();
   const [itemType] = useState(searchParams.get("item") || "plastic");
 
-  const recyclables = ["plastic", "fabric", "glass", "paper"];
+  // const recyclables = ["plastic", "fabric", "glass", "paper"];
 
   const [items, setItems] = useState({
     plastic: 0,
@@ -44,6 +44,10 @@ const BookPickup = () => {
   ];
 
   const [itemQuestion, setItemQuestion] = useState(question[0]);
+
+  if (itemQuestion) (
+    console.log(itemQuestion)
+  )
 
   useEffect(() => {
     switch (pickUpForm.itemType) {
