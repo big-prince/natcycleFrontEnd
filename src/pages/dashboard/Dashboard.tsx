@@ -51,6 +51,7 @@ const Dashboard = () => {
   }, []);
 
   if (!user) return null;
+  
 
   return (
     <div className="mb-20">
