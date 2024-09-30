@@ -102,9 +102,11 @@ const UserDetails = () => {
         </div>
 
         {/* user dashboard data */}
-        <h2 className="text-xl mb-4 text-darkgreen font-semibold">Users Stats</h2>
+        <h2 className="text-xl mb-4 text-darkgreen font-semibold">
+          Users Stats
+        </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
               <p className="font-bold text-black mr-4">{user?.pointsEarned}</p>
@@ -121,33 +123,63 @@ const UserDetails = () => {
 
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.totalItemsCollected}</p>
+              <p className="font-bold text-black mr-4">
+                {user?.totalItemsCollected}
+              </p>
               <p className="text-gray-500 text-xs">Items Recycled</p>
             </div>
           </div>
+
+          <div className="md:flex mb-4">
+            <Link
+              to={`/admin/pickups?userId=${user?._id}`}
+              className="mb-4 md:mb-0"
+            >
+              <p className="text-darkgreen font-bold underline text-xs">
+                View Collections
+              </p>
+            </Link>
+          </div>
         </div>
 
-        <h2 className="text-xl mb-2 text-darkgreen font-semibold">Items Count</h2>
+        <h2 className="text-xl mb-2 text-darkgreen font-semibold">
+          Items Count
+        </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.itemsCount.plastic}</p>
+              <p className="font-bold text-black mr-4">
+                {user?.itemsCount.plastic}
+              </p>
               <p className="text-gray-500 text-xs">Plastic</p>
             </div>
           </div>
 
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.itemsCount.fabric}</p>
+              <p className="font-bold text-black mr-4">
+                {user?.itemsCount.fabric}
+              </p>
               <p className="text-gray-500 text-xs">Fabric</p>
             </div>
           </div>
 
           <div className="md:flex mb-4">
             <div className="mb-4 md:mb-0">
-              <p className="font-bold text-black mr-4">{user?.itemsCount.glass}</p>
+              <p className="font-bold text-black mr-4">
+                {user?.itemsCount.glass}
+              </p>
               <p className="text-gray-500 text-xs">Glass</p>
+            </div>
+          </div>
+
+          <div className="md:flex mb-4">
+            <div className="mb-4 md:mb-0">
+              <p className="font-bold text-black mr-4">
+                {user?.itemsCount.paper}
+              </p>
+              <p className="text-gray-500 text-xs">Paper</p>
             </div>
           </div>
         </div>

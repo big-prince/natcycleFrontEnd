@@ -8,6 +8,7 @@ import { logout } from "../../../reducers/authSlice";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { SlBadge } from "react-icons/sl";
 import { TiAnchorOutline, TiGift } from "react-icons/ti";
+import { RiMegaphoneFill } from "react-icons/ri";
 
 const Links = [
   {
@@ -34,6 +35,11 @@ const Links = [
     title: "Redeemed Rewards",
     icon: <TiAnchorOutline />,
     path: "/admin/redeemed",
+  },
+  {
+    title: "Campaigns",
+    icon: <RiMegaphoneFill />,
+    path: "/admin/campaign",
   },
 ];
 

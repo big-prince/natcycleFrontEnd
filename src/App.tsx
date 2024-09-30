@@ -30,6 +30,8 @@ import PickupDetails from "./pages/pickups/PickupDetails";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import AdminRedeemedRewards from "./pages/admin/AdminRedeemedRewards";
+import AdminCampaign from "./pages/admin/AdminCampaign";
+import CampaignDetails from "./pages/dashboard/CampaignDetails";
 
 const App = () => {
   return (
@@ -67,6 +69,7 @@ const App = () => {
             <Route path="notifications" element={<Notifications />} />
 
             <Route path="rewards" element={<UserRewards />} />
+            <Route path="campaigns/:id" element={<CampaignDetails />} />
           </Route>
 
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -79,6 +82,7 @@ const App = () => {
             <Route path="/admin/badges" element={<AdminBadges />} />
             <Route path="/admin/rewards" element={<AdminRewards />} />
             <Route path="/admin/redeemed" element={<AdminRedeemedRewards />} />
+            <Route path="/admin/campaign" element={<AdminCampaign />} />
           </Route>
 
           {/* the pickup side of things */}

@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { FaTimes } from "react-icons/fa";
 import { IUser } from "../../../types";
 
-type IPickup = {
+export type IPickup = {
   _id: string;
   createdAt: string;
   itemType: string;
@@ -25,7 +25,19 @@ type IPickup = {
   status: string;
   updatedAt: string;
   user: IUser;
-}
+  items: {
+    plastic: number;
+    fabric: number;
+    glass: number;
+    paper: number;
+  };
+  confirmedItems?: {
+    plastic: number;
+    fabric: number;
+    glass: number;
+    paper: number;
+  };
+};
 
 type PickupModalProps = {
   isModalOpen;
@@ -47,8 +59,20 @@ const AdminPickupModal = ({
   //   { item: "Mixed", points: 2 },
   // ];
 
-  const [itemsCount, setItemsCount] = useState(0);
+  // const [itemsCount, setItemsCount] = useState(0);
+  const [items, setItems] = useState({
+    plastic: pickup.items.plastic,
+    fabric: pickup.items.fabric,
+    glass: pickup.items.glass,
+    paper: pickup.items.paper,
+  });
 
+  const handleItemChange = (e: any) => {
+    setItems({
+      ...items,
+      [e.target.name]: parseInt(e.target.value),
+    });
+  };
 
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,17 +80,16 @@ const AdminPickupModal = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!itemsCount) {
-      alert("Please enter the items count");
-      return;
-    }
+    const confirm = window.confirm(
+      "Are you sure you want to complete this pickup?"
+    );
+    if (!confirm) return;
 
     setLoading(true);
 
-    const payload  = {
-      itemsCount,
-      status: "completed",
-    }
+    const payload = {
+      items,
+    };
 
     PickUpApi.adminCompletePickUp(pickup._id, payload)
       .then((res) => {
@@ -76,7 +99,6 @@ const AdminPickupModal = ({
         toast.success("Pickup completed successfully");
         setLoading(false);
         // setPointsEarned(0);
-        setItemsCount(0);
       })
       .catch((err) => {
         console.log(err);
@@ -111,13 +133,13 @@ const AdminPickupModal = ({
 
             <div className="flex gap-6 my-4 text-sm">
               <div>
-                <p className="font-medium">
+                <p className="font-medium text-base">
                   {pickup.user.firstName} {pickup.user.lastName}
                 </p>
                 <p className="text-xs">Full name</p>
               </div>
               <div>
-                <p className="font-medium">{pickup.user.email}</p>
+                <p className="font-medium text-base">{pickup.user.email}</p>
                 <p className="text-xs">User Email</p>
               </div>
             </div>
@@ -125,7 +147,7 @@ const AdminPickupModal = ({
             <div className="flex gap-6 my-4 text-sm">
               <div>
                 <p className="font-medium">
-                {new Date(pickup.scheduledDate).toLocaleDateString()}
+                  {new Date(pickup.scheduledDate).toLocaleDateString()}
                 </p>
                 <p className="text-xs">Pickup Date</p>
               </div>
@@ -135,35 +157,56 @@ const AdminPickupModal = ({
               </div>
             </div>
 
-            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              {/* <div>
-                <label
-                  htmlFor="pointsEarned"
-                  className="text-sm font-medium block"
-                >
-                  Points Earned
-                </label>
+            <form className="flex flex-col gap-4 text-sm" onSubmit={handleSubmit}>
+              <h2 className="text-lg font-semibold">Items</h2>
+              <div className="flex gap-4">
+                <div>
+                  <label className="font-medium">Plastic</label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    name="plastic"
+                    onChange={handleItemChange}
+                    required
+                    value={items.plastic}
+                  />
+                </div>
 
-                <input
-                  type="number"
-                  id="pointsEarned"
-                  className="p-2 border text-sm border-gray-300 rounded-md"
-                  value={pointsEarned}
-                  onChange={(e) => setPointsEarned(Number(e.target.value))}
-                />
-              </div> */}
+                <div>
+                  <label className="font-medium">Fabric</label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    name="fabric"
+                    onChange={handleItemChange}
+                    required
+                    value={items.fabric}
+                  />
+                </div>
 
-              <div>
-                <label htmlFor="itemsCount" className="text-sm font-medium block">
-                  {pickup.itemType} Count
-                </label>
-                <input
-                  type="number"
-                  id="itemsCount"
-                  className="p-2 border text-sm border-gray-300 rounded-md"
-                  value={itemsCount}
-                  onChange={(e) => setItemsCount(Number(e.target.value))}
-                />
+                <div>
+                  <label className="font-medium">Glass</label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    name="glass"
+                    onChange={handleItemChange}
+                    required
+                    value={items.glass}
+                  />
+                </div>
+
+                <div>
+                  <label className="font-medium">Paper</label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    name="paper"
+                    onChange={handleItemChange}
+                    required
+                    value={items.paper}
+                  />
+                </div>
               </div>
 
               <div className="hidden">
@@ -181,25 +224,81 @@ const AdminPickupModal = ({
                 </select>
               </div>
 
-              <div className="flex gap-4 mt-6">
-                <button
-                  type="button"
-                  className="btn underline text-red-500"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn bg-green-500 p-3 rounded-lg text-white"
-                >
-                  {loading ? "Loading..." : "Complete Pickup"}
-                </button>
-              </div>
+              {pickup.status !== "completed" && (
+                <div className="flex gap-4 mt-6">
+                  <button
+                    type="button"
+                    className="btn underline text-red-500"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn bg-green-500 p-3 rounded-lg text-white"
+                  >
+                    {loading ? "Loading..." : "Complete Pickup"}
+                  </button>
+                </div>
+              )}
             </form>
+
+            {pickup.status === "completed" && (
+              <div className="mt-8">
+                <h2 className="text-lg font-semibold">Confirmed Items</h2>
+                <div className="flex gap-4">
+                  <div>
+                    <label className="font-medium">Plastic</label>
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      name="plastic"
+                      required
+                      value={pickup.confirmedItems?.plastic}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-medium">Fabric</label>
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      name="fabric"
+                      onChange={handleItemChange}
+                      required
+                      value={pickup.confirmedItems?.fabric}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-medium">Glass</label>
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      name="glass"
+                      onChange={handleItemChange}
+                      required
+                      value={pickup.confirmedItems?.glass}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-medium">Paper</label>
+                    <input
+                      type="number"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      name="paper"
+                      onChange={handleItemChange}
+                      required
+                      value={pickup.confirmedItems?.paper}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </AlertDialog.Content>
       </AlertDialog.Root>

@@ -1,23 +1,37 @@
 import { FaChevronRight } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
 import { useState, useEffect } from "react";
 import ProfileApi from "../../api/profile.Api";
 import { updateUser } from "../../reducers/authSlice";
-import { FaEarthAmericas } from "react-icons/fa6";
+import {
+  FaEarthAmericas,
+  FaRegCircle,
+  FaRegCircleCheck,
+} from "react-icons/fa6";
 // import * as Select from '@radix-ui/react-select';
-import * as RadioGroup from "@radix-ui/react-radio-group";
+// import * as RadioGroup from "@radix-ui/react-radio-group";
 import Milestone from "./components/Milestone";
+import Campaigns from "./components/Campaigns";
 // import { FaRegCircle } from "react-icons/fa";
-
 
 const Dashboard = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
-  const recyclables = ["plastic", "fabric", "glass", "mixed"];
-  const [selectedRecyclable, setSelectedRecyclable] =
-    useState("Plastic Bottles");
+  const recyclables = ["plastic", "fabric", "glass", "paper"];
+  const [selectedRecyclables, setSelectedRecyclables] = useState<string[]>([]);
+
+  const handleAddAndRemoveRecyclable = (recyclable: string) => {
+    if (selectedRecyclables.includes(recyclable)) {
+      setSelectedRecyclables(
+        selectedRecyclables.filter((item) => item !== recyclable)
+      );
+    } else {
+      setSelectedRecyclables([...selectedRecyclables, recyclable]);
+    }
+  };
 
   const [user, setUser] = useState(localUser);
 
@@ -50,8 +64,24 @@ const Dashboard = () => {
     fetchUser();
   }, []);
 
+  const handleRecycleNowClick = () => {
+    if (selectedRecyclables.length === 0) {
+      return;
+    }
+
+    console.log("recycle now clicked");
+    console.log(selectedRecyclables);
+
+    // add this to the local storage
+    localStorage.setItem(
+      "selectedRecyclables",
+      JSON.stringify(selectedRecyclables)
+    );
+
+    navigate("/pickup/book");
+  };
+
   if (!user) return null;
-  
 
   return (
     <div className="mb-20">
@@ -91,6 +121,10 @@ const Dashboard = () => {
         <Milestone />
       </div>
 
+      <div>
+        <Campaigns />
+      </div>
+
       {/* mile stone */}
       <div className="mt-6 hidden">
         <p className="text-lg font-semibold">Milestones</p>
@@ -112,45 +146,33 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-2 gap-4">
           {recyclables.map((recyclable, index) => (
-            <RadioGroup.Root
-              key={index}
-              value={selectedRecyclable}
-              onValueChange={(value) => setSelectedRecyclable(value)}
-            >
-              <RadioGroup.Item value={recyclable} className="w-full">
-                <div className="bg-white p-3 rounded-2xl flex justify-between items-center w-full">
-                  <p className="font-bold md:text-xl w-full text-left">
-                    {/* {recyclable} */}
-                    {recyclable.charAt(0).toUpperCase() + recyclable.slice(1)}
-                  </p>
-                  {/* <RadioGroup.Indicator>
-                    <div className="bg-darkgreen h-6 w-6 rounded-full flex items-center justify-center">
-                      <p className="text-white">✔</p>
-                    </div>
-                  </RadioGroup.Indicator> */}
+            <div key={index} className="w-full">
+              <div
+                onClick={() => handleAddAndRemoveRecyclable(recyclable)}
+                className={`bg-white p-3 rounded-2xl flex justify-between items-center w-full cursor-pointer`}
+              >
+                <p className="font-bold md:text-xl w-full text-left flex justify-between items-center">
+                  {recyclable.charAt(0).toUpperCase() + recyclable.slice(1)}
 
-                  {/* show empty  */}
-                  {/* <FaRegCircleCheck className="text-green-500 text-2xl" /> */}
-
-                  {/* {selectedRecyclable !== recyclable && (
+                  {selectedRecyclables.includes(recyclable) ? (
+                    <FaRegCircleCheck className="text-darkgreen" />
+                  ) : (
                     <FaRegCircle className="text-green-500 text-2xl" />
-                  )} */}
-                </div>
-              </RadioGroup.Item>
-            </RadioGroup.Root>
+                  )}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* <p className="mt-4 text-gray-500">Metals Paper Glass coming soon</p> */}
-
         <div className="mt-6">
-          <Link
-            to={`/pickup/book?item=${selectedRecyclable}`}
-            className="b-black p-2 py-3 rounded-2xl flex items-center justify-between w-full special_button"
+          <div
+            onClick={() => handleRecycleNowClick()}
+            className="b-black p-2 py-3 rounded-2xl flex items-center justify-between w-full special_button cursor-pointer"
           >
             <p className="text-lg font-semibold text-green">Recycle Now</p>
             <FaChevronRight className="text-white" />
-          </Link>
+          </div>
         </div>
       </div>
     </div>

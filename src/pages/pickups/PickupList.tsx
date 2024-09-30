@@ -1,32 +1,9 @@
- /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import PickUpApi from "../../api/pickUpApi";
-import { IUser } from "../../types";
-import AdminPickupModal from "../admin/components/AdminPickupModal";
+import AdminPickupModal, { IPickup } from "../admin/components/AdminPickupModal";
 import PickupMap from "./components/PickupMap";
 import { Link } from "react-router-dom";
-
-type Pickup = {
-  _id: string;
-  createdAt: string;
-  itemType: string;
-  itemsCount: number;
-  location: {
-    _id: string;
-    name: string;
-    address: string;
-    latitude: number;
-    longitude: number;
-  };
-  description: string;
-  pointsEarned: number;
-  scheduledDate: string;
-  scheduledTimeEnd: string;
-  scheduledTimeStart: string;
-  status: string;
-  updatedAt: string;
-  user: IUser;
-}
 
 const PickupList = () => {
   const [pickups, setPickups] = useState([]);
@@ -53,9 +30,9 @@ const PickupList = () => {
   }, [notify]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPickup, setSelectedPickup] = useState<Pickup | null>(null);
+  const [selectedPickup, setSelectedPickup] = useState<IPickup | null>(null);
 
-  const handleOpenModal = (pickup: Pickup) => {
+  const handleOpenModal = (pickup: IPickup) => {
     console.log(pickup);
     setSelectedPickup(pickup);
     setIsModalOpen(true);
@@ -118,10 +95,11 @@ const PickupList = () => {
       <div className="grid grid-cols-1 gap-4">
         {!loading &&
           pickups &&
-          pickups.map((pickup: Pickup) => (
+          pickups.map((pickup: IPickup) => (
             <div
               key={pickup._id}
-              className="bg-white rounded-md shadow-md p-4 text-sm gap-4"
+              className={`bg-white rounded-md shadow-md p-4 text-sm gap-4
+               ${pickup.status === "pending" ? "bg-[#e9f5eb]" : "bg-white"}`}
             >
               <div className="flex justify-between font-bold">
                 <div>

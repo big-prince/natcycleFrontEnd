@@ -1,42 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import PickUpApi from "../../api/pickUpApi";
 import { IUser } from "../../types";
-import AdminPickupModal from "./components/AdminPickupModal";
+import AdminPickupModal, { IPickup } from "./components/AdminPickupModal";
 import PickupMap from "../pickups/components/PickupMap";
 import UsersApi from "../../api/usersApi";
-
-type IPickup = {
-  _id: string;
-  createdAt: string;
-  itemType: string;
-  itemsCount: number;
-  description: string;
-  location: {
-    _id: string;
-    name: string;
-    address: string;
-    latitude: number;
-    longitude: number;
-  };
-  pointsEarned: number;
-  scheduledDate: string;
-  scheduledTimeEnd: string;
-  scheduledTimeStart: string;
-  status: "pending" | "completed" | "cancelled";
-  updatedAt: string;
-  user: IUser;
-};
+import { useSearchParams } from "react-router-dom";
 
 const AdminPickups = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [pickups, setPickups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notify, setNotify] = useState(false);
   const [users, setUsers] = useState([]);
-
-  const [query, setQuery] = useState({
-    status: "",
-    userId: "",
-  });
 
   const fetchUsers = () => {
     UsersApi.getUsers()
@@ -51,7 +28,14 @@ const AdminPickups = () => {
       });
   };
 
-  const fetchPickups = async () => {
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const [userId, setUserId] = useState("");
+  const [status, setStatus] = useState("");
+
+  const fetchPickups = async (query: any) => {
     setLoading(true);
 
     PickUpApi.adminGetPickUps(query)
@@ -66,14 +50,26 @@ const AdminPickups = () => {
       });
   };
 
+ 
   useEffect(() => {
-    fetchPickups();
-    fetchUsers();
-  }, [notify]);
+    const query: any = {};
 
-  useEffect(() => {
-    fetchPickups();
-  }, [query]);
+    if (userId) query.userId = userId;
+    if (status) query.status = status;
+
+    if (searchParams.has("userId")) {
+      query.userId = searchParams.get("userId");
+      setUserId(query.userId);
+    }
+
+    if (searchParams.has("status")) {
+      query.status = searchParams.get("status");
+      setStatus(query.status);
+    }
+
+    fetchPickups(query);
+  }, [notify, searchParams, status, userId]);
+
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPickup, setSelectedPickup] = useState<IPickup | null>(null);
@@ -118,7 +114,10 @@ const AdminPickups = () => {
             name="user"
             id="user"
             className="p-2 border border-gray-300 rounded-md"
-            onChange={(e) => setQuery({ ...query, userId: e.target.value })}
+            onChange={(e) => {
+              setUserId(e.target.value);
+              setSearchParams({ userId: e.target.value });
+            }}
           >
             <option value="">All Users</option>
             {users &&
@@ -136,7 +135,9 @@ const AdminPickups = () => {
             name="status"
             id="status"
             className="p-2 border border-gray-300 rounded-md"
-            onChange={(e) => setQuery({ ...query, status: e.target.value })}
+            onChange={(e) => {
+              setStatus(e.target.value);
+            }}
           >
             <option value="">All Status</option>
             <option value="pending">Pending</option>
@@ -145,7 +146,6 @@ const AdminPickups = () => {
         </div>
       </div>
 
-      {/* cards not tables */}
       <div className="grid grid-cols-1 gap-4">
         {!loading &&
           pickups &&
@@ -154,11 +154,11 @@ const AdminPickups = () => {
               key={pickup._id}
               className={`rounded-md shadow-md p-4 text-sm flex justify-between gap-4
                 ${
-                  pickup.status === "pending" ? "bg-[#fdf0f0]" : "bg-[#e9f5eb]"
+                  pickup.status === "pending" ? "bg-[#e9f5eb]" : "bg-white"
                 }`}
             >
               <div>
-                <p className="text-sm">
+                <p className="text-sm font-bold">
                   {pickup.user.firstName} {pickup.user.lastName}
                 </p>
                 <p className="text-sm hidden">{pickup.user.email}</p>
@@ -176,13 +176,7 @@ const AdminPickups = () => {
               </div>
 
               <div>
-                <p className="text-sm">
-                  Item Type: {pickup.itemType} - {pickup.description}
-                </p>
                 <p className="text-sm">Points Earned: {pickup.pointsEarned}</p>
-                <p className="text-sm">
-                  Confirmed Items Count: {pickup.itemsCount}
-                </p>
               </div>
 
               <div>
