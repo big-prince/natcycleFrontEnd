@@ -7,7 +7,7 @@ import AuthApi from "../../api/authApi";
 const Signup = () => {
   const [searchParams] = useSearchParams();
 
-  const [referralId] = useState(searchParams.get("referral") );
+  const [referralId, setReferralId] = useState(searchParams.get("referral") || "");
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,6 @@ const Signup = () => {
       referralId,
     };
     console.log(data);
-    // return
     
     setLoading(true);
     AuthApi
@@ -50,7 +49,7 @@ const Signup = () => {
       .catch((err: { response: { data: SetStateAction<string>; }; }) => {
         console.log(err);
         setLoading(false);
-        setError(err.response.data);
+        // setError(err?.response?.data || "An error occurred. Please try again.");
       })
       .finally(() => {
         setLoading(false);
@@ -109,6 +108,16 @@ const Signup = () => {
             value={signupData.confirmPassword}
             onChange={handleChange}
           />
+          {/* referral Id */}
+          <input
+            type="text"
+            name="referralId"
+            placeholder="Referral ID"
+            value={referralId}
+            onChange={(e) => setReferralId(e.target.value)}
+          />
+          
+          
           <button className="button bg-green w-full" type="submit"
             disabled={loading}
           >
