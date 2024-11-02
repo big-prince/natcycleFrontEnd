@@ -50,6 +50,20 @@ const PickupList = () => {
     fetchPickups(query);
   }, [selectedDate, status]);
 
+  const getCardColor = (pickup: IPickup) => {
+    const currentDate = new Date();
+    const scheduledDate = new Date(pickup.scheduledDate);
+
+    if (pickup.status === "completed") {
+      return "bg-white";
+    } else if (scheduledDate > currentDate) {
+      return "bg-green-50";
+    } else if (pickup.status === "pending") {
+      return "bg-red-50";
+    }
+    return "bg-white";
+  };
+
   return (
     <div className="px-4">
       {pickups.length > 0 && <PickupMap userPickups={pickups} />}
@@ -99,7 +113,7 @@ const PickupList = () => {
             <div
               key={pickup._id}
               className={`bg-white rounded-md shadow-md p-4 text-sm gap-4
-               ${pickup.status === "pending" ? "bg-[#e9f5eb]" : "bg-white"}`}
+               ${getCardColor(pickup)}`}
             >
               <div className="flex justify-between font-bold">
                 <div>
@@ -127,11 +141,15 @@ const PickupList = () => {
                 <p className="text-sm">Status: {pickup.status}</p>
               </div>
               <div className=" flex justify-between mt-4">
+                
                 <button
                   className="btn text-green-900 font-medium block cursor-pointer border-2 rounded-full p-2"
                   onClick={() => handleOpenModal(pickup)}
+                  disabled={pickup.status === "completed"}
                 >
-                  Complete Pickup
+                  {
+                    pickup.status === "completed" ? "Completed" : "Complete"
+                  }
                 </button>
 
                 {/* view details button */}

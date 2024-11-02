@@ -5,9 +5,10 @@ import { IoMdSettings, IoMdSwitch } from "react-icons/io";
 import UpdateProfilePicture from "../components/UpdateProfilePicture";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { IoNotifications } from "react-icons/io5";
-import AuthApi from "../../../api/authApi";
-import { toast } from "react-toastify";
+// import AuthApi from "../../../api/authApi";
+// import { toast } from "react-toastify";
 import { TiGift } from "react-icons/ti";
+import { logout } from "../../../reducers/authSlice";
 
 const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
 
@@ -16,15 +17,19 @@ const Profile = () => {
   const dispatch = useAppDispatch();
 
   const handleLogout = () => {
-    // localStorage.removeItem("token");
-    AuthApi.signout().then((res) => {
-      console.log(res);
-      dispatch({ type: "LOGOUT" });
-      navigate("/");
-    }).then((err) => {
-      console.log(err);
-      toast.error("An error occurred. Please try again");
-    });
+    // AuthApi.signout().then((res) => {
+    //   console.log(res);
+    //   dispatch(logout());
+    //   navigate("/");
+    // }).then((err) => {
+    //   console.log('going out')
+    //   console.log(err);
+    //   dispatch(logout());
+    //   navigate("/");
+    // })
+
+    dispatch(logout());
+    navigate("/");
   };
 
   const user = useAppSelector((state) => state.auth.user);

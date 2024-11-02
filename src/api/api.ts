@@ -21,27 +21,27 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    try {
-      if (error?.response?.status === 401) {
-        console.log("redirecting to signin page");
-        if (typeof window !== "undefined") {
-          if (window.location.pathname.includes("/admin")) {
-            window.location.href = "/admin/login";
-          } else {
-            window.location.href = "/account/signin";
-          }
-        }
-      }
-    } catch (err) {
-      console.log(err);
-    }
-    return Promise.reject(error);
-  }
-);
+// api.interceptors.response.use(
+//   (response) => {
+//     return response;
+//   },
+//   (error) => {
+//     try {
+//       if (error?.response?.status === 401) {
+//         console.log("redirecting to signin page");
+//         if (typeof window !== "undefined") {
+//           if (window.location.pathname.includes("/admin")) {
+//             window.location.href = "/admin/login";
+//           } else {
+//             window.location.href = "/";
+//           }
+//         }
+//       }
+//     } catch (err) {
+//       console.log(err);
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 
 export default api;

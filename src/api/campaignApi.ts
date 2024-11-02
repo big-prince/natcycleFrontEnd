@@ -17,6 +17,9 @@ const CampaignApi = {
   async deleteCampaign(id: string) {
     return await api.delete(`/campaigns/${id}`)
   },
+  async getContributors (id: string) {
+    return await api.get(`/campaigns/${id}/contributors`)
+  },
 }
 
 export default CampaignApi

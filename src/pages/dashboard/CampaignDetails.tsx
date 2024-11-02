@@ -35,7 +35,7 @@ const CampaignDetails = () => {
     const item = [campaign?.material];
     localStorage.setItem("selectedRecyclables", JSON.stringify(item));
 
-    navigate("/pickup/book?campaignId=" + campaign?._id);
+    navigate(`/pickup/book?campaignId=${campaign?._id}&campaignName=${campaign?.name}`);
   };
 
   return (
@@ -65,7 +65,6 @@ const CampaignDetails = () => {
             />
           </div>
 
-          <p className="mt-4 mb-1">{campaign.description}</p>
 
           <div>
             <p className="text-sm font-semibold">End Date: {new Date(campaign.endDate).toLocaleDateString()}</p>
@@ -102,6 +101,9 @@ const CampaignDetails = () => {
               <FaChevronRight className="text-white" />
             </div>
           </div>
+
+          <p className="mt-4 mb-1">{campaign.description}</p>
+
         </div>
       ) : (
         <p>Loading...</p>

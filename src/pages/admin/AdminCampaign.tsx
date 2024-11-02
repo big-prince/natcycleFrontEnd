@@ -4,6 +4,7 @@ import { FaPlus } from "react-icons/fa6";
 import AddCampaignModal from "./components/AddCampaignModal";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 interface ICampaign {
   _id: string;
@@ -61,7 +62,7 @@ const AdminCampaign = () => {
     <div>
       <div>
         <div className="flex justify-between">
-          <div className="font-bold text-2xl">All Rewards</div>
+          <div className="font-bold text-2xl">All Campaigns</div>
 
           <div className="flex">
             <div
@@ -79,20 +80,23 @@ const AdminCampaign = () => {
         {campaign.length > 0 &&
           campaign.map((campaign) => (
             <div key={campaign._id} className="border p-4 mb-4 relative">
-              <div className="flex">
-                <div className="mr-4">
+              <div className="grid grid-cols-3">
+                <div className="mr-4 col-span-1">
                   <img
                     src={campaign.image?.url}
                     alt={campaign.name}
-                    className="w-48 h-44 object-cover rounded-md"
+                    className="w-full h-full object-cover rounded-md"
                   />
                 </div>
 
-                <div>
+                <div className="col-span-2">
                   <div className=" mb-3">
                     <div className="font-bold">{campaign.name}</div>
                     <div className="mt-2 font-medium">
-                      {campaign.description}
+                      {/* {campaign.description}  */}
+                      {campaign.description.length > 100
+                        ? campaign.description.substring(0, 200) + "..."
+                        : campaign.description}
                     </div>
                   </div>
 
@@ -110,6 +114,15 @@ const AdminCampaign = () => {
                         {" "}
                         {campaign.status}
                       </span>
+                    </div>
+
+                    <div className="col-span-2">
+                      <Link
+                        to={`/admin/campaign/${campaign._id}`}
+                        className="btn bg-green-900 text-white px-4 font-medium border-2 rounded-md p-2 py-3 inline-block"
+                      >
+                        View Details
+                      </Link>
                     </div>
                   </div>
                 </div>

@@ -1,20 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import RewardApi from "../../../api/rewardApi";
+import { IReward } from "../../../types";
 
 
 type Props = {
   isModalOpen: boolean;
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setNotify: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedReward: IReward | null;
 };
 
 const AddRewardModal = ({
   isModalOpen,
   setIsModalOpen,
   setNotify,
+  selectedReward,
 }: Props) => {
   const [rewardName, setRewardName] = useState("");
   const [description, setDescription] = useState("");
@@ -23,6 +27,19 @@ const AddRewardModal = ({
   const [pointsRequired, setPointsRequired] = useState(0);
   const [sponsorName, setSponsorName] = useState("");
   const [sponsorLink, setSponsorLink] = useState("");
+
+  const [action, setAction] = useState("Add");
+
+  useEffect(() => {
+    if (selectedReward) {
+      setRewardName(selectedReward.name);
+      setDescription(selectedReward.description);
+      setPointsRequired(selectedReward.pointsRequired);
+      setSponsorName(selectedReward.sponsorName);
+      setSponsorLink(selectedReward.sponsorLink);
+      setAction("Edit");
+    }
+  }, [selectedReward]);
 
   const readFile = (file: Blob | string) => {
     return new Promise((resolve, reject) => {
@@ -49,20 +66,25 @@ const AddRewardModal = ({
       }
       
       setLoading(true);
-      RewardApi.adminCreateReward(payload)
-        .then((response) => {
-          console.log(response);
-          setLoading(false);
-          setRewardName("");
-          setImage(null);
-          setIsModalOpen(false);
-          setNotify(true);
-        })
-        .catch((error) => {
-          console.error(error);
-          setLoading(false);
-          toast.error(error.response.data.message)
-        });
+      let response;
+
+      try {
+        if (selectedReward) {
+          response = await RewardApi.adminUpdateAward(selectedReward._id, payload);
+        } else {
+          response = await RewardApi.adminCreateReward(payload);
+        }
+        console.log(response);
+        setLoading(false);
+        setRewardName("");
+        setImage(null);
+        setIsModalOpen(false);
+        setNotify(true);
+      } catch (error: any) {
+        console.error(error);
+        setLoading(false);
+        toast.error(error.response.data.message);
+      }
     }
   };
 
@@ -134,7 +156,10 @@ const AddRewardModal = ({
                       placeholder="Image"
                       className="mt-1 p-2 w-full border border-gray-300 rounded-md"
                       onChange={(e) => setImage(e.target.files![0])}
-                      required
+                      // required
+                      {
+                        ...(selectedReward && { required: false })
+                      }
                     />
                   </div>
 
@@ -192,7 +217,7 @@ const AddRewardModal = ({
                       className="bg-green-400 text-white p-2 rounded-lg w-full"
                     >
                       {
-                        loading ? "Loading..." : "Add Reward"
+                        loading ? "Loading..." : action
                       }
                     </button>
                   </div>

@@ -6,6 +6,7 @@ import RewardApi from "../../api/rewardApi";
 import AddRewardModal from "./components/AddRewardModal";
 
 type IReward = {
+  status: string;
   image: {
     public_id: string;
     url: string;
@@ -23,6 +24,8 @@ const AdminRewards = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [rewards, setRewards] = useState<IReward[]>([]);
+
+  const [selectedReward, setSelectedReward] = useState<IReward | null>(null);
 
   const fetchRewards = () => {
     RewardApi.adminGetAwards()
@@ -53,6 +56,11 @@ const AdminRewards = () => {
       .catch((error) => {
         console.error(error);
       });
+  };
+
+  const handleEditClick = (badge: IReward) => {
+    setSelectedReward(badge);
+    setIsModalOpen(true);
   };
 
   return (
@@ -92,7 +100,9 @@ const AdminRewards = () => {
                         side="bottom"
                       >
                         <div>
-                          <button className="text-sm text-gray-500 block">
+                          <button className="text-sm text-gray-500 block"
+                            onClick={() => handleEditClick(badge)}
+                          >
                             Edit
                           </button>
                           <button
@@ -151,6 +161,7 @@ const AdminRewards = () => {
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           setNotify={fetchRewards}
+          selectedReward={selectedReward}
         />
       </div>
     </div>

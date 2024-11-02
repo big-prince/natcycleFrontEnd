@@ -44,6 +44,7 @@ const Signup = () => {
       .then((res: any) => {
         console.log(res);
         setLoading(false);
+        // toast.success("Account created successfully. Please login.");
         navigate("/");
       })
       .catch((err: { response: { data: SetStateAction<string>; }; }) => {

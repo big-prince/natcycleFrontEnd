@@ -1,20 +1,30 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import BadgeApi from "../../../api/badgeApi";
 import { toast } from "react-toastify";
+import { IBadge } from "../../../types";
 
 type Props = {
   isModalOpen: boolean;
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setNotify: React.Dispatch<React.SetStateAction<boolean>>;
+  badge?: IBadge | null;
 };
 
-const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
+const AddBadgeModal = ({
+  isModalOpen,
+  setIsModalOpen,
+  setNotify,
+  badge,
+}: Props) => {
   const [badgeName, setBadgeName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [action, setAction] = useState("Add");
 
   const readFile = (file: Blob | string) => {
     return new Promise((resolve, reject) => {
@@ -25,33 +35,47 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
     });
   };
 
+  useEffect(() => {
+    if (badge) {
+      setBadgeName(badge.name);
+      setDescription(badge.description);
+      setAction("Edit");
+    }
+  }, [badge]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    let badgeImage;
+
     if (image) {
-      const badgeImage = await readFile(image);
+      badgeImage = await readFile(image);
+    }
 
-      const payload = {
-        name: badgeName,
-        image: badgeImage,
-        description,
-      };
+    const payload = {
+      name: badgeName,
+      image: badgeImage || null,
+      description,
+    };
 
-      setLoading(true);
-      BadgeApi.createBadge(payload)
-        .then((response) => {
-          console.log(response);
-          setLoading(false);
-          setBadgeName("");
-          setImage(null);
-          setIsModalOpen(false);
-          setNotify(true);
-        })
-        .catch((error) => {
-          console.error(error);
-          setLoading(false);
-          toast.error(error.response.data.message);
-        });
+    setLoading(true);
+
+    let response;
+
+    try {
+      if (badge) {
+        response = await BadgeApi.updateBadge(badge._id, payload);
+      } else {
+        response = await BadgeApi.createBadge(payload);
+      }
+      console.log(response);
+      setLoading(false);
+      setIsModalOpen(false);
+      setNotify(true);
+    } catch (error: any) {
+      console.error(error);
+      setLoading(false);
+      toast.error(error.response.data.message);
     }
   };
 
@@ -133,7 +157,8 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
                       placeholder="Image"
                       className="mt-1 p-2 w-full border border-gray-300 rounded-md"
                       onChange={(e) => setImage(e.target.files![0])}
-                      required
+                      // required
+                      {...(badge ? {} : { required: true })}
                     />
                   </div>
 
@@ -143,7 +168,7 @@ const AddBadgeModal = ({ isModalOpen, setIsModalOpen, setNotify }: Props) => {
                       disabled={loading}
                       className="bg-green-400 text-white p-2 rounded-lg w-full"
                     >
-                      {loading ? "Loading..." : "Add Badge"}
+                      {loading ? "Loading..." : action}
                     </button>
                   </div>
                 </form>

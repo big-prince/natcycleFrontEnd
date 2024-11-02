@@ -35,15 +35,17 @@ const Signin = () => {
     e.preventDefault();
     console.log(signinData);
 
-    setLoading(true);
+    // setLoading(true);
 
     AuthApi.signin(signinData)
       .then((res: any) => {
+        console.log(res)
         const payload = {
           token: res.token,
           user: res.user,
         };
         dispatch(login(payload));
+        // return
 
         if (!res.user.isEmailVerified) {
           navigate("/verify-email");

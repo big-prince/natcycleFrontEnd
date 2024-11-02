@@ -50,7 +50,6 @@ const AdminPickups = () => {
       });
   };
 
- 
   useEffect(() => {
     const query: any = {};
 
@@ -69,7 +68,6 @@ const AdminPickups = () => {
 
     fetchPickups(query);
   }, [notify, searchParams, status, userId]);
-
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPickup, setSelectedPickup] = useState<IPickup | null>(null);
@@ -94,6 +92,20 @@ const AdminPickups = () => {
       .catch((err) => {
         console.log(err);
       });
+  };
+
+  const getCardColor = (pickup: IPickup) => {
+    const currentDate = new Date();
+    const scheduledDate = new Date(pickup.scheduledDate);
+
+    if (pickup.status === "completed") {
+      return "bg-white";
+    } else if (scheduledDate > currentDate) {
+      return "bg-green-50";
+    } else if (pickup.status === "pending") {
+      return "bg-red-50";
+    }
+    return "bg-white";
   };
 
   return (
@@ -153,9 +165,7 @@ const AdminPickups = () => {
             <div
               key={pickup._id}
               className={`rounded-md shadow-md p-4 text-sm flex justify-between gap-4
-                ${
-                  pickup.status === "pending" ? "bg-[#e9f5eb]" : "bg-white"
-                }`}
+                ${getCardColor(pickup)}`}
             >
               <div>
                 <p className="text-sm font-bold">
@@ -193,12 +203,14 @@ const AdminPickups = () => {
               </div>
 
               <div className="">
-                <button
-                  className="btn underline text-green-900 font-medium block cursor-pointer"
-                  onClick={() => handleOpenModal(pickup)}
-                >
-                  Complete Pickup
-                </button>
+                {pickup.status !== "completed" && (
+                  <button
+                    className="btn underline text-green-900 font-medium block cursor-pointer"
+                    onClick={() => handleOpenModal(pickup)}
+                  >
+                    Complete Pickup
+                  </button>
+                )}
 
                 <button
                   className="btn underline text-green-900 font-medium block mt-4"

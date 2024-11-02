@@ -13,6 +13,8 @@ const AdminBadges = () => {
 
   const [badges, setBadges] = useState<IBadge[]>([]);
 
+  const [selectedBadge, setSelectedBadge] = useState<IBadge | null>(null);
+
   useEffect(() => {
     BadgeApi.getBadges()
       .then((response) => {
@@ -38,6 +40,11 @@ const AdminBadges = () => {
       .catch((error) => {
         console.error(error);
       });
+  };
+
+  const handleEditClick = (badge: IBadge) => {
+    setSelectedBadge(badge);
+    setIsModalOpen(true);
   };
 
   return (
@@ -73,7 +80,9 @@ const AdminBadges = () => {
                       side="bottom"
                     >
                       <div>
-                        <button className="text-sm text-gray-500 block">
+                        <button className="text-sm text-gray-500 block"
+                          onClick={() => handleEditClick(badge)}
+                        >
                           Edit
                         </button>
                         <button
@@ -106,6 +115,7 @@ const AdminBadges = () => {
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
         setNotify={setTrigger}
+        badge={selectedBadge}
       />
     </div>
   );

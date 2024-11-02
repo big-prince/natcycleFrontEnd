@@ -3,11 +3,20 @@ import { useState, useEffect, FormEvent } from "react";
 import { FaChevronRight } from "react-icons/fa";
 import LocationApi from "../../../api/locationApi";
 import PickUpApi from "../../../api/pickUpApi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 const BookPickup = () => {
   const [selectedRecyclables, setSelectedRecyclables] = useState<string[]>([]);
+
+  const [searchParams] = useSearchParams();
+  const [campaignId] = useState(searchParams.get("campaignId") || "")
+  const [campaignName] = useState(searchParams.get("campaignName") || "")
+
+  useEffect(() => {
+    console.log('campaignId', campaignId);
+    console.log('campaignName', campaignName);
+  }, [campaignId, campaignName]);
 
   useEffect(() => {
     let getSelectedRecyclables = localStorage.getItem("selectedRecyclables");
@@ -93,6 +102,7 @@ const BookPickup = () => {
     const payload = {
       ...pickUpForm,
       items,
+      campaignId: campaignId || ""
     };
     console.log(payload);
     // return;
@@ -114,6 +124,18 @@ const BookPickup = () => {
         <h2 className="text-2xl font-bold mt-8 text-darkgreen">
           Book a Pickup
         </h2>
+
+        {
+          campaignName && (
+            <div className="mt-4">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  To Support {campaignName}
+                </h2>
+              </div>
+            </div>
+          )
+        }
 
         <div className="mt-4">
           {/* <label className="font-semibold pb-4">Enter Quantity of Items</label> */}

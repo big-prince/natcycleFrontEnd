@@ -19,7 +19,7 @@ export type IPickup = {
     longitude: number;
   };
   pointsEarned: number;
-  scheduledDate: string;
+  scheduledDate: Date;
   scheduledTimeEnd: string;
   scheduledTimeStart: string;
   status: string;
