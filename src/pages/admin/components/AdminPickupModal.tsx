@@ -22,6 +22,7 @@ export type IPickup = {
   scheduledDate: Date;
   scheduledTimeEnd: string;
   scheduledTimeStart: string;
+  campaign?: string,
   status: string;
   updatedAt: string;
   user: IUser;

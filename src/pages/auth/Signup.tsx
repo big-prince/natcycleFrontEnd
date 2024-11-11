@@ -3,8 +3,11 @@ import { SetStateAction, useState } from "react";
 import Logo from "../../assets/logo.png";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthApi from "../../api/authApi";
+import { useAppDispatch } from "../../hooks/reduxHooks";
+import { login } from "../../reducers/authSlice";
 
 const Signup = () => {
+  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
 
   const [referralId, setReferralId] = useState(searchParams.get("referral") || "");
@@ -45,7 +48,15 @@ const Signup = () => {
         console.log(res);
         setLoading(false);
         // toast.success("Account created successfully. Please login.");
-        navigate("/");
+        // navigate("/");
+
+        const payload = {
+          token: res.token,
+          user: res.user || null,
+        };
+        dispatch(login(payload));
+        navigate("/verify-email");
+
       })
       .catch((err: { response: { data: SetStateAction<string>; }; }) => {
         console.log(err);

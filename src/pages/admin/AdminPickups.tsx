@@ -6,6 +6,7 @@ import AdminPickupModal, { IPickup } from "./components/AdminPickupModal";
 import PickupMap from "../pickups/components/PickupMap";
 import UsersApi from "../../api/usersApi";
 import { useSearchParams } from "react-router-dom";
+import { TbClover } from "react-icons/tb";
 
 const AdminPickups = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -187,6 +188,13 @@ const AdminPickups = () => {
 
               <div>
                 <p className="text-sm">Points Earned: {pickup.pointsEarned}</p>
+                <p>
+                  {pickup.campaign && (
+                    <div className="text-[#08310D font-semibold">
+                      <TbClover className="w-4 h-4 inline-block" /> Campaign
+                    </div>
+                  )}
+                </p>
               </div>
 
               <div>

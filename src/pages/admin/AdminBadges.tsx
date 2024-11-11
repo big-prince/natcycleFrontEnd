@@ -5,9 +5,11 @@ import BadgeApi from "../../api/badgeApi";
 import { IBadge } from "../../types";
 import * as Popover from "@radix-ui/react-popover";
 import { BsThreeDots } from "react-icons/bs";
+import AssignBadgeToUser from "./components/AssignBadgeToUser";
 
 const AdminBadges = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddBadgeToUserModalOpen, setIsAddBadgeToUserModalOpen] = useState(false)
 
   const [trigger, setTrigger] = useState(false);
 
@@ -47,6 +49,12 @@ const AdminBadges = () => {
     setIsModalOpen(true);
   };
 
+  const handleAssignBadgeToUser = (badge: IBadge) => {
+    setSelectedBadge(badge);
+    setIsAddBadgeToUserModalOpen(true);
+    // setIsModalOpen(true);
+  };
+
   return (
     <div>
       <div className="flex justify-between">
@@ -80,7 +88,14 @@ const AdminBadges = () => {
                       side="bottom"
                     >
                       <div>
-                        <button className="text-sm text-gray-500 block"
+                        <button
+                          className="text-sm text-green-500 block"
+                          onClick={() => handleAssignBadgeToUser(badge)}
+                        >
+                          Assign Badge
+                        </button>
+
+                        <button className="text-sm text-blue-500 block mt-3"
                           onClick={() => handleEditClick(badge)}
                         >
                           Edit
@@ -115,6 +130,12 @@ const AdminBadges = () => {
         isModalOpen={isModalOpen}
         setIsModalOpen={setIsModalOpen}
         setNotify={setTrigger}
+        badge={selectedBadge}
+      />
+
+      <AssignBadgeToUser
+        isModalOpen={isAddBadgeToUserModalOpen}
+        setIsModalOpen={setIsAddBadgeToUserModalOpen}
         badge={selectedBadge}
       />
     </div>

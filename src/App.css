@@ -63,7 +63,7 @@
 }
 
 .button {
-  @apply py-2 px-4 border shadow-sm text-sm font-medium rounded-2xl text-black bg-green block;
+  @apply py-4 px-4 border shadow-sm font-semibold text-base rounded-2xl text-black bg-green block;
 }
 
 .special_button {

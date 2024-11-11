@@ -71,7 +71,7 @@ const CampaignDetails = () => {
           </div>
 
           <div className="mt-5">
-              <p className="text-lg font-semibold">Milestone</p>
+              <p className="text-lg font-semibold">Progress</p>
               <div>
                 <div className="bg-green h-6 w-full rounded-2xl p-1">
                   <div
@@ -84,7 +84,7 @@ const CampaignDetails = () => {
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <p className="text-sm">{campaign?.progress}</p>
+                  <p className="text-sm"></p>
                   <p className="text-sm">{campaign?.goal}</p>
                 </div>
               </div>

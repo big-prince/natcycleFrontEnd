@@ -15,6 +15,11 @@ const ProfileApi = {
   updateProfileImage: async (body: any) => {
     const response = await api.put("/profile/image", body);
     return response.data;
+  },
+
+  getUserBadges: async () => {
+    const response = await api.get("/profile/badges");
+    return response.data;
   }
 };
 

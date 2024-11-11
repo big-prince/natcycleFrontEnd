@@ -19,7 +19,13 @@ const BadgeApi = {
   },
   async deleteAllBadges() {
     return await api.delete('/badges');
-  }
+  },
+  async assignBadgeToUser(userId: string, badgeId: string) {
+    return await api.post(`/badges/user/${userId}/${badgeId}`);
+  },
+  async removeBadgeFromUser(userId: string, badgeId: string) {
+    return await api.delete(`/badges/user/${userId}/${badgeId}`);
+  },
 };
 
 export default BadgeApi;

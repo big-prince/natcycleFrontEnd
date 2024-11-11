@@ -8,20 +8,22 @@ import ReferModal from "./components/ReferModal";
 import PickUpApi from "../../api/pickUpApi";
 import RewardSwiper from "./components/RewardSwiper";
 import Milestone from "./components/Milestone";
+import ProfileApi from "../../api/profile.Api";
+import { IBadge } from "../../types";
 
 const recyclablesWithPoints = [
-  { item: 'plastic', points: 10 },
-  { item: 'fabric', points: 5 },
-  { item: 'glass', points: 8 },
-  { item: 'mixed', points: 2 }
-]
+  { item: "plastic", points: 10 },
+  { item: "fabric", points: 5 },
+  { item: "glass", points: 8 },
+  { item: "mixed", points: 2 },
+];
 
 type IItemsCount = {
   fabric: number;
   glass: number;
   mixed: number;
   plastic: number;
-}
+};
 
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
@@ -31,6 +33,8 @@ const Impact = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [userPickups, setUserPickups] = useState([]);
+
+  const [userbadges, setUserBadges] = useState<IBadge[]>([]);
 
   // calculate point for each recyclable
   const calculatePoints = (item: string) => {
@@ -47,8 +51,21 @@ const Impact = () => {
   const fetchUserPickups = async () => {
     PickUpApi.getPickUps()
       .then((res) => {
-        console.log(res.data);
         setUserPickups(res.data.docs);
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+      .finally(() => {
+        console.log("page loaded");
+      });
+  };
+
+  const fetchUserBadges = async () => {
+    ProfileApi.getUserBadges()
+      .then((res) => {
+        console.log("badges", res.data);
+        setUserBadges(res.data);
       })
       .catch((err) => {
         console.log(err);
@@ -60,6 +77,7 @@ const Impact = () => {
 
   useEffect(() => {
     fetchUserPickups();
+    fetchUserBadges();
   }, []);
 
   return (
@@ -124,9 +142,9 @@ const Impact = () => {
                   </p>
                 </div>
 
-                  <div className="bg-black p-2 rounded-lg font-bold">
+                <div className="bg-black p-2 rounded-lg font-bold">
                   <p className="text-sm text-white">
-                    {calculatePoints("fabric")|| 0}
+                    {calculatePoints("fabric") || 0}
                     <span className="text-xs pl-[2px]">CU</span>
                   </p>
                 </div>
@@ -143,7 +161,7 @@ const Impact = () => {
                   </p>
                 </div>
 
-                  <div className="bg-black p-2 rounded-lg font-bold">
+                <div className="bg-black p-2 rounded-lg font-bold">
                   <p className="text-sm text-white">
                     {calculatePoints("glass") || 0}
                     <span className="text-xs pl-[2px]">CU</span>
@@ -162,9 +180,9 @@ const Impact = () => {
                   </p>
                 </div>
 
-                  <div className="bg-black p-2 rounded-lg font-bold">
+                <div className="bg-black p-2 rounded-lg font-bold">
                   <p className="text-sm text-white">
-                    {calculatePoints("mixed") || 0 }
+                    {calculatePoints("mixed") || 0}
                     <span className="text-xs pl-[2px]">CU</span>
                   </p>
                 </div>
@@ -208,7 +226,7 @@ const Impact = () => {
       {/* badges */}
       <div className="mt-6">
         <p className="text-lg font-semibold mb-4">Badges</p>
-        <div className="flex justify-between">
+        {/* <div className="flex justify-between">
           <div>
             <div className="m-auto border-2 rounded-full w-20 h-20 border-green flex items-center justify-between">
               <p className="text-center text-5xl m-auto">🌟</p>
@@ -216,6 +234,27 @@ const Impact = () => {
             <p className="text-center text-sm font-semibold text-darkgreen">
               First Pickup
             </p>
+          </div>
+        </div> */}
+
+        <div>
+          <div className="flex justify-between">
+            {userbadges &&
+              userbadges.length > 0 &&
+              userbadges.map((badge) => (
+                <div key={badge._id} className="bg-gray-100 p-2 rounded-3xl">
+                  <div className="m-auto w-28 h-28  flex items-center justify-between">
+                    <img
+                      src={badge.image.url}
+                      alt="badge"
+                      className="m-auto object-cover w-full h-full rounded-xl"
+                    />
+                  </div>
+                  <p className="text-center text-sm font-semibold text-darkgreen">
+                    {badge.name}
+                  </p>
+                </div>
+              ))}
           </div>
         </div>
       </div>
