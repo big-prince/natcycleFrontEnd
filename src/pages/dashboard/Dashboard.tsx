@@ -13,6 +13,7 @@ import {
 // import * as RadioGroup from "@radix-ui/react-radio-group";
 import Milestone from "./components/Milestone";
 import Campaigns from "./components/Campaigns";
+import ImpactCounter from "./components/ImpactCounter";
 // import { FaRegCircle } from "react-icons/fa";
 
 const Dashboard = () => {
@@ -95,10 +96,7 @@ const Dashboard = () => {
         </div>
 
         <div>
-          <p className="text-3xl text-center font-bold text-darkgreen">
-            {user.carbonUnits}
-          </p>
-          <p className="text-sm text-center">{user.impactMeasurement}</p>
+          <ImpactCounter carbonUnits={user.carbonUnits} impactMeasurement={user.impactMeasurement} />
         </div>
       </div>
 

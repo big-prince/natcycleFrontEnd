@@ -215,6 +215,15 @@ const PickupDetails = () => {
                 </p>
                 <p className="text-sm text-gray-700">Scheduled Time</p>
               </div>
+
+              {
+                pickup.campaign && (
+                  <div className="mb-4">
+                    <p className="text-xl font-medium">{pickup.campaign.name}</p>
+                    <p className="text-sm text-gray-700">Campaign Name</p>
+                  </div>
+                )
+              }
             </div>
           </div>
 

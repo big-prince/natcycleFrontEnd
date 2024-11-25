@@ -33,6 +33,7 @@ import AdminRedeemedRewards from "./pages/admin/AdminRedeemedRewards";
 import AdminCampaign from "./pages/admin/AdminCampaign";
 import CampaignDetails from "./pages/dashboard/CampaignDetails";
 import AdminCampaignDetails from "./pages/admin/AdminCampaignDetails";
+import CampaignContributors from "./pages/dashboard/campaign/CampaignContributors";
 
 const App = () => {
   return (
@@ -71,6 +72,7 @@ const App = () => {
 
             <Route path="rewards" element={<UserRewards />} />
             <Route path="campaigns/:id" element={<CampaignDetails />} />
+            <Route path="campaigns/:id/contributors" element={<CampaignContributors />} />
           </Route>
 
           <Route path="/admin/login" element={<AdminLogin />} />

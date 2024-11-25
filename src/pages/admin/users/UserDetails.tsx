@@ -2,6 +2,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import UsersApi from "../../../api/usersApi";
+import AdminUserBadges from "../components/AdminUserBadges";
 
 const UserDetails = () => {
   // const navigate = useNavigate();
@@ -218,6 +219,9 @@ const UserDetails = () => {
             </table>
           </div>
         </div>
+
+        {/* user badges */}
+        <AdminUserBadges id={id} />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import CampaignApi from "../../api/campaignApi";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { Link, useParams } from "react-router-dom";
 import { ICampaign } from "../dashboard/components/Campaigns";
-import { IUser } from "../../types";
+import { ICampaignUser } from "../dashboard/campaign/CampaignContributors";
 
 const AdminCampaignDetails = () => {
   const { id } = useParams();
@@ -21,7 +21,7 @@ const AdminCampaignDetails = () => {
     CampaignApi.getCampaign(id)
       .then((res) => {
         console.log(res);
-        setCampaignDetails(res.data.data);
+        setCampaignDetails(res.data.data.campaign);
         setLoading(false);
       })
       .catch((err) => {
@@ -60,7 +60,7 @@ const AdminCampaignDetails = () => {
 
       <div>
         <div key={campaignDetails._id} className="border p-4 mb-4 relative">
-          <div className="grid grid-cols-3">
+          <div className="grid lg:grid-cols-3 gap-4">
             <div className="mr-4 col-span-1">
               <img
                 src={campaignDetails.image?.url}
@@ -69,7 +69,7 @@ const AdminCampaignDetails = () => {
               />
             </div>
 
-            <div className="col-span-2">
+            <div className="lg:col-span-2">
               <div className=" mb-3">
                 <div className="font-bold">{campaignDetails.name}</div>
                 <div className="mt-2 font-medium">
@@ -125,14 +125,14 @@ const AdminCampaignDetails = () => {
                   <th className="text-left py-3">LAST NAME</th>
                   <th className="text-left py-3 hidden md:block">EMAIL</th>
                   {/* date joined */}
-                  <th className="text-left py-3">DATE JOINED</th>
+                  <th className="text-left py-3">CONTRIBUTIONS</th>
                   <th className="text-left py-3">ACTIONS</th>
                 </tr>
               </thead>
 
               <tbody>
                 {contributors &&
-                  contributors.map((user: IUser, index: number) => (
+                  contributors.map((user: ICampaignUser, index: number) => (
                     <tr key={user._id} className="border-b border-gray-200">
                       <td className="py-3">{index + 1}</td>
                       <td className="py-3">
@@ -143,7 +143,7 @@ const AdminCampaignDetails = () => {
                       <td className="py-3">{user.lastName}</td>
                       <td className="py-3 hidden md:block">{user?.email}</td>
                       <td className="py-3">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {user.contributions}
                       </td>
                       <td className="py-3 text-sm">
                         <Link to={`/admin/users/${user._id}`}>

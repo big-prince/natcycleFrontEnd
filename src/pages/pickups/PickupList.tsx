@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import PickUpApi from "../../api/pickUpApi";
-import AdminPickupModal, { IPickup } from "../admin/components/AdminPickupModal";
+import AdminPickupModal, {
+  IPickup,
+} from "../admin/components/AdminPickupModal";
 import PickupMap from "./components/PickupMap";
 import { Link } from "react-router-dom";
+import { TbClover } from "react-icons/tb";
 
 const PickupList = () => {
   const [pickups, setPickups] = useState([]);
@@ -135,24 +138,27 @@ const PickupList = () => {
                 <p className="text-sm">
                   {/* {new Date(pickup.scheduledDate).toLocaleDateString()} -{" "} */}
                 </p>
+                <p>
+                  {pickup.campaign && (
+                    <div className="text-[#08310D font-semibold">
+                      <TbClover className="w-4 h-4 inline-block" /> Campaign
+                    </div>
+                  )}
+                </p>
               </div>
 
               <div>
                 <p className="text-sm">Status: {pickup.status}</p>
               </div>
               <div className=" flex justify-between mt-4">
-                
                 <button
                   className="btn text-green-900 font-medium block cursor-pointer border-2 rounded-full p-2"
                   onClick={() => handleOpenModal(pickup)}
                   disabled={pickup.status === "completed"}
                 >
-                  {
-                    pickup.status === "completed" ? "Completed" : "Complete"
-                  }
+                  {pickup.status === "completed" ? "Completed" : "Complete"}
                 </button>
 
-                {/* view details button */}
                 <Link to={`/admin/pickup/pickup/${pickup?._id}`}>
                   <button className="btn text-green-900 font-medium block border-2 rounded-full p-2">
                     View Details

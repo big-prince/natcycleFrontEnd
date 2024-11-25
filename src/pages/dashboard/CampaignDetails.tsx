@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import CampaignApi from "../../api/campaignApi";
 import { FaChevronRight } from "react-icons/fa6";
 import { ICampaign } from "./components/Campaigns";
@@ -10,16 +10,17 @@ const CampaignDetails = () => {
 
   const [campaign, setCampaign] = useState<ICampaign | null>(null);
   const [percentage, setPercentage] = useState(0);
+  const [pickupCount, setPickupCount] = useState(0);
 
   const fetchCampaign = async () => {
     if (!id) return;
 
     CampaignApi.getCampaign(id)
       .then((res) => {
-        console.log(res);
-        setCampaign(res.data.data);
+        console.log(res.data);
+        setCampaign(res.data.data.campaign);
+        setPickupCount(res.data.data.pickupCount);
 
-        // use goal and progress to calculate percentage
         setPercentage((res.data.data.progress / res.data.data.goal) * 100);
       })
       .catch((err) => {
@@ -35,7 +36,9 @@ const CampaignDetails = () => {
     const item = [campaign?.material];
     localStorage.setItem("selectedRecyclables", JSON.stringify(item));
 
-    navigate(`/pickup/book?campaignId=${campaign?._id}&campaignName=${campaign?.name}`);
+    navigate(
+      `/pickup/book?campaignId=${campaign?._id}&campaignName=${campaign?.name}`
+    );
   };
 
   return (
@@ -65,32 +68,47 @@ const CampaignDetails = () => {
             />
           </div>
 
-
           <div>
-            <p className="text-sm font-semibold">End Date: {new Date(campaign.endDate).toLocaleDateString()}</p>
+            <p className="text-sm font-semibold">
+              End Date: {new Date(campaign.endDate).toLocaleDateString()}
+            </p>
           </div>
 
           <div className="mt-5">
-              <p className="text-lg font-semibold">Progress</p>
-              <div>
-                <div className="bg-green h-6 w-full rounded-2xl p-1">
-                  <div
-                    className={`bg-black h-4  rounded-2xl`}
-                    style={{ width: `${percentage}%` }}
-                  >
-                    <p className="text-white text-xs text-right pr-2">
-                      {campaign?.progress}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <p className="text-sm"></p>
-                  <p className="text-sm">{campaign?.goal}</p>
+            <p className="text-lg font-semibold">Progress</p>
+            <div>
+              <div className="bg-green h-6 w-full rounded-2xl p-1">
+                <div
+                  className={`bg-black h-4  rounded-2xl`}
+                  style={{ width: `${percentage}%` }}
+                >
+                  <p className="text-white text-xs text-right pr-2">
+                    {campaign?.progress}
+                  </p>
                 </div>
               </div>
+              <div className="flex justify-between">
+                <p className="text-sm"></p>
+                <p className="text-sm">{campaign?.goal}</p>
+              </div>
             </div>
+          </div>
 
-          <div className="mt-6">
+          <div className="flex justify-between mt-2">
+            <p className="text-sm text-darkgreen font-medium">
+              Total Pickups: {pickupCount}
+            </p>
+
+            {/* view contributors */}
+            <Link
+              to={`/campaigns/${campaign._id}/contributors`}
+              className="text-sm underline text-darkgreen font-medium"
+            >
+              View Contributors
+            </Link>
+          </div>
+
+          <div className="mt-4">
             <div
               onClick={() => handleRecycleNowClick()}
               className="b-black p-2 py-3 rounded-2xl flex items-center justify-between w-full special_button cursor-pointer"
@@ -103,7 +121,6 @@ const CampaignDetails = () => {
           </div>
 
           <p className="mt-4 mb-1">{campaign.description}</p>
-
         </div>
       ) : (
         <p>Loading...</p>

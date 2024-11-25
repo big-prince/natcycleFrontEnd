@@ -26,6 +26,9 @@ const BadgeApi = {
   async removeBadgeFromUser(userId: string, badgeId: string) {
     return await api.delete(`/badges/user/${userId}/${badgeId}`);
   },
+  async getUserBadges(userId: string) {
+    return await api.get(`/badges/user/${userId}`);
+  },
 };
 
 export default BadgeApi;

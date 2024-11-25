@@ -106,4 +106,7 @@ export type IPickup = {
   completedAt: string;
   user: IUser;
   completedBy: string;
+  campaign? : {
+    name: string;
+  }
 }
