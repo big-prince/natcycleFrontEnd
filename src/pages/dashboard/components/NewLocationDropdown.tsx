@@ -73,7 +73,6 @@ const NewLocationDropdown = ({
     console.log(place);
     setGoogleApiResults([]);
 
-
     // setLocationName(`${place.displayName.text} - ${place.formattedAddress}`);
     // setQuery(`${place.displayName.text} - ${place.formattedAddress}`);
 
@@ -126,6 +125,11 @@ const NewLocationDropdown = ({
     //   return;
     // }
 
+    if (!locationName || !city || !state) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
     const newLocation = {
       name: locationName,
       address,
@@ -158,7 +162,6 @@ const NewLocationDropdown = ({
   useEffect(() => {
     // don't api again if user selects a result
     if (city) return;
-
 
     if (!query) {
       setGoogleApiResults([]);
@@ -198,7 +201,7 @@ const NewLocationDropdown = ({
           </Accordion.Trigger>
 
           <Accordion.Content className="bg-white">
-            <form className="w-full">
+            <div className="w-full">
               <div className="flex flex-col">
                 <div className="mt-6">
                   <label className="text-sm font-medium">Location Name</label>
@@ -315,7 +318,7 @@ const NewLocationDropdown = ({
                   Cancel
                 </button>
               </div>
-            </form>
+            </div>
           </Accordion.Content>
         </Accordion.Item>
       </Accordion.Root>

@@ -35,6 +35,9 @@ const Locations = () => {
   }, []);
 
   const handleDelete = (id: string) => {
+    const confirm = window.confirm("Are you sure you want to delete this location?");
+    if (!confirm) return;
+
     LocationApi.deleteLocation(id)
       .then((_) => {
         fetchNotifications();

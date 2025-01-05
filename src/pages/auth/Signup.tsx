@@ -111,6 +111,7 @@ const Signup = () => {
             name="password"
             placeholder="Password"
             value={signupData.password}
+            minLength={6}
             onChange={handleChange}
           />
           <input
@@ -119,6 +120,7 @@ const Signup = () => {
             placeholder="Confirm Password"
             value={signupData.confirmPassword}
             onChange={handleChange}
+            minLength={6}
           />
           {/* referral Id */}
           <input
