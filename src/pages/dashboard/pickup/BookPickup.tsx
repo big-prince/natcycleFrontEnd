@@ -6,6 +6,9 @@ import PickUpApi from "../../../api/pickUpApi";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
+// metal and appliances item types
+const ItemTypes = ['Fridge', 'Iron', 'Microwave', 'Washing Machine', 'Others'];
+
 const BookPickup = () => {
   const [selectedRecyclables, setSelectedRecyclables] = useState<string[]>([]);
 
@@ -54,6 +57,7 @@ const BookPickup = () => {
     timeStart: "",
     timeEnd: "",
     description: "",
+    itemType: "",
   });
 
   const itemAndQuestion = {
@@ -99,6 +103,14 @@ const BookPickup = () => {
 
     e.preventDefault();
 
+    if (!pickUpForm.location) {
+      return toast.error("Please select a location");
+    }
+
+    if (!pickUpForm.date) {
+      return toast.error("Please select a date");
+    }
+
     const payload = {
       ...pickUpForm,
       items,
@@ -137,10 +149,7 @@ const BookPickup = () => {
           )
         }
 
-        <div className="mt-4">
-          {/* <label className="font-semibold pb-4">Enter Quantity of Items</label> */}
-
-          {/* list of items */}
+        <div className="">
           <div className="grid grid-cols-4 gap-2">
             {selectedRecyclables.map((recyclable, index) => (
               <p
@@ -211,9 +220,27 @@ const BookPickup = () => {
           />
         </div>
 
-        <p className="mt-4 text-sm font-medium">Select Available Time Range</p>
-        {/* time input */}
-        <div className="flex gap-2 justify-between">
+        {/* item type */}
+        <div className="mt-6">
+          <label className="font-semibold">Select Item Type</label>
+          <select
+            name="itemType"
+            onChange={handleChange}
+            required
+            className="w-full p-2 border border-gray-300 rounded-lg"
+            value={pickUpForm.itemType}
+          >
+            <option value="">Select Item Type</option>
+            {ItemTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* <p className="mt-4 text-sm font-medium">Select Available Time Range</p> */}
+        {/* <div className="flex gap-2 justify-between">
           <div className="mt-0">
             <label className="text-sm">Start</label>
             <input
@@ -237,7 +264,7 @@ const BookPickup = () => {
               value={pickUpForm.timeEnd}
             />
           </div>
-        </div>
+        </div> */}
 
         {/* how many bottles do you want to recycle */}
         {/* <div className="mt-6">

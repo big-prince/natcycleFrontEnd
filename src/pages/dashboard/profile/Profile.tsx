@@ -9,6 +9,7 @@ import { IoNotifications } from "react-icons/io5";
 // import { toast } from "react-toastify";
 import { TiGift } from "react-icons/ti";
 import { logout } from "../../../reducers/authSlice";
+import { MdWork } from "react-icons/md";
 
 const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
 
@@ -67,7 +68,7 @@ const Profile = () => {
             </Link>
           </li>
 
-          <li className="">
+          <li className="bg-bg cursor-pointer">
             <Link
               to="/locations"
               className="flex items-center space-x-2 p-4 rounded-2xl"
@@ -77,7 +78,18 @@ const Profile = () => {
             </Link>
           </li>
 
-          <li className="">
+          {/* pickups */}
+          <li className="bg-bg cursor-pointer">
+            <Link
+              to="/pickup/all"
+              className="flex items-center space-x-2 p-4 rounded-2xl"
+            >
+              <MdWork />
+              <span>Pickups</span>
+            </Link>
+          </li>
+
+          <li className="bg-bg cursor-pointer">
             <Link
               to="/rewards"
               className="flex items-center space-x-2 p-4 rounded-2xl"
@@ -87,7 +99,7 @@ const Profile = () => {
             </Link>
           </li>
 
-          <li>
+          <li className="bg-bg cursor-pointer">
             <Link
               to="/profile/update-profile"
               className="flex items-center space-x-2 p-4 rounded-2xl"
@@ -99,17 +111,17 @@ const Profile = () => {
 
           {/* if user is admin show switch to collector link */}
           {user.isAdmin && (
-            <li>
+          <li className="bg-bg cursor-pointer">
               <Link
                 to="/admin/pickup/pickups"
-                className="flex items-center space-x-2 p-4 rounded-2xl text-darkgreen"
+                className="flex items-center space-x-2 p-4 rounded-2xl text-darkgreen font-medium"
               >
                 <IoMdSwitch />
                 <span>Switch to Collector</span>
               </Link>
             </li>
           )}
-          <li>
+          <li className="bg-red-50 cursor-pointer font-bold">
             <p
               onClick={() => handleLogout()}
               className="flex items-center space-x-2 p-4 rounded-2xl text-red-500 border-2 border-red-50 cursor-pointer"

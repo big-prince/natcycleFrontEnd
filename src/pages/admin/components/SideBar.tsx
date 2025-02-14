@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { SlBadge } from "react-icons/sl";
 import { TiAnchorOutline, TiGift } from "react-icons/ti";
 import { RiMegaphoneFill } from "react-icons/ri";
+import { FaBox } from "react-icons/fa";
 
 const Links = [
   {
@@ -20,6 +21,16 @@ const Links = [
     title: "Pickups",
     icon: <MdWork />,
     path: "/admin/pickups",
+  },
+  {
+    title: "Drop Offs",
+    icon: <FaBox />,
+    path: "/admin/dropoffs",
+  },
+  {
+    title: "Dropoff Locations",
+    icon: <FaBox />,
+    path: "/admin/dropoff-locations",
   },
   {
     title: "Badges",

@@ -2,9 +2,14 @@
   @apply text-sm font-medium text-gray-700;
 }
 
-.form input {
+.form input, .form textarea, .form select {
   @apply block w-full px-3 py-3 mt-1 text-gray-700 bg-white border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm mb-4;
 }
+
+.input {
+  @apply block w-full px-3 py-3 mt-1 text-gray-700 bg-white border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm mb-4;
+}
+
 
 .heading {
   @apply text-2xl font-bold text-gray-900;

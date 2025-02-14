@@ -20,7 +20,7 @@ const DashLayout = () => {
   }
 
   return (
-    <div className="max-w-[450px] m-auto relative px-4">
+    <div className="max-w-[550px] m-auto relative px-4">
       <div className="flex justify-between items-center mt-8">
         <Link to="/home">
           <img className="h-10 object-cover" src={Logo} alt="NatCycle Logo" />

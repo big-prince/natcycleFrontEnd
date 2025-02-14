@@ -51,7 +51,7 @@ const Campaigns = () => {
         modules={[Pagination]}
       >
         {campaign.map((item) => (
-          <SwiperSlide key={item._id} className="pb-10">
+          <SwiperSlide key={item._id} className="pb-4">
             <Link to={`/campaigns/${item._id}`} className="">
               <div className="bg-white p-4 rounded-lg box_shadow flex gap-4">
                 <div>
@@ -63,7 +63,7 @@ const Campaigns = () => {
                 </div>
 
                 <div className="w-full">
-                  <p className="text-lg font-semibold text-gray-800">
+                  <p className="md:text-lg font-semibold text-gray-800 mb-2">
                     {item.name}
                   </p>
 

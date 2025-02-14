@@ -34,6 +34,11 @@ import AdminCampaign from "./pages/admin/AdminCampaign";
 import CampaignDetails from "./pages/dashboard/CampaignDetails";
 import AdminCampaignDetails from "./pages/admin/AdminCampaignDetails";
 import CampaignContributors from "./pages/dashboard/campaign/CampaignContributors";
+import CreateDropOff from "./pages/dashboard/dropoff/CreateDropOff";
+import AdminDropOffs from "./pages/admin/dropoff/AdminDropOffs";
+import AdminDropOffDetails from "./pages/admin/dropoff/AdminDropOffDetails";
+import AddDropOffLocation from "./pages/admin/dropoff/AddDropOffLocation";
+import DropOffLocations from "./pages/admin/dropoff/DropOffLocations";
 
 const App = () => {
   return (
@@ -73,6 +78,8 @@ const App = () => {
             <Route path="rewards" element={<UserRewards />} />
             <Route path="campaigns/:id" element={<CampaignDetails />} />
             <Route path="campaigns/:id/contributors" element={<CampaignContributors />} />
+
+            <Route path="dropoff/create" element={<CreateDropOff />} />
           </Route>
 
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -82,6 +89,10 @@ const App = () => {
             <Route path="/admin/users/:id" element={<UserDetails />} />
 
             <Route path="/admin/pickups" element={<AdminPickups />} />
+            <Route path="/admin/dropoffs" element={<AdminDropOffs />} />
+            <Route path="/admin/dropoff-locations" element={<DropOffLocations />} />
+            <Route path="/admin/dropoffs/:id" element={<AdminDropOffDetails />} />
+            <Route path="/admin/dropoffs/create-location" element={<AddDropOffLocation />} />
             <Route path="/admin/badges" element={<AdminBadges />} />
             <Route path="/admin/rewards" element={<AdminRewards />} />
             <Route path="/admin/redeemed" element={<AdminRedeemedRewards />} />
