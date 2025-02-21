@@ -130,14 +130,13 @@ const Where = () => {
         }
       </div>
 
-      <div className='relative top-0 right-0 bottom-0 left-0 z-40 pt-2 mx-6'>
+      <div className='relative top-0 right-0 bottom-0 left-0 z-40 px-2 pt-2 w-full'>
         <div className='p-4 bg-white rounded-lg'>
-
-          <p className='text-2xl font-bold'>
+          <p className='text-xl font-bold md:text-2xl'>
             Where to recycle, drop-off?
           </p>
 
-          <div className='flex flex-wrap gap-2 mt-4'>
+          <div className='flex flex-wrap gap-2 mt-2 text-sm'>
             <p
               className={`px-3 py-1 rounded-lg border font-medium ${selectedItemType === "food" ? "bg-green-500 text-white" : ""}`}
               onClick={() => handleSelectItemType("food")}
@@ -149,7 +148,7 @@ const Where = () => {
             >Plastic Bottles</p>
           </div>
 
-          <p className='mt-4 text-xs font-bold text-darkgreen'>
+          <p className='mt-4 text-xs italic font-semibold text-darkgreen'>
             Click on a marker to see more details
           </p>
         </div>
@@ -157,7 +156,7 @@ const Where = () => {
 
       {
         selectedLocation ? (
-          <div className='absolute top-[60vh] right-0 left-0 bottom-2 z-40 pt-4 mx-6'>
+          <div className='absolute top-[60vh] right-0 left-0 w-full  bottom-2 z-40 pt-4  px-2'>
             <div className='p-4 bg-white rounded-lg'>
               <p className='mb-1 text-xl font-bold'>
                 {selectedLocation?.name}

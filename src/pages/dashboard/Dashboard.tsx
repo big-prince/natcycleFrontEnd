@@ -63,12 +63,12 @@ const Dashboard = () => {
 
   return (
     <div className="mb-20">
-      <div className="flex justify-between p-4 mt-6 bg-white rounded-lg box_shadow">
+      <div className="flex justify-between p-4 py-5 bg-white rounded-lg box_shadow">
         <div className="flex items-center">
-          <FaEarthAmericas className="mr-2 text-lg text-green-500" />
+          <FaEarthAmericas className="mr-2 text-2xl text-green-500" />
           <div>
             <p className="text-sm">Green Impact</p>
-            <p className="text-lg font-semibold">You have Saved</p>
+            <p className="text-xl font-semibold">You have Saved</p>
           </div>
         </div>
 
@@ -125,7 +125,7 @@ const Dashboard = () => {
               <div
                 className="p-4 py-3 bg-white rounded-2xl"
               >
-                <p className="text-xl font-semibold md:text-2xl">{recyclable.name}</p>
+                <p className="text-xl font-semibold text-darkgreen md:text-2xl">{recyclable.name}</p>
                 <div className="flex items-center">
                   <p className="text-sm">{recyclable.type} Only</p>
                 </div>

@@ -41,6 +41,7 @@ const CampaignDetails = () => {
     );
   };
 
+
   return (
     <div className="mb-20">
       {campaign ? (

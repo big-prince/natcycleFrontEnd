@@ -24,11 +24,11 @@
 }
 
 .mobileLink a.active .icon {
-  @apply text-darkgreen font-bold text-4xl transition-all duration-500 ease-in-out;
+  @apply text-darkgreen font-bold text-3xl transition-all duration-500 ease-in-out;
 }
 
 .mobileLink a.active .link {
-  @apply text-xs;
+  @apply text-xs font-bold;
 }
 
 
@@ -90,4 +90,8 @@
 
 .gmnoprint, .gm-style-mtc-bbw {
   display: none !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #204C27 !important;
 }

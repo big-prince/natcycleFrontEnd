@@ -21,14 +21,14 @@ const DashLayout = () => {
 
   return (
     <div className="max-w-[550px] m-auto relative px-4">
-      <div className="flex justify-between items-center mt-8">
+      <div className="flex justify-between items-center mt-6 mb-3">
         <Link to="/home">
-          <img className="h-10 object-cover" src={Logo} alt="NatCycle Logo" />
+          <img className="object-cover h-10" src={Logo} alt="NatCycle Logo" />
         </Link>
 
         <div className="flex items-center">
-          <Link to="/notifications" className="text-2xl mr-4">
-            <IoNotifications className="text-2xl mr-4" />
+          <Link to="/notifications" className="text-2xl">
+            <IoNotifications className="mr-4 text-2xl" />
           </Link>
         </div>
       </div>

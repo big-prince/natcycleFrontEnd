@@ -82,7 +82,7 @@ const Impact = () => {
 
   return (
     <div className="mb-16">
-      <div className="flex justify-between bg-black text-white p-4 rounded-lg mt-6">
+      <div className="flex justify-between bg-black text-white p-4 rounded-lg">
         <div className="text-center">
           <LuLeafyGreen className="text-lg text-yellow-500 m-auto" />
           <p className="text-4xl py-2">

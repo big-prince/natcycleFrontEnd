@@ -37,15 +37,15 @@ const Profile = () => {
 
   return (
     <div>
-      <div className="p-4 rounded-2xl mt-6">
-        <div className="text-center items-center">
+      <div className="p-4 rounded-2xl">
+        <div className="items-center text-center">
           <div>
             <UpdateProfilePicture
               oldPicture={user.profilePicture.url || tempImage}
             />
           </div>
           <div className="ml-4">
-            <h1 className="text-xl font-semibold mt-4">
+            <h1 className="mt-4 text-xl font-semibold">
               {user.firstName} {user.lastName}
             </h1>
             <p className="text-sm">
@@ -61,17 +61,17 @@ const Profile = () => {
           <li className="hidden">
             <Link
               to="/locations"
-              className="flex items-center space-x-2 p-4 rounded-2xl"
+              className="flex items-center p-4 space-x-2 rounded-2xl"
             >
               <FaUser />
               <span>Profile</span>
             </Link>
           </li>
 
-          <li className="bg-bg cursor-pointer">
+          <li className="cursor-pointer bg-bg">
             <Link
               to="/locations"
-              className="flex items-center space-x-2 p-4 rounded-2xl"
+              className="flex items-center p-4 space-x-2 rounded-2xl"
             >
               <IoNotifications />
               <span>Locations</span>
@@ -79,30 +79,30 @@ const Profile = () => {
           </li>
 
           {/* pickups */}
-          <li className="bg-bg cursor-pointer">
+          <li className="cursor-pointer bg-bg">
             <Link
               to="/pickup/all"
-              className="flex items-center space-x-2 p-4 rounded-2xl"
+              className="flex items-center p-4 space-x-2 rounded-2xl"
             >
               <MdWork />
               <span>Pickups</span>
             </Link>
           </li>
 
-          <li className="bg-bg cursor-pointer">
+          <li className="cursor-pointer bg-bg">
             <Link
               to="/rewards"
-              className="flex items-center space-x-2 p-4 rounded-2xl"
+              className="flex items-center p-4 space-x-2 rounded-2xl"
             >
               <TiGift />
               <span>Rewards</span>
             </Link>
           </li>
 
-          <li className="bg-bg cursor-pointer">
+          <li className="cursor-pointer bg-bg">
             <Link
               to="/profile/update-profile"
-              className="flex items-center space-x-2 p-4 rounded-2xl"
+              className="flex items-center p-4 space-x-2 rounded-2xl"
             >
               <IoMdSettings />
               <span>Update Profile</span>
@@ -111,20 +111,20 @@ const Profile = () => {
 
           {/* if user is admin show switch to collector link */}
           {user.isAdmin && (
-          <li className="bg-bg cursor-pointer">
+          <li className="cursor-pointer bg-bg">
               <Link
                 to="/admin/pickup/pickups"
-                className="flex items-center space-x-2 p-4 rounded-2xl text-darkgreen font-medium"
+                className="flex items-center p-4 space-x-2 font-medium rounded-2xl text-darkgreen"
               >
                 <IoMdSwitch />
                 <span>Switch to Collector</span>
               </Link>
             </li>
           )}
-          <li className="bg-red-50 cursor-pointer font-bold">
+          <li className="font-bold bg-red-50 cursor-pointer">
             <p
               onClick={() => handleLogout()}
-              className="flex items-center space-x-2 p-4 rounded-2xl text-red-500 border-2 border-red-50 cursor-pointer"
+              className="flex items-center p-4 space-x-2 text-red-500 rounded-2xl border-2 border-red-50 cursor-pointer"
             >
               <GoSignOut />
               <span>Logout</span>

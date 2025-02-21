@@ -5,6 +5,7 @@ import dropOffLocationApi from '../../../api/dropOffLocationApi';
 import { toast } from 'react-toastify';
 import DropOffApi from '../../../api/dropOffApi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { MdOutlineRefresh } from "react-icons/md";
 
 interface Location {
   type: string;
@@ -224,12 +225,16 @@ const CreateDropOff = () => {
             >
               <div className="form-group">
                 <div className="flex justify-between items-center mb-2">
-                  <p className='text-lg font-semibold'>Get Locations</p>
+                  <p className='text-lg font-semibold'>Get Drop-Off Locations</p>
 
-                  <div>
-                    <p className="font-bold cursor-pointer text-darkgreen" onClick={() => handleRefreshLocations()}>
+                  <div className="flex items-center">
+                    <p className="text-sm font-medium cursor-pointer text-darkgreen" onClick={() => handleRefreshLocations()}>
                       Refresh Locations
                     </p>
+
+                    <div className="flex items-center">
+                      <MdOutlineRefresh className="text-darkgreen" />
+                    </div>
                   </div>
                 </div>
 
@@ -309,8 +314,8 @@ const CreateDropOff = () => {
                     <img
                       src={URL.createObjectURL(file)}
                       alt="preview"
-                      style={{ width: "100px", height: "100px" }}
-                      className='rounded-lg'
+                      style={{ width: "130px", height: "130px" }}
+                      className='object-cover rounded-lg'
                     />
                   </div>
                 )

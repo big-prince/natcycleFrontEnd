@@ -25,23 +25,23 @@ const MobileNav = () => {
   const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
 
   return (
-    <div className="fixed bottom-6 w-full left-0 px-4 z-[3000]">
-      <div className="py-4 rounded-2xl bg-bg h-[100px]">
+    <div className="fixed bottom-3 w-full left-0 px-2 z-[3000]">
+      <div className="py-4 rounded-2xl bg-bg h-[90px]">
         <div className="flex justify-around items-center w-full mobileLink h-200px">
           {linkList.map((link, index) => (
             <NavLink key={index} to={link.link} className="text-center">
-              <p className="text-2xl icon">{link.icon}</p>
-              <p className="link text-sm mt-[5px]">{link.name}</p>
+              <p className="text-xl md:text-2xl icon">{link.icon}</p>
+              <p className="link text-sm mt-[5px] font-medium text-gray-700">{link.name}</p>
             </NavLink>
           ))}
           <NavLink to="/profile">
             <div className="w-full">
               <img
-                className="object-cover w-12 h-12 rounded-full"
+                className="object-cover w-10 h-10 rounded-full"
                 src={user.profilePicture.url || tempImage}
                 alt="User"
               />
-              <p className="text-center link">
+              <p className="text-sm text-center link">
                 Profile
               </p>
             </div>
