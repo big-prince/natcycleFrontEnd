@@ -63,12 +63,12 @@ const Dashboard = () => {
 
   return (
     <div className="mb-20">
-      <div className="flex justify-between mt-6 bg-white p-4 rounded-lg box_shadow">
+      <div className="flex justify-between p-4 mt-6 bg-white rounded-lg box_shadow">
         <div className="flex items-center">
-          <FaEarthAmericas className="text-lg text-green-500 mr-2" />
+          <FaEarthAmericas className="mr-2 text-lg text-green-500" />
           <div>
             <p className="text-sm">Green Impact</p>
-            <p className="font-semibold text-lg">You have Saved</p>
+            <p className="text-lg font-semibold">You have Saved</p>
           </div>
         </div>
 
@@ -79,20 +79,20 @@ const Dashboard = () => {
 
       {!user.phoneNumber && (
         <Link to="/profile/update-profile">
-          <div className="bg-bg p-4 rounded-lg mt-6 border-l-4 border-darkgreen">
-            <p className="text-darkgreen text-lg font-semibold">
+          <div className="p-4 mt-6 rounded-lg border-l-4 bg-bg border-darkgreen">
+            <p className="text-lg font-semibold text-darkgreen">
               Update your phone number to get notified when your pickup is
               scheduled{" "}
             </p>
 
-            <div className="text-darkgreen underline mt-4 inline-block">
+            <div className="inline-block mt-4 underline text-darkgreen">
               Update Phone Number
             </div>
           </div>
         </Link>
       )}
 
-      <div>
+      <div className="hidden">
         <Milestone />
       </div>
 
@@ -101,21 +101,21 @@ const Dashboard = () => {
       </div>
 
       {/* mile stone */}
-      <div className="mt-4 hidden">
+      <div className="hidden mt-4">
         <p className="text-lg font-semibold">Milestones</p>
         <div>
-          <div className="bg-green h-6 w-full rounded-2xl p-1">
-            <div className="bg-black h-4 w-1/6 rounded-2xl"></div>
+          <div className="p-1 w-full h-6 rounded-2xl bg-green">
+            <div className="w-1/6 h-4 bg-black rounded-2xl"></div>
           </div>
         </div>
       </div>
 
-      <div className="bg-green p-4 rounded-2xl mt-6 box_shadow">
-        <p className="text-xl md:text-2xl font-medium">
+      <div className="p-4 mt-4 rounded-2xl bg-green box_shadow">
+        <p className="text-xl font-medium md:text-2xl">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
 
-        <p className=" text-2xl md:text-3xl font-bold mt-4 mb-4">
+        <p className="mt-4 mb-4 text-2xl font-bold md:text-3xl">
           What are you recycling today?
         </p>
 
@@ -123,9 +123,9 @@ const Dashboard = () => {
           {recyclables.map((recyclable, index) => (
             <Link to={recyclable.link} key={index}>
               <div
-                className="bg-white p-4 py-3 rounded-2xl"
+                className="p-4 py-3 bg-white rounded-2xl"
               >
-                <p className="text-xl md:text-2xl font-semibold">{recyclable.name}</p>
+                <p className="text-xl font-semibold md:text-2xl">{recyclable.name}</p>
                 <div className="flex items-center">
                   <p className="text-sm">{recyclable.type} Only</p>
                 </div>
@@ -134,10 +134,10 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="mt-6 hidden">
+        <div className="hidden mt-6">
           <div
             // onClick={() => handleRecycleNowClick()}
-            className="b-black p-2 py-3 rounded-2xl flex items-center justify-between w-full special_button cursor-pointer"
+            className="flex justify-between items-center p-2 py-3 w-full rounded-2xl cursor-pointer b-black special_button"
           >
             <p className="text-lg font-semibold text-green">Recycle Now</p>
             <FaChevronRight className="text-white" />

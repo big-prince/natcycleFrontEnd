@@ -39,6 +39,7 @@ import AdminDropOffs from "./pages/admin/dropoff/AdminDropOffs";
 import AdminDropOffDetails from "./pages/admin/dropoff/AdminDropOffDetails";
 import AddDropOffLocation from "./pages/admin/dropoff/AddDropOffLocation";
 import DropOffLocations from "./pages/admin/dropoff/DropOffLocations";
+import Where from "./pages/dashboard/where/Where";
 
 const App = () => {
   return (
@@ -80,6 +81,7 @@ const App = () => {
             <Route path="campaigns/:id/contributors" element={<CampaignContributors />} />
 
             <Route path="dropoff/create" element={<CreateDropOff />} />
+            <Route path="where" element={<Where />} />
           </Route>
 
           <Route path="/admin/login" element={<AdminLogin />} />

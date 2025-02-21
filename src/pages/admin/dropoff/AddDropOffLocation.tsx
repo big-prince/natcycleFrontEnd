@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface LocationFormData {
   name: string;
+  itemType: string;
   description: string;
   address: string;
   latitude: string;
@@ -43,6 +44,7 @@ const AddDropOffLocation = () => {
   useEffect(() => {
     const locationId = searchParams.get('id');
     console.log(locationId);
+
     if (locationId) {
       setButtonText('Update Location');
       setLoadingPage(true);
@@ -54,6 +56,7 @@ const AddDropOffLocation = () => {
           setLoadingPage(false);
           setFormData({
             name: data.name,
+            itemType: data.itemType,
             description: data.description,
             address: data.address,
             latitude: data.location.coordinates[1].toString(),
@@ -68,6 +71,16 @@ const AddDropOffLocation = () => {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [googleApiResults, setGoogleApiResults] = useState<Place[]>([]);
+  
+  const handleGoogleResultSelect = (place) => {
+    setFormData(prev => ({
+     ...prev,
+      name: place.displayName.text,
+      address: place.formattedAddress,
+      latitude: place.location.latitude,
+      longitude: place.location.longitude
+    }));
+  };
 
   const callGoogleApi = async (query) => {
     if (!query) {
@@ -110,16 +123,27 @@ const AddDropOffLocation = () => {
     return;
   };
 
+  const itemTypesList = [
+    {
+      label: 'Fabric',
+      value: 'fabric'
+    },
+    {
+      label: 'Plastic Bottles',
+      value: 'plastic'
+    }
+  ]
 
   const [formData, setFormData] = useState<LocationFormData>({
     name: '',
+    itemType: '',
     description: '',
     address: '',
     latitude: '',
     longitude: ''
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -132,7 +156,6 @@ const AddDropOffLocation = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log(formData);
-
 
     const data = {
       ...formData,
@@ -186,12 +209,12 @@ const AddDropOffLocation = () => {
 
       <div className='mt-8 mb-4'>
         <label htmlFor="searchQuery"
-          className='font-bold text-lg'
+          className='text-lg font-bold'
         >Search for Address</label>
 
         <div className="flex items-center">
           <input
-            className='input mt-0 mb-0'
+            className='mt-0 mb-0 input'
             type="text"
             name="searchQuery"
             id="searchQuery"
@@ -200,9 +223,30 @@ const AddDropOffLocation = () => {
             placeholder='Search for address using Google Maps API'
           />
           <button
-            className=' bg-black text-white w-20 h-full block p-3 rounded-xl'
+            className='block p-3 w-20 h-full text-white bg-black rounded-xl'
             onClick={() => callGoogleApi(searchQuery)}>Search</button>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="googleApiResults"
+          className='font-medium'
+        >Location Search Results</label>
+        <p className='text-sm font-bold text-darkgreen'>
+          Found {googleApiResults.length} Locations
+        </p>
+        <select className='input' name="googleApiResults" id="googleApiResults" 
+          onChange={(e) => handleGoogleResultSelect(googleApiResults.find((result) => result.formattedAddress === e.target.value))}
+        >
+          <option value="">Select Address</option>
+          {
+            googleApiResults.map((result) => (
+              <option key={result.id} value={result.formattedAddress}>
+                {result.formattedAddress}
+              </option>
+            ))
+          }
+        </select>
       </div>
 
       <form className='form'
@@ -211,6 +255,19 @@ const AddDropOffLocation = () => {
         <div>
           <label htmlFor="name">Name</label>
           <input className='input' type="text" name="name" id="name" value={formData.name} onChange={handleInputChange} required />
+        </div>
+        <div>
+          <label htmlFor="itemType">Item Type</label>
+          <select className='input' name="itemType" id="itemType" value={formData.itemType} onChange={handleInputChange} required>
+            <option value="">Select Item Type</option>
+            {
+              itemTypesList.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))
+            }
+          </select>
         </div>
         <div>
           <label htmlFor="description">Description</label>
@@ -229,7 +286,7 @@ const AddDropOffLocation = () => {
           <input className='input' type="text" name="longitude" id="longitude" value={formData.longitude} onChange={handleInputChange} required />
         </div>
         <button
-          className='button bg-black text-white'
+          className='text-white bg-black button'
           type="submit">
           {
             loading ? 'Loading...' : buttonText

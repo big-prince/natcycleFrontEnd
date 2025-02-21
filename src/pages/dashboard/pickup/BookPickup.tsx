@@ -6,12 +6,20 @@ import PickUpApi from "../../../api/pickUpApi";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
+const itemTypesList = [
+  {
+    label: 'Metals',
+    value: 'metals'
+  },
+  {
+    label: 'Appliances',
+    value: 'appliances'
+  }
+]
 // metal and appliances item types
-const ItemTypes = ['Fridge', 'Iron', 'Microwave', 'Washing Machine', 'Others'];
+// const ItemTypes = ['Fridge', 'Iron', 'Microwave', 'Washing Machine', 'Others'];
 
 const BookPickup = () => {
-  const [selectedRecyclables, setSelectedRecyclables] = useState<string[]>([]);
-
   const [searchParams] = useSearchParams();
   const [campaignId] = useState(searchParams.get("campaignId") || "")
   const [campaignName] = useState(searchParams.get("campaignName") || "")
@@ -21,37 +29,7 @@ const BookPickup = () => {
     console.log('campaignName', campaignName);
   }, [campaignId, campaignName]);
 
-  useEffect(() => {
-    let getSelectedRecyclables = localStorage.getItem("selectedRecyclables");
-
-    if (getSelectedRecyclables) {
-      getSelectedRecyclables = JSON.parse(getSelectedRecyclables);
-      console.log("__get___", getSelectedRecyclables);
-    } else {
-      return;
-    }
-
-    if (selectedRecyclables) {
-      setSelectedRecyclables(getSelectedRecyclables as unknown as string[]);
-    }
-  }, []);
-
-  const [items, setItems] = useState({
-    plastic: 0,
-    fabric: 0,
-    glass: 0,
-    paper: 0,
-  });
-
-  const handleItemChange = (e: any) => {
-    setItems({
-      ...items,
-      [e.target.name]: parseInt(e.target.value),
-    });
-  };
-
   const [pickUpForm, setPickUpForm] = useState({
-    // itemType: itemType,
     location: "",
     date: "",
     timeStart: "",
@@ -59,13 +37,6 @@ const BookPickup = () => {
     description: "",
     itemType: "",
   });
-
-  const itemAndQuestion = {
-    plastic: "How many bottles do you want to recycle?",
-    fabric: "How much fabric do you want to recycle? in kg",
-    glass: "How many glass do you want to recycle? in kg",
-    paper: "How many mixed items do you want to recycle?",
-  };
 
   const navigate = useNavigate();
 
@@ -113,7 +84,6 @@ const BookPickup = () => {
 
     const payload = {
       ...pickUpForm,
-      items,
       campaignId: campaignId || ""
     };
     console.log(payload);
@@ -133,60 +103,17 @@ const BookPickup = () => {
   return (
     <div className="mb-20">
       <form onSubmit={bookPickup}>
-        <h2 className="text-2xl font-bold mt-8 text-darkgreen">
+        <h2 className="mt-8 text-2xl font-bold text-darkgreen">
           Book a Pickup
         </h2>
 
-        {
-          campaignName && (
-            <div className="mt-4">
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  To Support {campaignName}
-                </h2>
-              </div>
-            </div>
-          )
-        }
-
-        <div className="">
-          <div className="grid grid-cols-4 gap-2">
-            {selectedRecyclables.map((recyclable, index) => (
-              <p
-                key={index}
-                className="font-medium bg-black text-white p-2 text-center rounded-full"
-              >
-                {recyclable.toUpperCase()}
-              </p>
-            ))}
-          </div>
-
-          {selectedRecyclables.map((recyclable, index) => (
-            <div key={index} className="items-center gap-2 mt-4">
-              <label className="font-medium">
-                {/* {recyclable.toUpperCase()}  */}
-                {itemAndQuestion[recyclable]}
-              </label>
-              <input
-                type="number"
-                className="w-full p-2 border border-gray-300 rounded-lg"
-                name={recyclable}
-                onChange={handleItemChange}
-                required
-                value={items[recyclable]}
-                placeholder={itemAndQuestion[recyclable]}
-              />
-            </div>
-          ))}
-        </div>
-
         {/* select location */}
-        <div className="mt-6">
+        <div className="mt-4">
           <div className="flex justify-between">
             <label className="font-semibold">Select Location</label>
             <Link
               to="/locations"
-              className="text-darkgreen text-sm font-semibold"
+              className="text-sm font-semibold text-darkgreen"
             >
               Add Location
             </Link>
@@ -195,7 +122,7 @@ const BookPickup = () => {
             name="location"
             onChange={handleChange}
             required
-            className="w-full p-2 border border-gray-300 rounded-lg"
+            className="input"
             value={pickUpForm.location}
           >
             <option value="">Select Location</option>
@@ -206,11 +133,11 @@ const BookPickup = () => {
             ))}
           </select>
         </div>
-        <div className="mt-6">
+        <div className="mt-4">
           <label className="font-semibold">Select Pickup Date</label>
           <input
             type="date"
-            className="w-full p-2 border border-gray-300 rounded-lg"
+            className="input"
             name="date"
             onChange={handleChange}
             required
@@ -221,67 +148,42 @@ const BookPickup = () => {
         </div>
 
         {/* item type */}
-        <div className="mt-6">
+        <div className="mt-4">
           <label className="font-semibold">Select Item Type</label>
           <select
             name="itemType"
             onChange={handleChange}
             required
-            className="w-full p-2 border border-gray-300 rounded-lg"
+            className="input"
             value={pickUpForm.itemType}
           >
             <option value="">Select Item Type</option>
-            {ItemTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
+            {
+              itemTypesList.map((itemType: any) => (
+                <option key={itemType.value} value={itemType.value}>
+                  {itemType.label}
+                </option>
+              ))
+            }
           </select>
         </div>
 
-        {/* <p className="mt-4 text-sm font-medium">Select Available Time Range</p> */}
-        {/* <div className="flex gap-2 justify-between">
-          <div className="mt-0">
-            <label className="text-sm">Start</label>
-            <input
-              type="time"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              name="timeStart"
-              onChange={handleChange}
-              required
-              value={pickUpForm.timeStart}
-            />
-          </div>
-
-          <div className="">
-            <label className="text-sm">End</label>
-            <input
-              type="time"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              name="timeEnd"
-              onChange={handleChange}
-              required
-              value={pickUpForm.timeEnd}
-            />
-          </div>
-        </div> */}
-
-        {/* how many bottles do you want to recycle */}
-        {/* <div className="mt-6">
-          <label className="text-sm">{itemQuestion}</label>
-          <input
-            type="number"
-            className="w-full p-2 border border-gray-300 rounded-lg"
+        <div className="mt-6">
+          <label className="font-semibold">
+            Details of  {pickUpForm.itemType.toUpperCase()}?
+          </label>
+          <textarea
+            className="input"
             name="description"
             onChange={handleChange}
             required
             value={pickUpForm.description}
           />
-        </div> */}
+        </div>
 
         <button
           type="submit"
-          className="bg-black p-4 py-4 rounded-2xl flex items-center justify-between w-full mt-6"
+          className="flex justify-between items-center p-4 py-4 mt-6 w-full bg-black rounded-2xl"
         >
           <p className="text-lg font-semibold text-green">Submit</p>
           <FaChevronRight className="text-white" />

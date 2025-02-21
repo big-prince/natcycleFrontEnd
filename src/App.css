@@ -23,6 +23,14 @@
   @apply text-darkgreen font-bold;
 }
 
+.mobileLink a.active .icon {
+  @apply text-darkgreen font-bold text-4xl transition-all duration-500 ease-in-out;
+}
+
+.mobileLink a.active .link {
+  @apply text-xs;
+}
+
 
 /* scroll bar  */
 ::-webkit-scrollbar {
@@ -78,4 +86,8 @@
 /* nice box shadow in css */
 .box_shadow {
   box-shadow: 2px 0 10px 0 rgba(90, 89, 89, 0.1);
+}
+
+.gmnoprint, .gm-style-mtc-bbw {
+  display: none !important;
 }

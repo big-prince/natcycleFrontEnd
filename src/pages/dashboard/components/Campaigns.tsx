@@ -4,6 +4,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Pagination } from "swiper/modules";
 import { Link } from "react-router-dom";
+import { textShortener } from "../../../utils";
+import Loading from "../../../components/Loading";
 
 export interface ICampaign {
   _id: string;
@@ -15,6 +17,7 @@ export interface ICampaign {
   goal: number; // Goal amount for the fundraising campaign
   progress: number; // Current progress towards the goal (numerical)
   image?: Image; // Optional image object for the campaign
+  itemType: string; // Type of item being donated (e.g., "clothes", "food", "books")
 }
 
 interface Image {
@@ -23,6 +26,7 @@ interface Image {
 }
 
 const Campaigns = () => {
+  const [loading, setLoading] = useState(true);
   const [campaign, setCampaign] = useState<ICampaign[]>([]);
 
   const fetchCampaigns = () => {
@@ -30,6 +34,7 @@ const Campaigns = () => {
       .then((response) => {
         console.log(response.data);
         setCampaign(response.data.data.docs);
+        setLoading(false);
       })
       .catch((error) => {
         console.error(error);
@@ -40,9 +45,20 @@ const Campaigns = () => {
     fetchCampaigns();
   }, []);
 
+  if (loading) {
+    return <div
+      className="h-24"
+    >
+      <p className="mb-8 text-lg font-semibold text-gray-800">
+        Loading campaigns...
+      </p>
+      <Loading />
+      </div>;
+  }
+
   return (
-    <div>
-      <h2 className="text-xl font-semibold text-gray-800">Campaigns</h2>
+    <div className="mt-4">
+      <h2 className="text-lg font-semibold text-gray-800">Ongoing Campaigns</h2>
 
       <Swiper
         spaceBetween={50}
@@ -51,26 +67,25 @@ const Campaigns = () => {
         modules={[Pagination]}
       >
         {campaign.map((item) => (
-          <SwiperSlide key={item._id} className="pb-4">
+          <SwiperSlide key={item._id} className="pb-8">
             <Link to={`/campaigns/${item._id}`} className="">
-              <div className="bg-white p-4 rounded-lg box_shadow flex gap-4">
+              <div className="flex gap-4 p-4 bg-white rounded-lg box_shadow">
                 <div>
                   <img
                     src={item.image?.url}
                     alt={item.name}
-                    className="w-20 object-cover rounded-lg"
+                    className="object-cover h-20 rounded-lg"
                   />
                 </div>
 
                 <div className="w-full">
-                  <p className="md:text-lg font-semibold text-gray-800 mb-2">
+                  <p className="font-semibold text-gray-800 md:text-lg">
                     {item.name}
                   </p>
 
                   <div className="flex justify-between w-full">
-                    <p className="text-sm text-gray-700">{item.material}</p>
-                    <p className="text-sm font-bold bg-black text-white rounded-full px-2 ">
-                      {item.status}
+                    <p className="text-sm text-gray-700">
+                      {textShortener(item.description, 90)}
                     </p>
                   </div>
                 </div>

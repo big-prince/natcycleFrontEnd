@@ -58,9 +58,9 @@ const PickupMap = ({ userPickups }: any) => {
     <div>
       <Dialog.Root>
         <Dialog.Trigger className="fixed bottom-28 right-10 bg-darkgreen p-4 rounded-2xl z-[200]">
-          <FaMapLocationDot className="text-green cursor-pointer text-4xl bottom-0" />
+          <FaMapLocationDot className="bottom-0 text-4xl cursor-pointer text-green" />
         </Dialog.Trigger>
-        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50 bottom-0" />
+        <Dialog.Overlay className="fixed inset-0 bottom-0 bg-black bg-opacity-50" />
 
         <Dialog.Content
           className="z-50"

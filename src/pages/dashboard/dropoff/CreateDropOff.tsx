@@ -1,10 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react'
 import dropOffLocationApi from '../../../api/dropOffLocationApi';
 import { toast } from 'react-toastify';
 import DropOffApi from '../../../api/dropOffApi';
-import { useNavigate } from 'react-router-dom';
-
-const ItemTypes = ['Plastic', 'Fabric', 'Glass', 'Paper', 'Others'];
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface Location {
   type: string;
@@ -12,22 +12,52 @@ interface Location {
 }
 
 export interface DropoffPoint {
+  googleMapId: string;
   location: Location;
   _id: string;
   name: string;
+  itemType: string;
   description: string;
   address: string;
   __v: number;
 }
 
+const itemTypesList = [
+  {
+    label: 'Fabric',
+    value: 'fabric'
+  },
+  {
+    label: 'Plastic Bottles',
+    value: 'plastic'
+  }
+]
+
 const CreateDropOff = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [campaignId] = useState(searchParams.get("campaignId") || "")
+  const [campaignName] = useState(searchParams.get("campaignName") || "")
+
+
   const [loading, setLoading] = useState(false);
   const [dropOffForm, setDropOffForm] = useState({
     location: "",
     description: "",
     itemType: "",
   });
+
+  useEffect(() => {
+    if (dropOffForm.location) {
+      const location = locations.find((location) => location._id === dropOffForm.location);
+      if (location) {
+        setDropOffForm({
+          ...dropOffForm,
+          itemType: location.itemType,
+        });
+      }
+    }
+  }, [dropOffForm.location]);
 
   const handleDropOffFormChange = (e: any) => {
     const { name, value } = e.target;
@@ -61,6 +91,10 @@ const CreateDropOff = () => {
     formData.append("itemType", dropOffForm.itemType);
     formData.append("file", file as Blob);
 
+    if (campaignId) {
+      formData.append("campaignId", campaignId);
+    }
+
     DropOffApi.addDropOff(formData)
       .then((response) => {
         console.log(response.data);
@@ -81,7 +115,6 @@ const CreateDropOff = () => {
   };
 
   const [locations, setLocations] = useState<DropoffPoint[]>([]);
-
   const [loadingLocations, setLoadingLocations] = useState(false);
 
   const getUserLocation = () => {
@@ -108,6 +141,7 @@ const CreateDropOff = () => {
     const data = {
       latitude: userLocation.latitude,
       longitude: userLocation.longitude,
+      distance: 90000,
     }
 
     console.log(data);
@@ -115,12 +149,36 @@ const CreateDropOff = () => {
     try {
       const response = await dropOffLocationApi.getNearestDropOffLocations(data);
       console.log(response.data);
-      setLocations(response.data.data);
-      // toast.success("Locations fetched successfully");
+
+      const locations = response.data.data;
+      setLocations(locations);
+
+      if (locations.length === 0) {
+        toast.info("No locations found. Expanding 300km");
+        const data = {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          distance: 300000,
+        }
+
+        const response = await dropOffLocationApi.getNearestDropOffLocations(data);
+        const extendedKmLocations = response.data.data;
+
+        console.log('300km', extendedKmLocations)
+        setLocations(extendedKmLocations);
+
+        if (extendedKmLocations.length === 0) {
+          toast.info("No locations in 300km");
+          setLoadingLocations(false);
+          return;
+        }
+      }
+      setLoadingLocations(false);
     }
     catch (error) {
       console.log(error);
       toast.error("Error fetching locations");
+      setLoadingLocations(false);
     }
   };
 
@@ -135,7 +193,8 @@ const CreateDropOff = () => {
 
   const [file, setFile] = useState<File | null>(null);
 
-  const handleFileChange = (e: any) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
     const file = e.target.files[0];
     setFile(file);
   };
@@ -145,20 +204,32 @@ const CreateDropOff = () => {
     <div>
       <div className="container">
         <div className="row">
-          <div className="col-md-6 offset-md-3 mt-6">
-            <h2 className="text-xl font-bold mb-4">Create Drop Off</h2>
+          <div className="mt-6 col-md-6 offset-md-3">
+            <h2 className="mb-4 text-2xl font-bold text-darkgreen">Create Drop Off</h2>
+
+            <div className='mb-2'>
+              {
+                campaignName && campaignId && (
+                  <div>
+                    <p className="px-4 py-4 mb-4 text-xl bg-black rounded-lg text-green">
+                      Support Campaign: {campaignName}
+                    </p>
+                  </div>
+                )
+              }
+            </div>
 
             <form onSubmit={handleDropOffFormSubmit}
               className='form'
             >
               <div className="form-group">
                 <div className="flex justify-between items-center mb-2">
-                  <p className='font-bold text-lg'>Get Locations</p>
+                  <p className='text-lg font-semibold'>Get Locations</p>
 
                   <div>
-                    <button className=" font-bold text-darkgreen" onClick={() => handleRefreshLocations()}>
+                    <p className="font-bold cursor-pointer text-darkgreen" onClick={() => handleRefreshLocations()}>
                       Refresh Locations
-                    </button>
+                    </p>
                   </div>
                 </div>
 
@@ -172,7 +243,7 @@ const CreateDropOff = () => {
                 <select
                   name="location"
                   id="location"
-                  className="form-control"
+                  className="input"
                   value={dropOffForm.location}
                   onChange={handleDropOffFormChange}
                 >
@@ -185,23 +256,25 @@ const CreateDropOff = () => {
                     ))}
                 </select>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="itemType">Item Type</label>
                 <select
                   name="itemType"
                   id="itemType"
-                  className="form-control"
+                  className="input"
                   value={dropOffForm.itemType}
                   onChange={handleDropOffFormChange}
                   required
                 >
                   <option value="">Select Item Type</option>
-                  {ItemTypes.map((itemType) => (
-                    <option key={itemType} value={itemType}>
-                      {itemType}
-                    </option>
-                  ))}
+                  {
+                    itemTypesList.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))
+                  }
                 </select>
               </div>
 
@@ -210,7 +283,7 @@ const CreateDropOff = () => {
                 <textarea
                   name="description"
                   id="description"
-                  className="form-control"
+                  className="input"
                   value={dropOffForm.description}
                   onChange={handleDropOffFormChange}
 
@@ -245,7 +318,7 @@ const CreateDropOff = () => {
 
               <button
                 type="submit"
-                className="button bg-green w-full mt-4"
+                className="mt-4 w-full text-green button bg-darkgreen"
                 disabled={loading}
               >
                 {loading ? "Creating Drop Off..." : "Create Drop Off"}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect } from 'react'
 import dropOffLocationApi from '../../../api/dropOffLocationApi'
 import { Link, useNavigate } from 'react-router-dom'

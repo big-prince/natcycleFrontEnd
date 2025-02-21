@@ -37,7 +37,7 @@ const CampaignDetails = () => {
     localStorage.setItem("selectedRecyclables", JSON.stringify(item));
 
     navigate(
-      `/pickup/book?campaignId=${campaign?._id}&campaignName=${campaign?.name}`
+      `/dropoff/create?campaignId=${campaign?._id}&campaignName=${campaign?.name}`
     );
   };
 
@@ -54,7 +54,7 @@ const CampaignDetails = () => {
               <p className="text-sm text-gray-700">
                 Material: {campaign.material?.toUpperCase()}
               </p>
-              <p className="text-sm font-bold bg-black text-white rounded-full px-2 ">
+              <p className="px-2 text-sm font-bold text-white bg-black rounded-full">
                 {campaign.status}
               </p>
             </div>
@@ -62,14 +62,14 @@ const CampaignDetails = () => {
 
           <div>
             <img
-              className="w-full h-80 object-cover rounded-lg"
+              className="object-cover w-full h-80 rounded-lg"
               src={campaign.image?.url}
               alt={campaign.name}
             />
           </div>
 
           <div>
-            <p className="text-sm font-semibold">
+            <p className="mt-1 text-sm font-medium">
               End Date: {new Date(campaign.endDate).toLocaleDateString()}
             </p>
           </div>
@@ -77,12 +77,12 @@ const CampaignDetails = () => {
           <div className="mt-5">
             <p className="text-lg font-semibold">Progress</p>
             <div>
-              <div className="bg-green h-6 w-full rounded-2xl p-1">
+              <div className="p-1 w-full h-6 rounded-2xl bg-green">
                 <div
-                  className={`bg-black h-4  rounded-2xl`}
+                  className={`h-4 bg-black rounded-2xl`}
                   style={{ width: `${percentage}%` }}
                 >
-                  <p className="text-white text-xs text-right pr-2">
+                  <p className="pr-2 text-xs text-right text-white">
                     {campaign?.progress}
                   </p>
                 </div>
@@ -95,14 +95,14 @@ const CampaignDetails = () => {
           </div>
 
           <div className="flex justify-between mt-2">
-            <p className="text-sm text-darkgreen font-medium">
+            <p className="text-sm font-medium text-darkgreen">
               Total Pickups: {pickupCount}
             </p>
 
             {/* view contributors */}
             <Link
               to={`/campaigns/${campaign._id}/contributors`}
-              className="text-sm underline text-darkgreen font-medium"
+              className="text-sm font-medium underline text-darkgreen"
             >
               View Contributors
             </Link>
@@ -111,7 +111,7 @@ const CampaignDetails = () => {
           <div className="mt-4">
             <div
               onClick={() => handleRecycleNowClick()}
-              className="b-black p-2 py-3 rounded-2xl flex items-center justify-between w-full special_button cursor-pointer"
+              className="flex justify-between items-center p-2 py-3 w-full rounded-2xl cursor-pointer b-black special_button"
             >
               <p className="text-lg font-semibold text-green">
                 Support Campaign
