@@ -142,7 +142,7 @@ const CreateDropOff = () => {
     const data = {
       latitude: userLocation.latitude,
       longitude: userLocation.longitude,
-      distance: 90000,
+      distance: 0,
     }
 
     console.log(data);
