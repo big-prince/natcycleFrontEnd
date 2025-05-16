@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import DropOffApi from "../../../api/dropOffApi";
 import { FaLocationDot } from "react-icons/fa6";
-import DropOffPopover from "../components/DropOffPopover";
 // import DropOffMap from "../components/DropOffMap";
-import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import { FaCalendarAlt, FaFilter } from "react-icons/fa";
 
 interface DropOff {
@@ -27,7 +25,7 @@ const UserDropOffs = () => {
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [monthFilter, setMonthFilter] = useState<string>("");
-  const [notify, setNotify] = useState("");
+  const [notify] = useState("");
 
   const fetchUserDropOffs = async () => {
     setLoading(true);
