@@ -56,7 +56,8 @@ const Signup = () => {
           user: res.user || null,
         };
         dispatch(login(payload));
-        navigate("/verify-email");
+        // navigate("/verify-email");
+        navigate("/home");
       })
       .catch((err: { response: { data: SetStateAction<string> } }) => {
         console.log(err);

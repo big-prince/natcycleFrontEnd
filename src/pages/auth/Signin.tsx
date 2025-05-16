@@ -47,10 +47,10 @@ const Signin = () => {
         console.log(payload.user);
         dispatch(login(payload));
 
-        if (!res.user.isEmailVerified) {
-          navigate("/verify-email");
-          return;
-        }
+        // if (!res.user.isEmailVerified) {
+        //   navigate("/verify-email");
+        //   return;
+        // }
 
         navigate("/home");
       })
