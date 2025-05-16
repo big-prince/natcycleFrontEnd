@@ -1,15 +1,15 @@
 import { LuLeafyGreen } from "react-icons/lu";
 import { PiRecycleDuotone } from "react-icons/pi";
-import { PiTrashThin } from "react-icons/pi";
+import { TbTruckDelivery } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../../hooks/reduxHooks";
 import { useEffect, useState } from "react";
 import ReferModal from "./components/ReferModal";
-import PickUpApi from "../../api/pickUpApi";
 import RewardSwiper from "./components/RewardSwiper";
 import Milestone from "./components/Milestone";
 import ProfileApi from "../../api/profile.Api";
 import { IBadge } from "../../types";
+import DropOffApi from "../../api/dropOffApi";
 
 const recyclablesWithPoints = [
   { item: "plastic", points: 10 },
@@ -27,6 +27,7 @@ type IItemsCount = {
 
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
+  console.log(localUser, "local user");
 
   const itemsCount: IItemsCount = localUser?.itemsCount;
 
@@ -48,19 +49,18 @@ const Impact = () => {
 
   console.log(calculatePoints("plastic"));
 
-  const fetchUserPickups = async () => {
-    PickUpApi.getPickUps()
+  const fetchUserDropOffs = async () => {
+    DropOffApi.getUserDropOffs(localUser._id)
       .then((res) => {
-        setUserPickups(res.data.docs);
+        //set state
+        setUserPickups(res.data.data.docs);
       })
       .catch((err) => {
         console.log(err);
-      })
-      .finally(() => {
-        console.log("page loaded");
       });
   };
 
+  // fetch user badges
   const fetchUserBadges = async () => {
     ProfileApi.getUserBadges()
       .then((res) => {
@@ -76,7 +76,7 @@ const Impact = () => {
   };
 
   useEffect(() => {
-    fetchUserPickups();
+    fetchUserDropOffs();
     fetchUserBadges();
   }, []);
 
@@ -86,22 +86,24 @@ const Impact = () => {
         <div className="text-center">
           <LuLeafyGreen className="text-lg text-yellow-500 m-auto" />
           <p className="text-4xl py-2">
-            {localUser.carbonUnits ? localUser.carbonUnits : 0}
+            {localUser.carbonUnits ? Math.floor(localUser.carbonUnits) : 0}
           </p>
           C Units
         </div>
         <div className="text-center">
           <PiRecycleDuotone className="text-lg text-green-500 m-auto" />
           <p className="text-4xl py-2">
-            {localUser.pointsEarned ? localUser.pointsEarned : 0}
+            {localUser.pointsEarned ? Math.floor(localUser.pointsEarned) : 0}
           </p>
           Points
         </div>
         <div className="text-center">
-          <Link to="/pickup/all">
-            <PiTrashThin className="text-lg text-white m-auto" />
-            <p className="text-4xl py-2">{userPickups.length}</p>
-            Collections
+          <Link to="/dropoff/all">
+            <TbTruckDelivery className="text-lg text-blue-500 m-auto" />
+            <p className="text-4xl py-2">
+              {userPickups.length ? userPickups.length : 0}
+            </p>
+            DropOffs
           </Link>
         </div>
       </div>

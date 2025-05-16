@@ -23,7 +23,7 @@ const ImpactCounter = ({ carbonUnits, impactMeasurement }) => {
           <SwiperSlide key={index}>
             <div>
               <p className="text-3xl text-center font-bold text-darkgreen">
-                {carbonUnits}
+                {Math.floor(carbonUnits)}
               </p>
               <p className="text-sm text-center">{_}</p>
             </div>

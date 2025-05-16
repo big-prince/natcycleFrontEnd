@@ -40,6 +40,7 @@ import AdminDropOffDetails from "./pages/admin/dropoff/AdminDropOffDetails";
 import AddDropOffLocation from "./pages/admin/dropoff/AddDropOffLocation";
 import DropOffLocations from "./pages/admin/dropoff/DropOffLocations";
 import Where from "./pages/dashboard/where/Where";
+import UserDropOffs from "./pages/dashboard/dropoff/UserDropOffs";
 
 const App = () => {
   return (
@@ -47,7 +48,7 @@ const App = () => {
       <BrowserRouter>
         <ToastContainer
           position="top-center"
-          autoClose={5000}
+          autoClose={2500}
           hideProgressBar={true}
           newestOnTop={false}
           closeOnClick
@@ -78,9 +79,13 @@ const App = () => {
 
             <Route path="rewards" element={<UserRewards />} />
             <Route path="campaigns/:id" element={<CampaignDetails />} />
-            <Route path="campaigns/:id/contributors" element={<CampaignContributors />} />
+            <Route
+              path="campaigns/:id/contributors"
+              element={<CampaignContributors />}
+            />
 
             <Route path="dropoff/create" element={<CreateDropOff />} />
+            <Route path="dropoff/all" element={<UserDropOffs />} />
             <Route path="where" element={<Where />} />
           </Route>
 
@@ -92,14 +97,26 @@ const App = () => {
 
             <Route path="/admin/pickups" element={<AdminPickups />} />
             <Route path="/admin/dropoffs" element={<AdminDropOffs />} />
-            <Route path="/admin/dropoff-locations" element={<DropOffLocations />} />
-            <Route path="/admin/dropoffs/:id" element={<AdminDropOffDetails />} />
-            <Route path="/admin/dropoffs/create-location" element={<AddDropOffLocation />} />
+            <Route
+              path="/admin/dropoff-locations"
+              element={<DropOffLocations />}
+            />
+            <Route
+              path="/admin/dropoffs/:id"
+              element={<AdminDropOffDetails />}
+            />
+            <Route
+              path="/admin/dropoffs/create-location"
+              element={<AddDropOffLocation />}
+            />
             <Route path="/admin/badges" element={<AdminBadges />} />
             <Route path="/admin/rewards" element={<AdminRewards />} />
             <Route path="/admin/redeemed" element={<AdminRedeemedRewards />} />
             <Route path="/admin/campaign" element={<AdminCampaign />} />
-            <Route path="/admin/campaign/:id" element={<AdminCampaignDetails />} />
+            <Route
+              path="/admin/campaign/:id"
+              element={<AdminCampaignDetails />}
+            />
           </Route>
 
           {/* the pickup side of things */}
@@ -107,7 +124,10 @@ const App = () => {
 
           <Route path="/admin/pickup" element={<PickupLayout />}>
             <Route path="/admin/pickup/pickups" element={<PickupList />} />
-            <Route path="/admin/pickup/pickup/:id" element={<PickupDetails />} />
+            <Route
+              path="/admin/pickup/pickup/:id"
+              element={<PickupDetails />}
+            />
             <Route path="/admin/pickup/profile" element={<PickupProfile />} />
             <Route path="/admin/pickup/settings" element={<PickupProfile />} />
           </Route>

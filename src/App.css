@@ -2,14 +2,15 @@
   @apply text-sm font-medium text-gray-700;
 }
 
-.form input, .form textarea, .form select {
+.form input,
+.form textarea,
+.form select {
   @apply block w-full px-3 py-3 mt-1 text-gray-700 bg-white border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm mb-4;
 }
 
 .input {
   @apply block w-full px-3 py-3 mt-1 text-gray-700 bg-white border border-gray-300 rounded-2xl shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm mb-4;
 }
-
 
 .heading {
   @apply text-2xl font-bold text-gray-900;
@@ -31,7 +32,6 @@
   @apply text-xs font-bold;
 }
 
-
 /* scroll bar  */
 ::-webkit-scrollbar {
   width: 8px;
@@ -52,7 +52,6 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a0aec0;
 }
-
 
 .admin_page_heading {
   @apply text-2xl font-bold text-gray-900;
@@ -80,7 +79,7 @@
 }
 
 .special_button {
-  @apply bg-black p-2 py-3 rounded-2xl flex items-center justify-between w-full
+  @apply bg-black p-2 py-3 rounded-2xl flex items-center justify-between w-full;
 }
 
 /* nice box shadow in css */
@@ -88,10 +87,11 @@
   box-shadow: 2px 0 10px 0 rgba(90, 89, 89, 0.1);
 }
 
-.gmnoprint, .gm-style-mtc-bbw {
+.gmnoprint,
+.gm-style-mtc-bbw {
   display: none !important;
 }
 
 .swiper-pagination-bullet-active {
-  background: #204C27 !important;
+  background: #204c27 !important;
 }

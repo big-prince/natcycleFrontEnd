@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SetStateAction, useState } from "react";
 import Logo from "../../assets/logo.png";
@@ -10,7 +11,9 @@ const Signup = () => {
   const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
 
-  const [referralId, setReferralId] = useState(searchParams.get("referral") || "");
+  const [referralId, setReferralId] = useState(
+    searchParams.get("referral") || ""
+  );
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -34,16 +37,14 @@ const Signup = () => {
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    
     const data = {
       ...signupData,
       referralId,
     };
     console.log(data);
-    
+
     setLoading(true);
-    AuthApi
-      .signup(data)
+    AuthApi.signup(data)
       .then((res: any) => {
         console.log(res);
         setLoading(false);
@@ -56,9 +57,8 @@ const Signup = () => {
         };
         dispatch(login(payload));
         navigate("/verify-email");
-
       })
-      .catch((err: { response: { data: SetStateAction<string>; }; }) => {
+      .catch((err: { response: { data: SetStateAction<string> } }) => {
         console.log(err);
         setLoading(false);
         // setError(err?.response?.data || "An error occurred. Please try again.");
@@ -130,9 +130,10 @@ const Signup = () => {
             value={referralId}
             onChange={(e) => setReferralId(e.target.value)}
           />
-          
-          
-          <button className="button bg-green w-full" type="submit"
+
+          <button
+            className="button bg-green w-full"
+            type="submit"
             disabled={loading}
           >
             {loading ? "Loading..." : "Sign Up"}

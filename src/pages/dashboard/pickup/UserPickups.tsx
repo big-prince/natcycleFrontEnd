@@ -9,7 +9,7 @@ const UserPickups = () => {
   const [userPickups, setUserPickups] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [notify, setNotify] = useState('');
+  const [notify, setNotify] = useState("");
 
   const fetchUserPickups = async () => {
     setLoading(true);
@@ -33,7 +33,7 @@ const UserPickups = () => {
   return (
     <div>
       <div className="flex justify-between items-center mt-4">
-        <h1 className="text-xl font-semibold">Your Pickups</h1>
+        <h1 className="text-xl font-semibold">Your DropOffs</h1>
 
         <div>
           {/* filter */}
@@ -44,7 +44,6 @@ const UserPickups = () => {
           </select>
         </div>
       </div>
-
 
       <div className="mb-40">
         {loading ? (

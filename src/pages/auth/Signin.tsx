@@ -39,11 +39,12 @@ const Signin = () => {
 
     AuthApi.signin(signinData)
       .then((res: any) => {
-        console.log(res)
+        console.log(res);
         const payload = {
           token: res.token,
           user: res.user,
         };
+        console.log(payload.user);
         dispatch(login(payload));
 
         if (!res.user.isEmailVerified) {
@@ -115,7 +116,10 @@ const Signin = () => {
           </div>
 
           {/* forgot password */}
-          <Link to="/forgot-password" className="text-primary text-sm pb-4 underline">
+          <Link
+            to="/forgot-password"
+            className="text-primary text-sm pb-4 underline"
+          >
             Forgot Password?
           </Link>
 

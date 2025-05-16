@@ -46,19 +46,19 @@ const Campaigns = () => {
   }, []);
 
   if (loading) {
-    return <div
-      className="h-24"
-    >
-      <p className="mb-8 text-lg font-semibold text-gray-800">
-        Loading campaigns...
-      </p>
-      <Loading />
-      </div>;
+    return (
+      <div className="h-24">
+        <p className="mb-8 text-lg font-semibold text-gray-800">
+          Loading campaigns...
+        </p>
+        <Loading />
+      </div>
+    );
   }
 
   return (
     <div className="mt-4">
-      <h2 className="text-lg font-semibold text-gray-800">Ongoing Campaigns</h2>
+      {/* <h2 className="text-lg font-semibold text-gray-800">Ongoing Campaigns</h2> */}
 
       <Swiper
         spaceBetween={50}

@@ -93,7 +93,7 @@ const Milestone = () => {
                     style={{ width: `${percentage}%` }}
                   >
                     <p className="text-white text-xs text-right pr-2">
-                      {localUser?.carbonUnits}
+                      {Math.floor(localUser?.carbonUnits)}
                     </p>
                   </div>
                 </div>
