@@ -81,9 +81,9 @@ const Where = () => {
 
       setLocations(response.data.data);
 
-      const newMarkers: Poi[] = response.data.data.map((location) => {
+      const newMarkers: Poi[] = response.data.data.map((location, index) => {
         return {
-          key: location.googleMapId || "",
+          key: location.googleMapId || `location-${index}`,
           location: {
             lat: location.location?.coordinates[0],
             lng: location.location?.coordinates[1],
@@ -142,16 +142,18 @@ const Where = () => {
 
           <div className="flex flex-wrap gap-2 mt-2 text-sm">
             <p
-              className={`px-3 py-1 rounded-lg border font-medium ${selectedItemType === "food" ? "bg-green-500 text-white" : ""
-                }`}
+              className={`px-3 py-1 rounded-lg border font-medium ${
+                selectedItemType === "food" ? "bg-green-500 text-white" : ""
+              }`}
               onClick={() => handleSelectItemType("food")}
             >
               Fabrics
             </p>
 
             <p
-              className={`px-3 py-1 rounded-lg border font-medium ${selectedItemType === "plastic" ? "bg-green-500 text-white" : ""
-                }`}
+              className={`px-3 py-1 rounded-lg border font-medium ${
+                selectedItemType === "plastic" ? "bg-green-500 text-white" : ""
+              }`}
               onClick={() => handleSelectItemType("plastic")}
             >
               Plastic Bottles

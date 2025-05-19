@@ -29,7 +29,7 @@ const UserDropOffs = () => {
 
   const fetchUserDropOffs = async () => {
     setLoading(true);
-    DropOffApi.getDropOffs()
+    DropOffApi.getUserDropOffs(localUser._id)
       .then((res) => {
         //set the state
         console.log(res.data.data.docs[0], "user drop offs Fetched");

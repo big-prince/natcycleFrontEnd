@@ -56,8 +56,8 @@ const Profile = () => {
         </div>
       </div>
 
-      <div className="mt-6">
-        <ul className="space-y-2">
+      <div className="mt-6 ">
+        <ul className="space-y-2 mb-10">
           <li className="hidden">
             <Link
               to="/locations"
@@ -111,7 +111,7 @@ const Profile = () => {
 
           {/* if user is admin show switch to collector link */}
           {user.isAdmin && (
-          <li className="cursor-pointer bg-bg">
+            <li className="cursor-pointer bg-bg">
               <Link
                 to="/admin/pickup/pickups"
                 className="flex items-center p-4 space-x-2 font-medium rounded-2xl text-darkgreen"
@@ -121,7 +121,7 @@ const Profile = () => {
               </Link>
             </li>
           )}
-          <li className="font-bold bg-red-50 cursor-pointer">
+          <li className="font-bold bg-red-50 cursor-pointer ">
             <p
               onClick={() => handleLogout()}
               className="flex items-center p-4 space-x-2 text-red-500 rounded-2xl border-2 border-red-50 cursor-pointer"

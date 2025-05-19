@@ -1,18 +1,19 @@
-import { Link } from "react-router-dom"
-import DropOffApi from "../../../api/dropOffApi"
-import { useEffect, useState } from "react"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Link } from "react-router-dom";
+import DropOffApi from "../../../api/dropOffApi";
+import { useEffect, useState } from "react";
 import { IUser } from "../../../types";
 
 interface DropOffLocation {
   address: string;
-  _id: string; 
+  _id: string;
 }
 
 interface RecyclingPoint {
   campaign: any; // Assuming campaign can be null or have a different structure
   createdAt: string; // Assuming ISO 8601 format
   description: string;
-  dropOffLocation: DropOffLocation; 
+  dropOffLocation: DropOffLocation;
   itemType: string;
   pointsEarned: number;
   status: string;
@@ -23,26 +24,26 @@ interface RecyclingPoint {
 }
 
 const AdminDropOffs = () => {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<RecyclingPoint[]>([])
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<RecyclingPoint[]>([]);
 
   const fetchData = async () => {
     DropOffApi.adminGetDropOffs()
       .then((res) => {
-        console.log(res.data.data.docs)
-        setData(res.data.data.docs)
-        setLoading(false)
+        console.log(res.data.data.docs.dropOffLocation);
+        setData(res.data.data.docs);
+        setLoading(false);
       })
       .catch((err) => {
-        console.log(err)
-        setLoading(false)
-      })
-  }
+        console.log(err);
+        setLoading(false);
+      });
+  };
 
   useEffect(() => {
-    setLoading(true)
-    fetchData()
-  }, [])
+    setLoading(true);
+    fetchData();
+  }, []);
 
   return (
     <div>
@@ -51,7 +52,9 @@ const AdminDropOffs = () => {
 
         <div>
           <Link to="/admin/dropoffs/create-location">
-            <button className="button bg-black text-white">Add DropOff Location</button>
+            <button className="button bg-black text-white">
+              Add DropOff Location
+            </button>
           </Link>
         </div>
       </div>
@@ -72,16 +75,18 @@ const AdminDropOffs = () => {
           <tbody>
             {data.map((item) => (
               <tr key={item._id} className="border-b border-gray-200">
-                 <td className="p-2">
+                <td className="p-2">
                   {item.user.firstName} {item.user.lastName}
                 </td>
                 <td className="p-2">{item.dropOffLocation.address}</td>
                 <td className="p-2">{item.itemType}</td>
                 <td className="p-2">{item.status}</td>
-               
+
                 <td className="p-2">
                   <Link to={`/admin/dropoffs/${item._id}`}>
-                    <button className="button bg-blue-500 text-white">View</button>
+                    <button className="button bg-blue-500 text-white">
+                      View
+                    </button>
                   </Link>
                 </td>
               </tr>
@@ -90,7 +95,7 @@ const AdminDropOffs = () => {
         </table>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AdminDropOffs
+export default AdminDropOffs;
