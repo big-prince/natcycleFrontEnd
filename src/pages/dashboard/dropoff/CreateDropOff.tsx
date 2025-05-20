@@ -12,12 +12,11 @@ import {
   MdCheckCircle,
   MdArrowForward,
   MdCameraAlt,
-  MdCheckroom, // Added MdCheckroom for fabric
-  MdClose, // For closing camera
-  MdFlipCameraAndroid, // For switching camera
+  MdCheckroom,
+  MdClose,
+  MdFlipCameraAndroid,
 } from "react-icons/md";
-// Removed FaBottleWater, FaArchive from "react-icons/fa"
-import { BsCupFill, BsArchiveFill } from "react-icons/bs"; // Added Bootstrap Icons
+import { BsCupFill, BsArchiveFill } from "react-icons/bs";
 
 // Interfaces (DropoffPoint, Location) remain the same
 interface Location {
@@ -103,8 +102,6 @@ const CreateDropOff = () => {
     // itemType: typeFromQuery, // Handled by typeFromQuery directly
     // quantity: "", // Replaced by detailedQuantities
   });
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // If there's a type from query, ensure it's set.
