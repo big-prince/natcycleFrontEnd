@@ -1,19 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
 import AuthApi from "../../api/authApi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 import Illustration from "../../assets/signup.png";
 import FullLogo from "../../assets/logo/Group 202@2x.png";
+import { toast } from "react-toastify";
 
 const Signin = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation(); // Add this to access location state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Get redirect path from location state if available
+  const redirectPath = location.state?.redirectAfterLogin || "/home";
 
   const [signinData, setSigninData] = useState({
     email: "",
@@ -33,7 +38,6 @@ const Signin = () => {
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(signinData);
 
     setLoading(true);
 
@@ -47,12 +51,16 @@ const Signin = () => {
         console.log(payload.user);
         dispatch(login(payload));
 
-        // if (!res.user.isEmailVerified) {
-        //   navigate("/verify-email");
-        //   return;
-        // }
+        // Check if there's a pending dropoff in sessionStorage
+        const pendingDropoff = sessionStorage.getItem("pendingDropoff");
 
-        navigate("/home");
+        if (pendingDropoff) {
+          toast.success("You can now complete your dropoff");
+          navigate("/dropoff/create");
+        } else {
+          // Use the redirect path from location state or default to home
+          navigate(redirectPath);
+        }
       })
       .catch((err: any) => {
         console.log(err);

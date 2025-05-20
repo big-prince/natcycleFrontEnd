@@ -81,9 +81,9 @@ const Where = () => {
 
       setLocations(response.data.data);
 
-      const newMarkers: Poi[] = response.data.data.map((location, index) => {
+      const newMarkers: Poi[] = response.data.data.map((location) => {
         return {
-          key: location.googleMapId || `location-${index}`,
+          key: location.googleMapId || "",
           location: {
             lat: location.location?.coordinates[0],
             lng: location.location?.coordinates[1],

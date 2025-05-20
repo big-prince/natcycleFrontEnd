@@ -1,136 +1,180 @@
-import { FaUser } from "react-icons/fa";
+import { FaUserEdit } from "react-icons/fa";
 import { GoSignOut } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
-import { IoMdSettings, IoMdSwitch } from "react-icons/io";
+import { IoMdSwitch } from "react-icons/io";
 import UpdateProfilePicture from "../components/UpdateProfilePicture";
 import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
-import { IoNotifications } from "react-icons/io5";
-// import AuthApi from "../../../api/authApi";
-// import { toast } from "react-toastify";
-import { TiGift } from "react-icons/ti";
+import { IoChevronForward } from "react-icons/io5";
 import { logout } from "../../../reducers/authSlice";
-import { MdWork } from "react-icons/md";
+import { MdOutlineLocationSearching } from "react-icons/md"; // More distinct icons
 
-const tempImage = "https://i.ibb.co/sq0WtbH/trees-119580.png";
+const tempImage = "https://dummyimage.com/300x200";
 
 const Profile = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const handleLogout = () => {
-    // AuthApi.signout().then((res) => {
-    //   console.log(res);
-    //   dispatch(logout());
-    //   navigate("/");
-    // }).then((err) => {
-    //   console.log('going out')
-    //   console.log(err);
-    //   dispatch(logout());
-    //   navigate("/");
-    // })
-
     dispatch(logout());
     navigate("/");
   };
 
   const user = useAppSelector((state) => state.auth.user);
 
-  return (
-    <div>
-      <div className="p-4 rounded-2xl">
-        <div className="items-center text-center">
-          <div>
-            <UpdateProfilePicture
-              oldPicture={user.profilePicture.url || tempImage}
-            />
-          </div>
-          <div className="ml-4">
-            <h1 className="mt-4 text-xl font-semibold">
-              {user.firstName} {user.lastName}
-            </h1>
-            <p className="text-sm">
-              <span className="font-normal">{user.email}</span>
-              <span> </span>
-            </p>
-          </div>
+  if (!user) {
+    return (
+      <div className="min-h-screen  from-slate-100 to-gray-200 flex items-center justify-center p-4">
+        <div className="text-center">
+          <svg
+            className="hidden animate-spin h-8 w-8 text-slate-600 mx-auto mb-3"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-slate-700 font-medium">Loading profile...</p>
         </div>
       </div>
+    );
+  }
 
-      <div className="mt-6 ">
-        <ul className="space-y-2 mb-10">
-          <li className="hidden">
-            <Link
-              to="/locations"
-              className="flex items-center p-4 space-x-2 rounded-2xl"
-            >
-              <FaUser />
-              <span>Profile</span>
-            </Link>
-          </li>
+  // Grouped Links
+  const activityLinks = [
+    {
+      to: "/dropoff/all",
+      icon: <MdOutlineLocationSearching size={22} className="text-blue-500" />,
+      label: "My Drop-offs",
+    },
+    // {
+    //   to: "/rewards",
+    //   icon: <TiGift size={22} className="text-amber-500" />,
+    //   label: "Rewards",
+    // },
+  ];
 
-          <li className="cursor-pointer bg-bg">
-            <Link
-              to="/locations"
-              className="flex items-center p-4 space-x-2 rounded-2xl"
-            >
-              <IoNotifications />
-              <span>Locations</span>
-            </Link>
-          </li>
+  const accountLinks = [
+    {
+      to: "/profile/update-profile",
+      icon: <FaUserEdit size={20} className="text-sky-500" />,
+      label: "Edit Profile",
+    },
+  ];
 
-          {/* pickups */}
-          <li className="cursor-pointer bg-bg">
-            <Link
-              to="/pickup/all"
-              className="flex items-center p-4 space-x-2 rounded-2xl"
-            >
-              <MdWork />
-              <span>Pickups</span>
-            </Link>
-          </li>
+  return (
+    <div className="min-h-screen pb-8">
+      {" "}
+      <div className="max-w-md mx-auto">
+        <div className="from-slate-700  text-black p-6 pt-10 text-center relative overflow-hidden">
+          <div className="relative z-10 mb-4">
+            <UpdateProfilePicture
+              oldPicture={user.profilePicture?.url || tempImage}
+            />
+          </div>
+          <h1 className="relative z-10 text-2xl font-semibold">
+            {user.firstName} {user.lastName}
+          </h1>
+          <p className="relative z-10 text-sm text-black mt-1 opacity-90">
+            {user.email}
+          </p>
+        </div>
 
-          <li className="cursor-pointer bg-bg">
-            <Link
-              to="/rewards"
-              className="flex items-center p-4 space-x-2 rounded-2xl"
-            >
-              <TiGift />
-              <span>Rewards</span>
-            </Link>
-          </li>
-
-          <li className="cursor-pointer bg-bg">
-            <Link
-              to="/profile/update-profile"
-              className="flex items-center p-4 space-x-2 rounded-2xl"
-            >
-              <IoMdSettings />
-              <span>Update Profile</span>
-            </Link>
-          </li>
-
-          {/* if user is admin show switch to collector link */}
+        <div className="p-1 space-y-6">
+          {" "}
+          {/* Content padding and spacing for cards */}
+          {/* Activity Links Card */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase p-3 border-b border-gray-100">
+              Activity
+            </h2>
+            <ul className="divide-y divide-gray-100">
+              {activityLinks.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    to={item.to}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors duration-150 group"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <span className="p-1.5 bg-gray-100 rounded-full">
+                        {item.icon}
+                      </span>{" "}
+                      {/* Icon background */}
+                      <span className="text-slate-700 font-medium group-hover:text-slate-900">
+                        {item.label}
+                      </span>
+                    </div>
+                    <IoChevronForward className="text-gray-400 group-hover:text-gray-600" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Account Links Card */}
+          <div className="bg-white rounded-xl shadow-lg">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase p-3 border-b border-gray-100">
+              Account
+            </h2>
+            <ul className="divide-y divide-gray-100">
+              {accountLinks.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    to={item.to}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors duration-150 group"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <span className="p-1.5 bg-gray-100 rounded-full">
+                        {item.icon}
+                      </span>{" "}
+                      {/* Icon background */}
+                      <span className="text-slate-700 font-medium group-hover:text-slate-900">
+                        {item.label}
+                      </span>
+                    </div>
+                    <IoChevronForward className="text-gray-400 group-hover:text-gray-600" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Conditional Admin Link - Styled as a distinct action button/card */}
           {user.isAdmin && (
-            <li className="cursor-pointer bg-bg">
-              <Link
-                to="/admin/pickup/pickups"
-                className="flex items-center p-4 space-x-2 font-medium rounded-2xl text-darkgreen"
-              >
-                <IoMdSwitch />
-                <span>Switch to Collector</span>
-              </Link>
-            </li>
-          )}
-          <li className="font-bold bg-red-50 cursor-pointer ">
-            <p
-              onClick={() => handleLogout()}
-              className="flex items-center p-4 space-x-2 text-red-500 rounded-2xl border-2 border-red-50 cursor-pointer"
+            <Link
+              to="/admin/pickup/pickups"
+              className="block w-full p-4 bg-green-600 text-white font-semibold rounded-xl shadow-lg hover:bg-green-700 transition-colors duration-150 group text-center"
             >
-              <GoSignOut />
+              <div className="flex items-center justify-center space-x-2">
+                <IoMdSwitch size={22} />
+                <span>Switch to Collector View</span>
+              </div>
+            </Link>
+          )}
+          {/* Logout Button */}
+          <div className="pt-4">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center p-3 space-x-3 bg-white text-red-500 font-medium rounded-xl shadow-md hover:bg-red-50 hover:text-red-600 transition-colors duration-150 group border border-red-200 hover:border-red-300"
+            >
+              <GoSignOut size={18} className="group-hover:text-red-600" />
               <span>Logout</span>
-            </p>
-          </li>
-        </ul>
+            </button>
+          </div>
+          <p className="text-center text-xs text-gray-400 pt-4">
+            App Version 1.0.1
+          </p>{" "}
+          {/* Updated version for 2.0 ;) */}
+        </div>
       </div>
     </div>
   );

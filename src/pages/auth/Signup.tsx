@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthApi from "../../api/authApi";
 import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
+import { toast } from "react-toastify";
 
 const Signup = () => {
   const dispatch = useAppDispatch();
@@ -41,23 +42,28 @@ const Signup = () => {
       ...signupData,
       referralId,
     };
-    console.log(data);
 
     setLoading(true);
     AuthApi.signup(data)
       .then((res: any) => {
         console.log(res);
         setLoading(false);
-        // toast.success("Account created successfully. Please login.");
-        // navigate("/");
 
         const payload = {
           token: res.token,
           user: res.user || null,
         };
         dispatch(login(payload));
-        // navigate("/verify-email");
-        navigate("/home");
+
+        // Check if there's a pending dropoff in sessionStorage
+        const pendingDropoff = sessionStorage.getItem("pendingDropoff");
+
+        if (pendingDropoff) {
+          toast.success("You can now complete your dropoff");
+          navigate("/dropoff/create");
+        } else {
+          navigate("/home");
+        }
       })
       .catch((err: { response: { data: SetStateAction<string> } }) => {
         console.log(err);

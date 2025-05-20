@@ -53,6 +53,16 @@
   background: #a0aec0;
 }
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* For IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .admin_page_heading {
   @apply text-2xl font-bold text-gray-900;
 }

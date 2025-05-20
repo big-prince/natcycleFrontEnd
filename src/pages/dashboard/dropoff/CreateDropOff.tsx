@@ -1,12 +1,23 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
+import { useAppSelector } from "../../../hooks/reduxHooks";
 import { toast } from "react-toastify";
 import DropOffApi from "../../../api/dropOffApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { MdOutlineRefresh } from "react-icons/md";
+import {
+  MdLocationOn,
+  MdCheckCircle,
+  MdArrowForward,
+  MdCameraAlt,
+  MdCheckroom, // Added MdCheckroom for fabric
+} from "react-icons/md";
+// Removed FaBottleWater, FaArchive from "react-icons/fa"
+import { BsCupFill, BsArchiveFill } from "react-icons/bs"; // Added Bootstrap Icons
 
+// Interfaces (DropoffPoint, Location) remain the same
 interface Location {
   type: string;
   coordinates: number[];
@@ -17,554 +28,487 @@ export interface DropoffPoint {
   location: Location;
   _id: string;
   name: string;
-  itemType: string;
+  itemType: string; // Ensure this is present if used for filtering/display
   description: string;
   address: string;
   __v: number;
+  distance?: string; // Optional: for displaying distance like "2 miles"
 }
 
-const itemTypesList = [
-  {
-    label: "Fabrics",
-    value: "fabric",
-  },
-  {
-    label: "Plastic Bottles",
-    value: "plastic",
-  },
-  {
-    label: "Food",
-    value: "food",
-  },
-  {
-    label: "Others",
-    value: "others",
-  },
+// Updated to match UI prototype's simplicity for selection
+const itemTypesForDisplay = [
+  { label: "Plastic", value: "plastic" },
+  { label: "Fabrics", value: "fabric" },
+  { label: "Food", value: "food" }, // Kept for consistency, though not in image's top bar
+  { label: "E-waste", value: "ewaste" },
+  { label: "Glass", value: "glass" },
+  // Add more as needed, the UI shows "Plastic" and "Fabrics" prominently
 ];
 
+// Sample structure for detailed quantity input based on item type
+const subItemsData: {
+  [key: string]: {
+    id: string;
+    name: string;
+    icon: JSX.Element;
+    unit: string;
+  }[]; // Changed 'image' to 'icon' and type to JSX.Element
+} = {
+  plastic: [
+    {
+      id: "plastic_bottle_500ml",
+      name: "500ml water bottle",
+      icon: <BsCupFill className="w-7 h-7 text-blue-500" />, // Using BsCupFill icon
+      unit: "bottles",
+    },
+    {
+      id: "plastic_jug_1l",
+      name: "1L plastic jug",
+      icon: <BsArchiveFill className="w-7 h-7 text-gray-500" />, // Using BsArchiveFill icon
+      unit: "jugs",
+    },
+  ],
+  fabric: [
+    {
+      id: "fabric_shirt",
+      name: "T-Shirt",
+      icon: <MdCheckroom className="w-7 h-7 text-green-600" />, // Using MdCheckroom for fabric
+      unit: "items",
+    },
+  ],
+  // Define for other types as needed
+};
+
 const CreateDropOff = () => {
+  const localUser = useAppSelector((state) => state.auth.user);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [campaignId] = useState(searchParams.get("campaignId") || "");
-  const [campaignName] = useState(searchParams.get("campaignName") || "");
-  const typeFromQuery = searchParams.get("type") || "";
+  const [searchParams, setSearchParams] = useSearchParams(); // Allow setting params
+  const campaignIdFromQuery = searchParams.get("campaignId") || "";
+  const campaignNameFromQuery = searchParams.get("campaignName") || "";
+  const typeFromQuery = searchParams.get("type") || "plastic"; // Default to plastic if none
 
   const [loading, setLoading] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null
+  );
+  const [detailedQuantities, setDetailedQuantities] = useState<{
+    [key: string]: string;
+  }>({});
+
   const [dropOffForm, setDropOffForm] = useState({
-    location: "",
-    description: "",
-    itemType: "",
-    quantity: "",
+    // location: "", // Replaced by selectedLocationId
+    description: "", // Kept if needed, though not prominent in new UI
+    // itemType: typeFromQuery, // Handled by typeFromQuery directly
+    // quantity: "", // Replaced by detailedQuantities
   });
 
-  // Set the initial itemType based on the query parameter
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    if (dropOffForm.location) {
-      const location = locations.find(
-        (location) => location._id === dropOffForm.location
-      );
-      if (location) {
-        setDropOffForm({
-          ...dropOffForm,
-          // itemType: location.itemType,
-        });
-      }
+    // If there's a type from query, ensure it's set.
+    // This effect also helps in re-fetching locations if type changes via item bar.
+    if (typeFromQuery) {
+      getNearestDropOffLocations(typeFromQuery);
+      setDetailedQuantities({}); // Reset quantities when type changes
     }
-  }, [dropOffForm.location]);
+  }, [typeFromQuery]);
 
-  const handleDropOffFormChange = (e: any) => {
-    const { name, value } = e.target;
+  const handleItemTypeSelect = (itemValue: string) => {
+    setSearchParams({ type: itemValue }); // This will trigger the useEffect above
+    setSelectedLocationId(null); // Reset selected location
+  };
 
-    setDropOffForm({
-      ...dropOffForm,
-      [name]: value,
-    });
+  const handleQuantityChange = (itemId: string, value: string) => {
+    setDetailedQuantities((prev) => ({ ...prev, [itemId]: value }));
   };
 
   const handleDropOffFormSubmit = async (e: any) => {
     e.preventDefault();
+    // if (!localUser || !localUser.isAuthenticated) {
+    //   const formDataToStore = {
+    //     selectedLocationId,
+    //     detailedQuantities,
+    //     typeFromQuery,
+    //     description: dropOffForm.description,
+    //     campaignId: campaignIdFromQuery,
+    //     campaignName: campaignNameFromQuery,
+    //     timestamp: new Date().toISOString(),
+    //   };
+    //   sessionStorage.setItem("pendingDropoff", JSON.stringify(formDataToStore));
+    //   if (file) {
+    //     /* ... store file ... */
+    //   }
+    //   navigate("/", {
+    //     state: {
+    //       redirectAfterLogin: `/public/dropoff/create?type=${typeFromQuery}`,
+    //     },
+    //   });
+    //   return toast.info("Please login or Signup to create a drop off");
+    // }
+    console.log("LOCAL USER AVAILBLE");
 
-    if (loadingLocations) {
-      return toast.error("Please wait for locations to load");
-    }
+    if (!selectedLocationId)
+      return toast.error("Please select a drop-off location.");
+    if (!file) return toast.error("Please upload a receipt image.");
 
-    // If no location is selected but locations are available, use the first one
-    if (!dropOffForm.location && locations.length > 0) {
-      setDropOffForm((prev) => ({
-        ...prev,
-        location: locations[0]._id,
-      }));
-      // Use the first location directly in form submission
-      const locationToUse = locations[0]._id;
-
-      if (!file) {
-        return toast.error("Please upload a photo");
-      }
-
-      setLoading(true);
-      console.log("FORM DATA with default location", {
-        ...dropOffForm,
-        location: locationToUse,
-      });
-
-      const formData = new FormData();
-      formData.append("location", locationToUse);
-      formData.append("description", dropOffForm.description);
-      formData.append("itemQuantity", dropOffForm.quantity);
-      formData.append("itemType", typeFromQuery);
-      formData.append("file", file as Blob);
-
-      if (campaignId) {
-        formData.append("campaignId", campaignId);
-      }
-
-      DropOffApi.addDropOff(formData)
-        .then((response) => {
-          console.log(response.data);
-          toast.success("Drop off created successfully");
-          navigate("/home");
-        })
-        .catch((error) => {
-          console.log(error);
-          setLoading(false);
-          toast.error("Error creating drop off");
-        });
-
-      return;
-    }
-
-    // Original code for when location is already selected
-    if (!dropOffForm.location) {
-      console.log(dropOffForm.location, "LOCATION");
-      return toast.error("Please select a drop off location");
-    }
-
-    if (!file) {
-      return toast.error("Please upload a photo");
+    const totalQuantity = Object.values(detailedQuantities).reduce(
+      (sum, qty) => sum + (parseInt(qty, 10) || 0),
+      0
+    );
+    if (totalQuantity === 0 && Object.keys(detailedQuantities).length > 0) {
+      // Only error if quantity inputs were shown but all are zero or empty
+      return toast.error("Please enter the quantity for at least one item.");
     }
 
     setLoading(true);
-    console.log("FORM DATA", dropOffForm);
     const formData = new FormData();
-    formData.append("location", dropOffForm.location);
-    formData.append("description", dropOffForm.description);
-    formData.append("itemQuantity", dropOffForm.quantity);
+    formData.append("location", selectedLocationId);
+    formData.append("description", dropOffForm.description); // Optional
+    formData.append("itemQuantity", totalQuantity.toString()); // Sum of detailed quantities
     formData.append("itemType", typeFromQuery);
     formData.append("file", file as Blob);
+    if (campaignIdFromQuery) formData.append("campaignId", campaignIdFromQuery);
 
-    if (campaignId) {
-      formData.append("campaignId", campaignId);
-    }
-
+    // ... (DropOffApi.addDropOff call - existing logic)
     DropOffApi.addDropOff(formData)
-      .then((response) => {
-        console.log(response.data);
+      .then(() => {
         toast.success("Drop off created successfully");
         navigate("/home");
       })
       .catch((error) => {
         console.log(error);
-        setLoading(false);
-        toast.error("Error creating drop off");
-      });
+        toast.error(
+          "Error creating drop off: " +
+            (error.response?.data?.message || error.message)
+        );
+      })
+      .finally(() => setLoading(false));
   };
 
   const [locations, setLocations] = useState<DropoffPoint[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
 
-  const getUserLocation = () => {
+  const getUserLocation = (): Promise<{
+    latitude: number;
+    longitude: number;
+  }> => {
     return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by your browser."));
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          resolve({ latitude, longitude });
-        },
+        (position) =>
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
         (error) => reject(error)
       );
     });
   };
 
-  // get nearest drop off locations using user's current location
-  const getNearestDropOffLocations = async () => {
+  const getNearestDropOffLocations = async (itemTypeValue = typeFromQuery) => {
     setLoadingLocations(true);
-    const userLocation = (await getUserLocation()) as {
-      latitude: number;
-      longitude: number;
-    };
-
-    if (!userLocation) {
-      return toast.error("Error getting user location");
-    }
-
-    const data = {
-      latitude: userLocation.latitude,
-      longitude: userLocation.longitude,
-      distance: 0,
-      itemType: typeFromQuery,
-    };
-
-    console.log(data, "GET LOCATION DATA");
-
+    setSelectedLocationId(null); // Reset selection when fetching new locations
     try {
-      const response = await dropOffLocationApi.getNearestDropOffLocations(
-        data
+      const userCoords = await getUserLocation();
+      const params = {
+        latitude: userCoords.latitude,
+        longitude: userCoords.longitude,
+        distance: 0, // Initial search radius
+        itemType: itemTypeValue,
+      };
+      let fetchedLocations = (
+        await dropOffLocationApi.getNearestDropOffLocations(params)
+      ).data.data;
+
+      if (fetchedLocations.length === 0) {
+        toast.info("No locations found nearby. Expanding search to 300km...");
+        params.distance = 300000; // 300km
+        fetchedLocations = (
+          await dropOffLocationApi.getNearestDropOffLocations(params)
+        ).data.data;
+      }
+
+      // Add a placeholder distance for UI demo purposes
+      const locationsWithDistance = fetchedLocations.map(
+        (loc: DropoffPoint, index: number) => ({
+          ...loc,
+          distance: `${(index + 1) * 2 + index * 0.5} miles`, // Placeholder
+        })
       );
-      console.log(response.data);
 
-      const locations = response.data.data;
-      setLocations(locations);
-
-      // Set the first location as default if available
-      if (locations.length > 0) {
-        setDropOffForm((prev) => ({
-          ...prev,
-          location: locations[0]._id,
-          itemType: locations[0].itemType,
-        }));
-      }
-
-      if (locations.length === 0) {
-        console.log(locations.length, "LOCATION LENGTH");
-        toast.info("No locations found. Expanding 300km");
-
-        const data = {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          distance: 300000,
-        };
-
-        const response = await dropOffLocationApi.getNearestDropOffLocations(
-          data
+      setLocations(locationsWithDistance);
+      if (locationsWithDistance.length > 0) {
+        setSelectedLocationId(locationsWithDistance[0]._id); // Auto-select first one
+      } else {
+        toast.info(
+          `No drop-off locations found for ${itemTypeValue} even within 300km.`
         );
-        const extendedKmLocations = response.data.data;
-
-        console.log("300km", extendedKmLocations);
-        setLocations(extendedKmLocations);
-
-        // Set the first location from expanded search as default if available
-        if (extendedKmLocations.length > 0) {
-          setDropOffForm((prev) => ({
-            ...prev,
-            location: extendedKmLocations[0]._id,
-            itemType: extendedKmLocations[0].itemType,
-          }));
-        }
-
-        if (extendedKmLocations.length === 0) {
-          toast.info("No locations in 300km");
-          setLoadingLocations(false);
-          return;
-        }
       }
-      setLoadingLocations(false);
-    } catch (error) {
-      console.log(error);
-      toast.error("Error fetching locations");
+    } catch (error: any) {
+      console.error("Error fetching locations:", error);
+      toast.error("Error fetching locations: " + error.message);
+    } finally {
       setLoadingLocations(false);
     }
   };
 
-  // get nearest drop off locations on component mount
-  useEffect(() => {
-    setLoading(false);
-    getNearestDropOffLocations().then(() => {
-      // Set the first location as default when locations are loaded
-      if (locations.length > 0) {
-        setDropOffForm((prev) => ({
-          ...prev,
-          location: locations[0]._id,
-          itemType: locations[0].itemType,
-        }));
-      }
-    });
-  }, []);
-
-  const handleRefreshLocations = () => {
-    getNearestDropOffLocations();
-  };
+  // useEffect(() => { getNearestDropOffLocations(); }, [typeFromQuery]); // Initial fetch and on type change
 
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const file = e.target.files[0];
-    setFile(file);
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+    } else {
+      setFile(null);
+      setPreviewUrl(null);
+    }
   };
 
+  // Restore from session storage
+  useEffect(() => {
+    const pendingDropoffRaw = sessionStorage.getItem("pendingDropoff");
+    if (localUser && localUser.isAuthenticated && pendingDropoffRaw) {
+      try {
+        const pendingData = JSON.parse(pendingDropoffRaw);
+        if (pendingData.typeFromQuery)
+          setSearchParams({ type: pendingData.typeFromQuery });
+        if (pendingData.selectedLocationId)
+          setSelectedLocationId(pendingData.selectedLocationId);
+        if (pendingData.detailedQuantities)
+          setDetailedQuantities(pendingData.detailedQuantities);
+        if (pendingData.description)
+          setDropOffForm((prev) => ({
+            ...prev,
+            description: pendingData.description,
+          }));
+
+        const pendingFileRaw = sessionStorage.getItem("pendingDropoffFile");
+        if (pendingFileRaw) {
+          // Logic to convert DataURL back to File and set preview
+          // Example: setFile(dataURLtoFile(pendingFileRaw, "restored-image.jpg"));
+          // Example: setPreviewUrl(pendingFileRaw); // If it was stored as a DataURL
+        }
+        toast.success("Your previous dropoff information has been restored.");
+        sessionStorage.removeItem("pendingDropoff");
+        sessionStorage.removeItem("pendingDropoffFile");
+      } catch (error) {
+        console.error("Error restoring dropoff data:", error);
+      }
+    }
+  }, [localUser, setSearchParams]);
+
+  const currentSubItems = subItemsData[typeFromQuery] || [];
+
   return (
-    <div>
-      <div className="container">
-        <div className="row">
-          <div className="mt-6 col-md-6 offset-md-3">
-            {/* ITEM BAR */}
-            <div className="flex justify-between mb-4">
-              {itemTypesList.map((item) => (
-                <p
-                  key={item.label}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg cursor-pointer ${
-                    item.value === typeFromQuery
-                      ? "bg-darkgreen text-white"
-                      : "bg-gray-200 text-darkgreen"
-                  }`}
-                  onClick={async () => {
-                    // Set loading state
-                    setLoadingLocations(true);
-
-                    // Update the query parameter first
-                    navigate(`/dropoff/create?type=${item.value}`);
-
-                    // Reset all relevant states
-                    setDropOffForm({
-                      ...dropOffForm,
-                      location: "",
-                      // itemType: item.value,
-                      quantity: "",
-                    });
-                    setFile(null);
-                    setLocations([]);
-
-                    // Get user location
-                    try {
-                      const userLocation = (await getUserLocation()) as {
-                        latitude: number;
-                        longitude: number;
-                      };
-
-                      if (!userLocation) {
-                        setLoadingLocations(false);
-                        return toast.error("Error getting user location");
-                      }
-
-                      // Prepare data with the selected item type
-                      const data = {
-                        latitude: userLocation.latitude,
-                        longitude: userLocation.longitude,
-                        distance: 0,
-                        itemType: item.value,
-                      };
-
-                      console.log(data, "GET LOCATION DATA FOR ITEM TYPE");
-
-                      // Call API to get nearest drop-off locations for this item type
-                      const response =
-                        await dropOffLocationApi.getNearestDropOffLocations(
-                          data
-                        );
-                      const locations = response.data.data;
-                      setLocations(locations);
-
-                      // Set the first location as default if available
-                      if (locations.length > 0) {
-                        setDropOffForm((prev) => ({
-                          ...prev,
-                          location: locations[0]._id,
-                        }));
-                      }
-
-                      // If no locations found, expand search radius
-                      if (locations.length === 0) {
-                        toast.info("No locations found. Expanding 300km");
-                        const expandedData = {
-                          latitude: userLocation.latitude,
-                          longitude: userLocation.longitude,
-                          distance: 300000,
-                          itemType: item.value,
-                        };
-
-                        const expandedResponse =
-                          await dropOffLocationApi.getNearestDropOffLocations(
-                            expandedData
-                          );
-                        const extendedKmLocations = expandedResponse.data.data;
-
-                        console.log(
-                          `300km locations for ${item.value}:`,
-                          extendedKmLocations
-                        );
-                        setLocations(extendedKmLocations);
-
-                        if (extendedKmLocations.length === 0) {
-                          toast.info(
-                            `No ${item.value} drop-off locations found within 300km`
-                          );
-                        }
-                      }
-                    } catch (error) {
-                      console.error("Error fetching locations:", error);
-                      toast.error(
-                        `Error fetching ${item.value} drop-off locations`
-                      );
-                    } finally {
-                      setLoadingLocations(false);
-                    }
-                  }}
-                >
-                  {item.value}
-                </p>
-              ))}
-            </div>
-            <h2 className="hidden mb-4 text-2xl font-bold text-darkgreen">
-              Create Drop Off
+    <div className="pb-20 px-4 max-w-md mx-auto">
+      {" "}
+      {/* Added max-width and centering */}
+      {/* Item Type Selection Bar */}
+      <div className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide">
+        {itemTypesForDisplay.map((item) => (
+          <button
+            key={item.value}
+            onClick={() => handleItemTypeSelect(item.value)}
+            className={`px-6 py-3 text-sm font-semibold rounded-full transition-colors whitespace-nowrap
+              ${
+                typeFromQuery === item.value
+                  ? "bg-slate-800 text-white"
+                  : "bg-gray-100 text-slate-700 border border-gray-300 hover:bg-gray-200"
+              }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      {/* Campaign Info */}
+      {campaignNameFromQuery && campaignIdFromQuery && (
+        <div className="mb-4 p-3 bg-indigo-600 text-white rounded-lg text-center">
+          Supporting Campaign: <strong>{campaignNameFromQuery}</strong>
+        </div>
+      )}
+      <form onSubmit={handleDropOffFormSubmit}>
+        {/* Drop-Off Locations Section */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-md font-semibold underline text-slate-700">
+              Select dropoff location
             </h2>
+            <button
+              type="button"
+              onClick={() => getNearestDropOffLocations()}
+              disabled={loadingLocations}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center transition-opacity disabled:opacity-50"
+            >
+              <MdLocationOn className="mr-1.5" />
+              {loadingLocations ? "Locating..." : "Locate"}
+            </button>
+          </div>
 
-            <div className="mb-2">
-              {campaignName && campaignId && (
-                <div>
-                  <p className="px-4 py-4 mb-4 text-xl bg-black rounded-lg text-green">
-                    Support Campaign: {campaignName}
-                  </p>
-                </div>
-              )}
-            </div>
+          {loadingLocations && !locations.length && (
+            <p className="text-center text-gray-500 py-4">
+              Finding locations...
+            </p>
+          )}
+          {!loadingLocations && locations.length === 0 && (
+            <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
+              No locations found for {typeFromQuery}. Try a different item type.
+            </p>
+          )}
 
-            <form onSubmit={handleDropOffFormSubmit} className="form">
-              <div className="form-group">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-lg font-semibold">Drop-Off Locations</p>
-
-                  <div className="flex items-center">
-                    <p
-                      className="text-sm font-medium cursor-pointer text-darkgreen"
-                      onClick={() => handleRefreshLocations()}
-                    >
-                      Refresh
-                    </p>
-
-                    <div className="flex items-center">
-                      <MdOutlineRefresh className="text-darkgreen" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* info */}
-                <div className=" hidden info">
-                  <p className="text-xs text-gray-500">
-                    Click the refresh button to get the nearest drop off
-                    locations to you
-                  </p>
-                </div>
-
-                <select
-                  name="location"
-                  id="location"
-                  className="input"
-                  value={dropOffForm.location}
-                  onChange={handleDropOffFormChange}
-                >
-                  {locations.length === 0 && (
-                    <option value="">Select Location</option>
-                  )}
-                  {locations &&
-                    locations.length > 0 &&
-                    locations.map((location) => (
-                      <option key={location._id} value={location._id}>
-                        {location.name} - {location.address}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* item type select */}
-              {/* <div className="hidden form-group">
-                <label htmlFor="itemType">Item Type</label>
-                <select
-                  name="itemType"
-                  id="itemType"
-                  className="input"
-                  value={dropOffForm.itemType}
-                  onChange={handleDropOffFormChange}
-                  required
-                >
-                  <option value="">Select Item Type</option>
-                  {itemTypesList.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {typeFromQuery === item.value ? item.label : item.label}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
-
-              {/* special entry for item type */}
-              {typeFromQuery === "others" && (
-                <div className="form-group">
-                  <label htmlFor="itemType">Item Type</label>
-                  <input
-                    type="text"
-                    name="itemType"
-                    id="itemType"
-                    className="input"
-                    placeholder="Enter item type"
-                    onChange={handleDropOffFormChange}
-                    required
-                  />
-                </div>
-              )}
-
-              {/* item quantity */}
-              <div>
-                <label htmlFor="quantity">
-                  Quantity of{" "}
-                  {dropOffForm.itemType === "fabrics" ||
-                  dropOffForm.itemType === "plastic" ||
-                  dropOffForm.itemType === "food"
-                    ? `${dropOffForm.itemType} waste `
-                    : "item"}
-                </label>
-                <input
-                  type="number"
-                  name="quantity"
-                  id="quantity"
-                  className="input"
-                  onChange={handleDropOffFormChange}
-                />
-              </div>
-
-              <div className="hidden form-group">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  name="description"
-                  id="description"
-                  className="input"
-                  value={dropOffForm.description}
-                  onChange={handleDropOffFormChange}
-                ></textarea>
-              </div>
-
-              {/* file select with preview */}
-              <div className="form-group">
-                <label htmlFor="file">
-                  Confirm your drop-off by uploading a receipt
-                </label>
-                <input
-                  type="file"
-                  name="file"
-                  id="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-              </div>
-              {file && (
-                <div className="form-group">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt="preview"
-                    style={{ width: "130px", height: "130px" }}
-                    className="object-cover rounded-lg"
-                  />
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="mt-4 w-full text-green button bg-darkgreen"
-                disabled={loading}
+          <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
+            {locations.map((loc) => (
+              <div
+                key={loc._id}
+                onClick={() => setSelectedLocationId(loc._id)}
+                className={`p-3 rounded-lg border cursor-pointer transition-all
+                  ${
+                    selectedLocationId === loc._id
+                      ? "bg-teal-50 border-teal-500 ring-2 ring-teal-500"
+                      : "bg-white border-gray-200 hover:border-gray-400"
+                  }`}
               >
-                {loading ? "Loading..." : "Submit"}
-              </button>
-            </form>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-slate-800">{loc.name}</p>
+                    <p className="text-xs text-gray-500">{loc.address}</p>
+                    {loc.distance && (
+                      <p className="text-xs text-green-600 mt-0.5">
+                        {loc.distance} away
+                      </p>
+                    )}
+                  </div>
+                  {selectedLocationId === loc._id && (
+                    <MdCheckCircle className="text-green-600 text-2xl flex-shrink-0 ml-2" />
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+
+        {/* Quantity Input Section - Dynamic */}
+        {currentSubItems.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-md font-semibold text-slate-700 mb-3">
+              How many <span className="lowercase">{typeFromQuery}</span> items
+              were recycled?
+            </h2>
+            <div className="space-y-4">
+              {currentSubItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                >
+                  {/* Updated to render icon component */}
+                  <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
+                    {item.icon}
+                  </div>
+                  <div className="flex-grow">
+                    <p className="text-sm text-slate-600">{item.name}</p>
+                    <input
+                      type="number"
+                      placeholder="How many"
+                      min="0"
+                      value={detailedQuantities[item.id] || ""}
+                      onChange={(e) =>
+                        handleQuantityChange(item.id, e.target.value)
+                      }
+                      className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Fallback for types without sub-items, or keep existing generic quantity if preferred */}
+        {currentSubItems.length === 0 && typeFromQuery && (
+          <div className="mb-6">
+            <label
+              htmlFor="generic_quantity"
+              className="block text-md font-semibold text-slate-700 mb-1"
+            >
+              Quantity of {typeFromQuery}
+            </label>
+            <input
+              type="number"
+              id="generic_quantity"
+              name="generic_quantity"
+              min="0"
+              placeholder="Enter quantity"
+              value={detailedQuantities["generic"] || ""}
+              onChange={(e) => handleQuantityChange("generic", e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
+          </div>
+        )}
+
+        {/* Receipt Upload Section */}
+        <div className="mb-8">
+          <h2 className="text-md font-semibold text-slate-700 mb-3">
+            Confirm your drop-off
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div
+              className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:border-gray-400 bg-gray-50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Receipt preview"
+                  className="max-h-full max-w-full object-contain rounded-md"
+                />
+              ) : (
+                <>
+                  <MdCameraAlt className="text-3xl text-gray-400 mb-1" />
+                  <p className="text-xs text-gray-500">Upload Receipt Image</p>
+                </>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()} // Or implement actual scan functionality
+              className="aspect-square rounded-lg border border-gray-300 flex flex-col items-center justify-center text-center p-4 hover:bg-gray-100 bg-white"
+            >
+              <span className="font-semibold text-indigo-600 text-sm">
+                SCAN
+              </span>
+              <span className="font-semibold text-indigo-600 text-sm">
+                REDEEM
+              </span>
+              <span className="font-semibold text-indigo-600 text-sm">
+                RECEIPT
+              </span>
+              <p className="text-xs text-gray-400 mt-1">(Upload a photo)</p>
+            </button>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading || loadingLocations}
+          className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3.5 px-6 rounded-full flex items-center justify-center text-lg transition-opacity disabled:opacity-60"
+        >
+          {loading ? "Submitting..." : "Submit"}
+          {!loading && <MdArrowForward className="ml-2 text-xl" />}
+        </button>
+      </form>
     </div>
   );
 };
