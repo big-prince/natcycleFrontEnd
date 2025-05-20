@@ -13,6 +13,8 @@ import {
   MdArrowForward,
   MdCameraAlt,
   MdCheckroom, // Added MdCheckroom for fabric
+  MdClose, // For closing camera
+  MdFlipCameraAndroid, // For switching camera
 } from "react-icons/md";
 // Removed FaBottleWater, FaArchive from "react-icons/fa"
 import { BsCupFill, BsArchiveFill } from "react-icons/bs"; // Added Bootstrap Icons
@@ -149,7 +151,7 @@ const CreateDropOff = () => {
 
     if (!selectedLocationId)
       return toast.error("Please select a drop-off location.");
-    if (!file) return toast.error("Please upload a receipt image.");
+    if (!file) return toast.error("Please capture a receipt image."); // Updated message
 
     const totalQuantity = Object.values(detailedQuantities).reduce(
       (sum, qty) => sum + (parseInt(qty, 10) || 0),
@@ -259,16 +261,106 @@ const CreateDropOff = () => {
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(
+    "environment"
+  );
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
-    } else {
-      setFile(null);
-      setPreviewUrl(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null); // For capturing photo
+
+  // Cleanup object URL and video stream
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      if (videoStream) {
+        videoStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [previewUrl, videoStream]);
+
+  const startCamera = async (mode: "user" | "environment") => {
+    if (videoStream) {
+      videoStream.getTracks().forEach((track) => track.stop());
     }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode },
+      });
+      setVideoStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraOpen(true);
+      setPreviewUrl(null); // Clear previous preview
+      setFile(null); // Clear previous file
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      toast.error("Could not access camera. Please check permissions.");
+      setIsCameraOpen(false);
+    }
+  };
+
+  const handleOpenCamera = () => {
+    startCamera(facingMode);
+  };
+
+  const handleSwitchCamera = () => {
+    const newMode = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(newMode);
+    startCamera(newMode); // Restart camera with new mode
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current && videoStream) {
+      const videoNode = videoRef.current;
+      const canvasNode = canvasRef.current;
+      // Set canvas dimensions to video stream's actual dimensions
+      const trackSettings = videoStream.getVideoTracks()[0].getSettings();
+      canvasNode.width = trackSettings.width || videoNode.videoWidth;
+      canvasNode.height = trackSettings.height || videoNode.videoHeight;
+
+      const context = canvasNode.getContext("2d");
+      if (context) {
+        context.drawImage(videoNode, 0, 0, canvasNode.width, canvasNode.height);
+        canvasNode.toBlob(
+          (blob) => {
+            if (blob) {
+              const capturedFile = new File(
+                [blob],
+                `receipt-${Date.now()}.jpg`,
+                {
+                  type: "image/jpeg",
+                }
+              );
+              setFile(capturedFile);
+              setPreviewUrl(URL.createObjectURL(capturedFile));
+            }
+            closeCamera(); // Close camera after capture
+          },
+          "image/jpeg",
+          0.9
+        ); // Adjust quality if needed
+      }
+    }
+  };
+
+  const closeCamera = () => {
+    if (videoStream) {
+      videoStream.getTracks().forEach((track) => track.stop());
+    }
+    setIsCameraOpen(false);
+    setVideoStream(null);
+  };
+
+  const retakePhoto = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setFile(null);
+    handleOpenCamera(); // Re-open camera
   };
 
   // Restore from session storage
@@ -455,57 +547,87 @@ const CreateDropOff = () => {
           <h2 className="text-md font-semibold text-slate-700 mb-3">
             Confirm your drop-off
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          {!isCameraOpen && (
             <div
               className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:border-gray-400 bg-gray-50"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={previewUrl ? retakePhoto : handleOpenCamera}
             >
               {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Receipt preview"
-                  className="max-h-full max-w-full object-contain rounded-md"
-                />
+                <>
+                  <img
+                    src={previewUrl}
+                    alt="Receipt preview"
+                    className="max-h-full max-w-full object-contain rounded-md"
+                  />
+                  <span className="mt-2 text-xs text-blue-600 font-medium">
+                    Tap to retake
+                  </span>
+                </>
               ) : (
                 <>
-                  <MdCameraAlt className="text-3xl text-gray-400 mb-1" />
-                  <p className="text-xs text-gray-500">Upload Receipt Image</p>
+                  <MdCameraAlt className="text-4xl text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600 font-medium">
+                    Take Receipt Photo
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tap here to open camera
+                  </p>
                 </>
               )}
             </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()} // Or implement actual scan functionality
-              className="aspect-square rounded-lg border border-gray-300 flex flex-col items-center justify-center text-center p-4 hover:bg-gray-100 bg-white"
-            >
-              <span className="font-semibold text-indigo-600 text-sm">
-                SCAN
-              </span>
-              <span className="font-semibold text-indigo-600 text-sm">
-                REDEEM
-              </span>
-              <span className="font-semibold text-indigo-600 text-sm">
-                RECEIPT
-              </span>
-              <p className="text-xs text-gray-400 mt-1">(Upload a photo)</p>
-            </button>
-          </div>
+          )}
+
+          {isCameraOpen && (
+            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+                style={{
+                  transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
+                }} // Mirror front camera
+              />
+              <canvas ref={canvasRef} className="hidden"></canvas>{" "}
+              {/* Hidden canvas for capture */}
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4 z-10">
+                <button
+                  type="button"
+                  onClick={handleSwitchCamera}
+                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70"
+                  aria-label="Switch camera"
+                >
+                  <MdFlipCameraAndroid size={24} />
+                </button>
+                <button
+                  type="button"
+                  onClick={capturePhoto}
+                  className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600"
+                  aria-label="Capture photo"
+                >
+                  <MdCameraAlt size={28} />
+                </button>
+                <button
+                  type="button"
+                  onClick={closeCamera}
+                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70"
+                  aria-label="Close camera"
+                >
+                  <MdClose size={24} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+        {/* Removed the second "SCAN REDEEM RECEIPT" button as its functionality is merged */}
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || loadingLocations}
+          disabled={loading || loadingLocations || !file} // Disable if no file captured
           className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3.5 px-6 rounded-full flex items-center justify-center text-lg transition-opacity disabled:opacity-60"
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Submitting..." : "Submit Drop-off"}
           {!loading && <MdArrowForward className="ml-2 text-xl" />}
         </button>
       </form>
