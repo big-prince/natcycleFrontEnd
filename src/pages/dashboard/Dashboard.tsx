@@ -78,8 +78,8 @@ const Dashboard = () => {
   }
 
   const currentMilestoneDetails = mileStoneNumbers[currentMilestoneIndex];
-  const nextMilestoneDetails =
-    mileStoneNumbers[currentMilestoneIndex + 1] || currentMilestoneDetails;
+  // const nextMilestoneDetails =
+  //   mileStoneNumbers[currentMilestoneIndex + 1] || currentMilestoneDetails;
 
   const milestoneStart = currentMilestoneDetails.pointsRange[0];
   const milestoneEndTarget = currentMilestoneDetails.pointsRange[1];

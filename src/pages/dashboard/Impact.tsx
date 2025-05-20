@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../../hooks/reduxHooks";
 import { useEffect, useState } from "react";
@@ -5,7 +7,7 @@ import ReferModal from "./components/ReferModal";
 // import RewardSwiper from "./components/RewardSwiper"; // Hidden in new design
 // import Milestone from "./components/Milestone"; // Logic will be integrated
 import ProfileApi from "../../api/profile.Api";
-import { IBadge } from "../../types"; // Assuming IDropOff type exists
+import { IBadge } from "../../types"; // Import needed types
 import DropOffApi from "../../api/dropOffApi";
 
 import { FaLeaf, FaBoxesStacked, FaMapPin, FaAward } from "react-icons/fa6"; // Added FaAward for badges
@@ -15,7 +17,7 @@ const recyclablesWithPoints = [
   { item: "plastic", points: 10, label: "Plastic bottles", unit: "units" },
   { item: "fabric", points: 5, label: "Fabrics", unit: "Lbs" },
   { item: "glass", points: 8, label: "Glass", unit: "lb" },
-  { item: "mixed", points: 2, label: "Mixed", unit: "lb" }, // Assuming 'lb' for mixed based on image
+  { item: "mixed", points: 2, label: "Mixed", unit: "lb" },
 ];
 
 type IItemsCount = {
@@ -24,6 +26,26 @@ type IItemsCount = {
   mixed: number;
   plastic: number;
   [key: string]: number; // Index signature
+};
+
+type IDropOff = {
+  _id: string;
+  itemType: string;
+  createdAt: string;
+  status: string; // Assuming status is a string
+  pointsEarned: number;
+  dropOffLocation: {
+    name: string;
+    address?: string; // Optional, depending on your API
+  };
+  itemQuantity?: number; // For "744"
+  itemDescription?: string; // For "500ml plastic water bottles"
+  carbonValue?: number; // Assuming this is the CU value
+  location?: {
+    name: string;
+  };
+  // Add any other relevant fields from your API response
+  [key: string]: any; // Index signature for additional properties
 };
 
 // Define or import mileStoneNumbers, similar to Dashboard.tsx

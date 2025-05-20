@@ -1,6 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
 import Logo from "../../assets/logo/Group 202@2x.png";
-import MobileNav from "../dashboard/components/MobileNav";
 import { IoNotifications } from "react-icons/io5";
 
 const PublicLayout = () => {
