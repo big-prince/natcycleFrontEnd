@@ -261,7 +261,7 @@ const CreateDropOff = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">(
-    "environment"
+    "environment" // Defaulting to "environment" (rear camera)
   );
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -554,7 +554,7 @@ const CreateDropOff = () => {
                   <img
                     src={previewUrl}
                     alt="Receipt preview"
-                    className="max-h-full max-w-full object-contain rounded-md"
+                    className="max-h-full max-w-full object-contain rounded-md" // Ensures preview fits
                   />
                   <span className="mt-2 text-xs text-blue-600 font-medium">
                     Tap to retake
@@ -575,12 +575,14 @@ const CreateDropOff = () => {
           )}
 
           {isCameraOpen && (
-            <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+            <div className="relative aspect-square bg-black rounded-lg overflow-hidden">
+              {" "}
+              {/* Changed from aspect-video to aspect-square */}
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover" // object-cover will fill the square, cropping if necessary
                 style={{
                   transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
                 }} // Mirror front camera
@@ -591,7 +593,7 @@ const CreateDropOff = () => {
                 <button
                   type="button"
                   onClick={handleSwitchCamera}
-                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70"
+                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm" // Added backdrop-blur
                   aria-label="Switch camera"
                 >
                   <MdFlipCameraAndroid size={24} />
@@ -599,7 +601,7 @@ const CreateDropOff = () => {
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600"
+                  className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600 shadow-lg" // Added shadow
                   aria-label="Capture photo"
                 >
                   <MdCameraAlt size={28} />
@@ -607,7 +609,7 @@ const CreateDropOff = () => {
                 <button
                   type="button"
                   onClick={closeCamera}
-                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70"
+                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm" // Added backdrop-blur
                   aria-label="Close camera"
                 >
                   <MdClose size={24} />
