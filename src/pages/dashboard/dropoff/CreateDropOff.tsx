@@ -86,7 +86,7 @@ const CreateDropOff = () => {
   const [searchParams, setSearchParams] = useSearchParams(); // Allow setting params
   const campaignIdFromQuery = searchParams.get("campaignId") || "";
   const campaignNameFromQuery = searchParams.get("campaignName") || "";
-  const typeFromQuery = searchParams.get("type") || "plastic"; // Default to plastic if none
+  const typeFromQuery = searchParams.get("type") || "plastic";
 
   const [loading, setLoading] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
@@ -97,18 +97,14 @@ const CreateDropOff = () => {
   }>({});
 
   const [dropOffForm, setDropOffForm] = useState({
-    // location: "", // Replaced by selectedLocationId
     description: "", // Kept if needed, though not prominent in new UI
-    // itemType: typeFromQuery, // Handled by typeFromQuery directly
-    // quantity: "", // Replaced by detailedQuantities
   });
 
   useEffect(() => {
     // If there's a type from query, ensure it's set.
-    // This effect also helps in re-fetching locations if type changes via item bar.
     if (typeFromQuery) {
       getNearestDropOffLocations(typeFromQuery);
-      setDetailedQuantities({}); // Reset quantities when type changes
+      setDetailedQuantities({});
     }
   }, [typeFromQuery]);
 
@@ -254,14 +250,12 @@ const CreateDropOff = () => {
     }
   };
 
-  // useEffect(() => { getNearestDropOffLocations(); }, [typeFromQuery]); // Initial fetch and on type change
-
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">(
-    "environment" // Defaulting to "environment" (rear camera)
+    "environment"
   );
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -292,8 +286,8 @@ const CreateDropOff = () => {
         videoRef.current.srcObject = stream;
       }
       setIsCameraOpen(true);
-      setPreviewUrl(null); // Clear previous preview
-      setFile(null); // Clear previous file
+      setPreviewUrl(null);
+      setFile(null);
     } catch (err) {
       console.error("Error accessing camera:", err);
       toast.error("Could not access camera. Please check permissions.");
@@ -308,7 +302,7 @@ const CreateDropOff = () => {
   const handleSwitchCamera = () => {
     const newMode = facingMode === "environment" ? "user" : "environment";
     setFacingMode(newMode);
-    startCamera(newMode); // Restart camera with new mode
+    startCamera(newMode);
   };
 
   const capturePhoto = () => {
@@ -339,7 +333,7 @@ const CreateDropOff = () => {
             closeCamera(); // Close camera after capture
           },
           "image/jpeg",
-          0.9
+          0.95
         ); // Adjust quality if needed
       }
     }
@@ -357,7 +351,7 @@ const CreateDropOff = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setFile(null);
-    handleOpenCamera(); // Re-open camera
+    handleOpenCamera();
   };
 
   // Restore from session storage
@@ -398,8 +392,6 @@ const CreateDropOff = () => {
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
       {" "}
-      {/* Added max-width and centering */}
-      {/* Item Type Selection Bar */}
       <div className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide">
         {itemTypesForDisplay.map((item) => (
           <button
