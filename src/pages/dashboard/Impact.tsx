@@ -32,27 +32,26 @@ type IDropOff = {
   _id: string;
   itemType: string;
   createdAt: string;
-  status: string; // Assuming status is a string
+  status: string;
   pointsEarned: number;
   dropOffLocation: {
     name: string;
-    address?: string; // Optional, depending on your API
+    address?: string;
   };
-  itemQuantity?: number; // For "744"
-  itemDescription?: string; // For "500ml plastic water bottles"
-  carbonValue?: number; // Assuming this is the CU value
+  itemQuantity?: number;
+  itemDescription?: string;
+  carbonValue?: number;
   location?: {
     name: string;
   };
-  // Add any other relevant fields from your API response
-  [key: string]: any; // Index signature for additional properties
+  [key: string]: any;
 };
 
 // Define or import mileStoneNumbers, similar to Dashboard.tsx
 const mileStoneNumbers = [
   { level: 1, pointsRange: [0, 1000], name: "Seedling" },
   { level: 2, pointsRange: [1001, 2000], name: "Sprout" },
-  { level: 3, pointsRange: [2001, 5000], name: "Tree" }, // Matches image: 2000-5000
+  { level: 3, pointsRange: [2001, 5000], name: "Tree" },
   { level: 4, pointsRange: [5001, 10000], name: "Forest" },
 ];
 
@@ -72,12 +71,9 @@ const Impact = () => {
   // Calculate point for each recyclable
   const calculateCarbonUnitsForItem = (itemKey: string) => {
     const itemData = recyclablesWithPoints.find((i) => i.item === itemKey);
-    const count = itemsCount[itemKey] || 0;
     if (!itemData) return 0;
-    // This calculation might need adjustment if 'points' directly means Carbon Units
-    // Or if there's a different conversion factor.
-    // For now, assuming itemData.points is the CU per unit of count.
-    return itemData.points * count;
+
+    return itemData.points;
   };
 
   const fetchUserDropOffs = async () => {
@@ -92,7 +88,6 @@ const Impact = () => {
   };
 
   const fetchUserBadges = async () => {
-    // Kept, but UI section hidden
     ProfileApi.getUserBadges()
       .then((res) => {
         setUserBadges(res.data);
@@ -104,7 +99,6 @@ const Impact = () => {
 
   useEffect(() => {
     if (localUser?._id) {
-      // Ensure localUser._id exists before fetching
       fetchUserDropOffs();
       fetchUserBadges();
     }
@@ -117,9 +111,10 @@ const Impact = () => {
   // Find a pending dropoff for display - assuming the latest one or one with 'pending' status
   // This logic needs to be adapted based on how 'pending' status is stored in your IDropOff type
   const pendingDropoff =
-    userDropOffs.find(
-      (dropoff) => dropoff.status === "pending" // Assuming 'status' field
-    ) || (userDropOffs.length > 0 ? userDropOffs[0] : null); // Fallback to first if no pending status
+    userDropOffs.find((dropoff) => dropoff.status === "Pending") ||
+    (userDropOffs.length > 0 ? userDropOffs[0] : null);
+
+  console.log("🚀 ~ Impact ~ pendingDropoff:", pendingDropoff);
 
   const currentCarbonUnits = localUser.carbonUnits || 0;
   const currentMilestoneData =
@@ -187,13 +182,17 @@ const Impact = () => {
             <h3 className="text-md font-semibold text-slate-700">
               Pending approval
             </h3>
-            {/* Assuming dropoff.locationName or similar exists, or link to its details */}
             <Link
-              to={`/dropoff/details/${pendingDropoff._id}`}
+              to={`/dropoff/all`}
               className="text-xs underline text-amber-700 font-medium"
             >
-              {pendingDropoff.location?.name || "EZ Bottle return"}{" "}
-              {/* Placeholder */}
+              {(pendingDropoff.dropOffLocation?.name || "Location Unknown")
+                .length > 20
+                ? `${(
+                    pendingDropoff.dropOffLocation?.name || "Location Unknown"
+                  ).substring(0, 20)}...`
+                : pendingDropoff.dropOffLocation?.name ||
+                  "Location Unknown"}{" "}
             </Link>
           </div>
           <div className="flex justify-between items-center text-sm">
@@ -207,10 +206,9 @@ const Impact = () => {
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Count</p>
+              <p className="text-xs text-gray-500">Quantity</p>
               <p className="font-medium text-slate-600">
                 {pendingDropoff.itemQuantity || 0} units{" "}
-                {/* Assuming itemQuantity */}
               </p>
             </div>
             {/* The second "Count" in the image might be a typo or specific detail. Using itemType for now. */}
@@ -221,9 +219,13 @@ const Impact = () => {
               </p>
             </div>
             <div className="bg-black text-white px-3 py-1.5 rounded-full text-xs font-bold">
-              {/* This CU value should ideally come from the pendingDropoff object if calculated server-side */}
-              {pendingDropoff.carbonValue || Math.floor(Math.random() * 30) + 5}{" "}
-              CU {/* Placeholder CU */}
+              <Link
+                to={`/dropoff/all`}
+                className="flex items-center text-white hover:text-gray-200 transition-colors"
+              >
+                More
+                <IoChevronForward className="ml-1" />
+              </Link>
             </div>
           </div>
         </div>

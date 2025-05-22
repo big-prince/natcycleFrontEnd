@@ -5,7 +5,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 // These are the keys expected in the impactMeasurement object
-const ImpactMetricTypes = ["trees", "carbon", "water", "birds"];
+const ImpactMetricTypes = ["carbon", "trees", "water", "birds"];
 
 const ImpactCounter = ({ carbonUnits, impactMeasurement }) => {
   // console.log("ImpactCounter Props:", { carbonUnits, impactMeasurement }); // For debugging
@@ -25,10 +25,13 @@ const ImpactCounter = ({ carbonUnits, impactMeasurement }) => {
       >
         {ImpactMetricTypes.map((metricKey) => {
           let value;
-          if (impactMeasurement && impactMeasurement[metricKey] !== undefined) {
-            value = impactMeasurement[metricKey];
-          } else if (metricKey === "carbon") {
+          if (metricKey === "carbon") {
             value = carbonUnits;
+          } else if (
+            impactMeasurement &&
+            impactMeasurement[metricKey] !== undefined
+          ) {
+            value = impactMeasurement[metricKey];
           } else {
             value = 0;
           }
@@ -42,12 +45,10 @@ const ImpactCounter = ({ carbonUnits, impactMeasurement }) => {
                 {/* Text aligned to right, space for dots */}
                 <p className="text-3xl font-bold text-green-700">
                   {" "}
-                  {/* Standard Tailwind color */}
-                  {Math.floor(value || 0)}
+                  {Math.floor(value || 0)}{" "}
                 </p>
                 <p className="text-xs text-gray-600 capitalize -mt-1">
                   {" "}
-                  {/* Capitalize label */}
                   {metricKey}
                 </p>
               </div>

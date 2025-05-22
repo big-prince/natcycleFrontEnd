@@ -16,9 +16,8 @@ import {
   MdClose,
   MdFlipCameraAndroid,
 } from "react-icons/md";
-import { BsCupFill, BsArchiveFill } from "react-icons/bs";
+import { FaBottleWater } from "react-icons/fa6";
 
-// Interfaces (DropoffPoint, Location) remain the same
 interface Location {
   type: string;
   coordinates: number[];
@@ -29,21 +28,18 @@ export interface DropoffPoint {
   location: Location;
   _id: string;
   name: string;
-  itemType: string; // Ensure this is present if used for filtering/display
+  itemType: string;
   description: string;
   address: string;
   __v: number;
-  distance?: string; // Optional: for displaying distance like "2 miles"
+  distance?: string;
 }
 
-// Updated to match UI prototype's simplicity for selection
 const itemTypesForDisplay = [
-  { label: "Plastic", value: "plastic" },
+  { label: "Plastic Bottle", value: "plastic" },
   { label: "Fabrics", value: "fabric" },
-  { label: "Food", value: "food" }, // Kept for consistency, though not in image's top bar
-  { label: "E-waste", value: "ewaste" },
-  { label: "Glass", value: "glass" },
-  // Add more as needed, the UI shows "Plastic" and "Fabrics" prominently
+  { label: "Food", value: "food" },
+  { label: "Others", value: "other" },
 ];
 
 // Sample structure for detailed quantity input based on item type
@@ -53,27 +49,27 @@ const subItemsData: {
     name: string;
     icon: JSX.Element;
     unit: string;
-  }[]; // Changed 'image' to 'icon' and type to JSX.Element
+  }[];
 } = {
   plastic: [
     {
       id: "plastic_bottle_500ml",
-      name: "500ml water bottle",
-      icon: <BsCupFill className="w-7 h-7 text-blue-500" />, // Using BsCupFill icon
+      name: "500ml plastic bottle",
+      icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
       unit: "bottles",
     },
     {
-      id: "plastic_jug_1l",
-      name: "1L plastic jug",
-      icon: <BsArchiveFill className="w-7 h-7 text-gray-500" />, // Using BsArchiveFill icon
-      unit: "jugs",
+      id: "plastic_bottle_1l",
+      name: "1L plastic bottle",
+      icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
+      unit: "bottles",
     },
   ],
   fabric: [
     {
       id: "fabric_shirt",
       name: "T-Shirt",
-      icon: <MdCheckroom className="w-7 h-7 text-green-600" />, // Using MdCheckroom for fabric
+      icon: <MdCheckroom className="w-7 h-7 text-green-600" />,
       unit: "items",
     },
   ],
@@ -487,7 +483,6 @@ const CreateDropOff = () => {
                   key={item.id}
                   className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                 >
-                  {/* Updated to render icon component */}
                   <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
                     {item.icon}
                   </div>

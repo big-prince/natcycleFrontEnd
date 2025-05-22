@@ -113,7 +113,7 @@ const Dashboard = () => {
 
   return (
     <div className="pb-10">
-      <div className="mb-6 p-4 bg-white rounded-xl shadow-md flex justify-between items-center">
+      <div className="mb-6 p-4 bg-white rounded-3xl shadow-md flex justify-between items-center">
         <div className="flex items-center">
           <div className="p-2 bg-blue-100 rounded-full mr-3">
             <FaEarthAmericas className="text-2xl text-blue-500" />
@@ -131,7 +131,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="mb-6 p-4 bg-white rounded-xl shadow-md">
+      <div className="mb-10 p-4 bg-white rounded-3xl shadow-md">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <FaTrophy className="text-amber-500 w-4 h-4 mr-2" />
@@ -168,7 +168,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="p-6 mt-4 rounded-3xl bg-[#D4FF4F] text-slate-800 shadow-lg">
+      {/* Green "Divert Today" Card */}
+      <div className="p-6 mt-4 rounded-3xl bg-[#D4FF4F] text-slate-800 shadow-lg relative pb-14 z-10">
+        {" "}
         <p className="text-lg font-semibold">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
@@ -179,8 +181,7 @@ const Dashboard = () => {
           <FaChevronRight className="mr-1 text-xs" />
           SELECT
         </div>
-
-        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide">
+        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide ">
           {divertItems.map((item) => (
             <button
               type="button"
@@ -199,29 +200,29 @@ const Dashboard = () => {
             </button>
           ))}
         </div>
-
         <Link
-          to="/public/dropoff/create" // This link can remain as a general fallback or for "others"
-          className="block text-center text-xs underline text-green-700 hover:text-green-800 font-medium"
+          to="/public/dropoff/create"
+          className="block  text-xs underline text-green-700 hover:text-green-800 font-medium"
         >
           Want to divert others?
         </Link>
-      </div>
-
-      <div className="mt-8 px-2 mb-4">
-        <button
-          type="button"
-          onClick={handleLogImpact}
-          className="flex items-center justify-between w-full bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-5 shadow-lg"
-        >
-          <div className="text-left">
-            <p className="text-base font-semibold">Log impact</p>
-            <p className="text-xs font-light -mt-0.5 opacity-80">
-              Dropoff only
-            </p>
-          </div>
-          <FaArrowRight className="text-lg" />
-        </button>
+        <div className="absolute bottom-[-26px] left-1 w-auto transform -translate-x-1/2 translate-x-8">
+          {" "}
+          {/* Adjusted positioning */}
+          <button
+            type="button"
+            onClick={handleLogImpact}
+            className="flex items-center justify-between bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72"
+          >
+            <div className="text-left">
+              <p className="text-base font-semibold">Log impact</p>
+              <p className="text-xs font-light -mt-0.5 opacity-80">
+                Dropoff only
+              </p>
+            </div>
+            <FaArrowRight className="text-lg ml-4" />
+          </button>
+        </div>
       </div>
 
       {!user.phoneNumber && (

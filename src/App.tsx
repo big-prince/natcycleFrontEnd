@@ -37,6 +37,9 @@ import CampaignContributors from "./pages/dashboard/campaign/CampaignContributor
 import CreateDropOff from "./pages/dashboard/dropoff/CreateDropOff";
 import AdminDropOffs from "./pages/admin/dropoff/AdminDropOffs";
 import AdminDropOffDetails from "./pages/admin/dropoff/AdminDropOffDetails";
+import AdminMaterials from "./pages/admin/AdminMaterials";
+import AddMaterialPage from "./pages/admin/AddMaterialPage";
+import MaterialDetails from "./pages/admin/MaterialDetails";
 import AddDropOffLocation from "./pages/admin/dropoff/AddDropOffLocation";
 import DropOffLocations from "./pages/admin/dropoff/DropOffLocations";
 import Where from "./pages/dashboard/where/Where";
@@ -99,7 +102,6 @@ const App = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/users/:id" element={<UserDetails />} />
-
             <Route path="/admin/pickups" element={<AdminPickups />} />
             <Route path="/admin/dropoffs" element={<AdminDropOffs />} />
             <Route
@@ -122,6 +124,19 @@ const App = () => {
               path="/admin/campaign/:id"
               element={<AdminCampaignDetails />}
             />
+            <Route path="materials" element={<AdminMaterials />} />
+            <Route path="materials/add" element={<AddMaterialPage />} />{" "}
+            {/* Route for adding */}
+            <Route
+              path="materials/edit/:materialId"
+              element={<AddMaterialPage />}
+            />{" "}
+            {/* Route for editing */}
+            <Route
+              path="materials/:materialId"
+              element={<MaterialDetails />}
+            />{" "}
+            {/* Route for details */}
           </Route>
 
           {/* the pickup side of things */}
