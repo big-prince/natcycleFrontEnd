@@ -10,7 +10,7 @@ import ProfileApi from "../../api/profile.Api";
 import { IBadge } from "../../types"; // Import needed types
 import DropOffApi from "../../api/dropOffApi";
 
-import { FaLeaf, FaBoxesStacked, FaMapPin, FaAward } from "react-icons/fa6"; // Added FaAward for badges
+import { FaLeaf, FaBoxesStacked, FaMapPin, FaAward } from "react-icons/fa6";
 import { IoChevronForward } from "react-icons/io5";
 
 const recyclablesWithPoints = [
@@ -25,7 +25,7 @@ type IItemsCount = {
   glass: number;
   mixed: number;
   plastic: number;
-  [key: string]: number; // Index signature
+  [key: string]: number;
 };
 
 type IDropOff = {
@@ -258,7 +258,7 @@ const Impact = () => {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-md font-semibold text-slate-700">Breakdown</h3>
           <Link
-            to="/profile"
+            to="/green-profile"
             className="text-xs text-green-600 font-medium flex items-center"
           >
             See Green Profile <IoChevronForward className="ml-0.5" />

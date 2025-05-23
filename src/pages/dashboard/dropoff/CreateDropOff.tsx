@@ -6,6 +6,7 @@ import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { toast } from "react-toastify";
 import DropOffApi from "../../../api/dropOffApi";
+import MaterialApi from "../../../api/materialApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   MdLocationOn,
@@ -34,13 +35,6 @@ export interface DropoffPoint {
   __v: number;
   distance?: string;
 }
-
-const itemTypesForDisplay = [
-  { label: "Plastic Bottle", value: "plastic" },
-  { label: "Fabrics", value: "fabric" },
-  { label: "Food", value: "food" },
-  { label: "Others", value: "other" },
-];
 
 // Sample structure for detailed quantity input based on item type
 const subItemsData: {
@@ -95,6 +89,12 @@ const CreateDropOff = () => {
   const [dropOffForm, setDropOffForm] = useState({
     description: "", // Kept if needed, though not prominent in new UI
   });
+  const [itemTypesForDisplay, setItemsForDisplay] = useState<
+    {
+      label: string;
+      value: string;
+    }[]
+  >([]);
 
   useEffect(() => {
     // If there's a type from query, ensure it's set.
@@ -103,6 +103,40 @@ const CreateDropOff = () => {
       setDetailedQuantities({});
     }
   }, [typeFromQuery]);
+
+  //use effect to set items for Display
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        const res = await MaterialApi.getAllMaterials();
+        const materials = res.data.data.materials;
+        materials.forEach((material) => {
+          //check for the arrays length
+          if (itemTypesForDisplay.length > 5) {
+            console.log("Limit reached");
+            return; // Limit to 5 items
+          }
+
+          //check if an item with this type already exists
+          const existingItem = itemTypesForDisplay.find(
+            (item) => item.value === material.category
+          );
+
+          if (!existingItem) {
+            itemTypesForDisplay.push({
+              label: material.name,
+              value: material.category,
+            });
+          }
+        });
+
+        setItemsForDisplay(itemTypesForDisplay);
+      } catch (err) {
+        console.error("Failed to fetch materials:", err);
+      }
+    };
+    fetchMaterials();
+  }, [itemTypesForDisplay]);
 
   const handleItemTypeSelect = (itemValue: string) => {
     setSearchParams({ type: itemValue }); // This will trigger the useEffect above

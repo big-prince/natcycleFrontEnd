@@ -16,7 +16,7 @@ const DashLayout = () => {
   }, [user, navigate]);
 
   if (!user) {
-    return null; // Or a loading spinner/page
+    return null;
   }
 
   return (
@@ -40,7 +40,6 @@ const DashLayout = () => {
         </div>
       </div>
       <Outlet />
-      {/* MobileNav container - padding adjusted if MobileNav handles its own */}
       <div className="p-0">
         <MobileNav />
       </div>

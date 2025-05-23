@@ -8,7 +8,8 @@ import { updateUser } from "../../reducers/authSlice";
 import { FaEarthAmericas } from "react-icons/fa6";
 import { FaTrophy } from "react-icons/fa6";
 import ImpactCounter from "./components/ImpactCounter";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify";
+import MaterialApi from "../../api/materialApi";
 
 const mileStoneNumbers = [
   { level: 1, pointsRange: [0, 500], name: "Seedling" },
@@ -23,17 +24,11 @@ const Dashboard = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate(); // Initialize useNavigate
   const [user, setUser] = useState(localUser);
-  const [selectedItemType, setSelectedItemType] = useState<string | null>(null); // State for selected item
+  const [selectedItemType, setSelectedItemType] = useState<string | null>(null);
 
-  const divertItems = [
-    { name: "Plastic bottle", type: "plastic" }, // Removed 'link' as navigation is handled differently
-    { name: "Food", type: "food" },
-    { name: "Fabrics", type: "fabric" },
-    // Add more items if needed
-    { name: "E-waste", type: "ewaste" },
-    { name: "Glass", type: "glass" },
-    { name: "Paper", type: "paper" },
-  ];
+  const [divertItems, setDivertItems] = useState<
+    { name: string; type: string }[]
+  >([]);
 
   function getTimeOfDay() {
     const now = new Date();
@@ -55,8 +50,38 @@ const Dashboard = () => {
         }
       }
     };
+    const fetchMaterials = async () => {
+      try {
+        const res = await MaterialApi.getAllMaterials();
+        const materials = res.data.data.materials;
+        materials.forEach((material) => {
+          //check for the arrays length
+          if (divertItems.length > 5) {
+            console.log("Limit reached");
+            return; // Limit to 5 items
+          }
+
+          //check if an item with this type already exists
+          const existingItem = divertItems.find(
+            (item) => item.type === material.category
+          );
+
+          if (!existingItem) {
+            divertItems.push({
+              name: material.name,
+              type: material.category,
+            });
+          }
+        });
+
+        setDivertItems(divertItems);
+      } catch (err) {
+        console.error("Failed to fetch materials:", err);
+      }
+    };
     fetchUser();
-  }, [dispatch, localUser?._id]);
+    fetchMaterials();
+  }, [dispatch, localUser?._id, divertItems]);
 
   if (!user) {
     return <div className="p-10 text-center">Loading user data...</div>;

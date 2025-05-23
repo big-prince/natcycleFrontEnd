@@ -54,17 +54,16 @@ const AdminDropOffs = () => {
     // Simulate API call
     console.log(`Attempting to approve dropOff ID: ${dropOffId}`);
     try {
-      // Placeholder for actual API call:
-      // await DropOffApi.approveDropOff(dropOffId, { status: "approved" });
-
-      // Simulate success:
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await DropOffApi.adminApproveDropOff(dropOffId).then((res) => {
+        console.log(res.data);
+      });
 
       setData((prevData) =>
         prevData.map((item) =>
-          item._id === dropOffId ? { ...item, status: "approved" } : item
+          item._id === dropOffId ? { ...item, status: "Approved" } : item
         )
       );
+
       toast.success("Drop-off approved successfully!");
     } catch (error) {
       console.error("Failed to approve drop-off:", error);
@@ -196,7 +195,7 @@ const AdminDropOffs = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <Link
                       to={`/admin/dropoffs/${item._id}`}
-                      className="text-sky-600 hover:text-sky-800 p-1" // Removed FaEye icon, using text
+                      className="text-sky-600 hover:text-sky-800 p-1"
                       title="View Details"
                     >
                       View Details

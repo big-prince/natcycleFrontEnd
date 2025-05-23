@@ -27,6 +27,7 @@ const AddMaterialPage = () => {
   const [description, setDescription] = useState("");
   const [weight, setWeight] = useState<number | string>("");
   const [cuValue, setCuValue] = useState<number | string>("");
+  const [natPoints, setNatPoints] = useState<number | string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,8 +37,6 @@ const AddMaterialPage = () => {
   useEffect(() => {
     if (isEditing && materialId) {
       setLoading(true);
-      // Simulating API call to fetch material by ID
-      // Replace with actual API call: materialApi.getMaterialById(materialId)
       const fetchMaterialDetails = async () => {
         setLoading(true);
         try {
@@ -53,6 +52,7 @@ const AddMaterialPage = () => {
           setDescription(mainData?.description);
           setWeight(mainData?.weight);
           setCuValue(mainData?.cuValue);
+          setNatPoints(mainData?.natPoints);
           if (mainData?.image) {
             setInitialImageURL(() => {
               const dataType = typeof mainData?.image;
@@ -106,13 +106,11 @@ const AddMaterialPage = () => {
     formData.append("description", description);
     formData.append("weight", String(weight));
     formData.append("cuValue", String(cuValue));
+    formData.append("natPoints", String(natPoints));
     if (imageFile) {
       formData.append("file", imageFile);
     } else if (isEditing && initialImageURL) {
-      console.log("EDiting and no existing image");
-      // If editing and no new file, you might need to send the existing image URL
-      // or your backend handles this by not updating the image if 'file' is not present.
-      // For this example, we assume backend handles it.
+      console.log("Editing and no existing image");
     }
 
     console.log("Form Data to submit:", Object.fromEntries(formData));
@@ -253,6 +251,27 @@ const AddMaterialPage = () => {
                 value={cuValue}
                 onChange={(e) =>
                   setCuValue(e.target.value === "" ? "" : e.target.value)
+                }
+                className="input w-full"
+                placeholder="e.g., 5"
+                min="0"
+                step="any"
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="materialNatPoints"
+                className="block text-sm font-semibold text-slate-700 mb-1.5"
+              >
+                Natcycle Points <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                id="materialNatPoints"
+                value={natPoints}
+                onChange={(e) =>
+                  setNatPoints(e.target.value === "" ? "" : e.target.value)
                 }
                 className="input w-full"
                 placeholder="e.g., 5"

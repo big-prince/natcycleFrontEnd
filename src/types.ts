@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // types.ts
 
 // LoginPayload
@@ -19,7 +20,7 @@ export type ILocation = {
   address: string;
   state: string;
   hidden: boolean;
-}
+};
 
 export type IUser = {
   _id: string;
@@ -33,13 +34,14 @@ export type IUser = {
   lastName: string;
   point: number;
   pointsEarned: number;
-  profilePicture?: { // Optional profile picture object
+  profilePicture?: {
+    // Optional profile picture object
     public_id: string;
     url: string;
   };
   referralId: string;
   totalItemsCollected: number;
-}
+};
 
 export type Pickup = {
   createdAt: string;
@@ -56,7 +58,7 @@ export type Pickup = {
   user: IUser;
   __v: number;
   _id: string;
-}
+};
 
 export type { LoginPayload };
 
@@ -67,8 +69,8 @@ export type IBadge = {
   image: {
     public_id: string;
     url: string;
-  }
-}
+  };
+};
 
 export type IReward = {
   status: string;
@@ -106,7 +108,30 @@ export type IPickup = {
   completedAt: string;
   user: IUser;
   completedBy: string;
-  campaign? : {
+  campaign?: {
     name: string;
-  }
+  };
+};
+
+export interface NormalizedPlaceData {
+  address: string; // Full formatted address
+  latitude: string;
+  longitude: string;
+  name?: string; // A derived name for the location (e.g., "Starbucks Main St" or "123 Main St")
+  city?: string;
+  country?: string;
+  postalCode?: string;
+  providerRawData?: any; // Optional: store the raw response from the provider
 }
+
+export type IDropOff = {
+  _id: string;
+  location: ILocation;
+  itemType: string;
+  itemQuantity: number;
+  description: string;
+  user: IUser;
+  pointsEarned: number;
+  createdAt: string;
+  updatedAt: string;
+};

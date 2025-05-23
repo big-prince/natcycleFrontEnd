@@ -45,6 +45,7 @@ import DropOffLocations from "./pages/admin/dropoff/DropOffLocations";
 import Where from "./pages/dashboard/where/Where";
 import UserDropOffs from "./pages/dashboard/dropoff/UserDropOffs";
 import PublicLayout from "./pages/components/PublicLayout";
+import GreenProfile from "./pages/dashboard/GreenProfile";
 
 const App = () => {
   return (
@@ -72,7 +73,9 @@ const App = () => {
           <Route path="/public" element={<PublicLayout />}>
             <Route path="dropoff/create" element={<CreateDropOff />} />
           </Route>
+          <Route path="/green-profile" element={<GreenProfile />} />
 
+          {/* Protected routes */}
           <Route path="/" element={<DashLayout />}>
             <Route path="home" element={<Dashboard />} />
             {/* Other protected routes */}

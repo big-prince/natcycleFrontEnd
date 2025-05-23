@@ -21,7 +21,7 @@ const DropOffApi = {
   async adminGetDropOffs() {
     return await api.get("dropOff/admin");
   },
-  async adminApproveDropOffs(id: string) {
+  async adminApproveDropOff(id: string) {
     return await api.get(`dropoff/approve/${id}`);
   },
 };
