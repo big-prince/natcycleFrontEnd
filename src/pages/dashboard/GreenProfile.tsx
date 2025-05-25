@@ -29,7 +29,7 @@ const getLevelName = (carbonUnits: number): string => {
 };
 
 const GreenProfile: React.FC = () => {
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate(); 
   const localUser = useAppSelector((state) => state.auth.user);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dropOffsByDay, setDropOffsByDay] = useState<Record<string, number>>(
