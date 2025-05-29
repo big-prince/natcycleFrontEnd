@@ -54,34 +54,50 @@ const Dashboard = () => {
       try {
         const res = await MaterialApi.getAllMaterials();
         const materials = res.data.data.materials;
-        materials.forEach((material) => {
-          //check for the arrays length
-          if (divertItems.length > 5) {
-            console.log("Limit reached");
-            return; // Limit to 5 items
+        // First collect all materials
+        const plasticMaterials = materials.filter((m) =>
+          m.category.toLowerCase().includes("plastic")
+        );
+        const nonPlasticMaterials = materials.filter(
+          (m) => !m.category.toLowerCase().includes("plastic")
+        );
+
+        const newDivertItems: { name: string; type: string }[] = [];
+
+        // Add plastic first if it exists
+        if (plasticMaterials.length > 0) {
+          newDivertItems.push({
+            name: "Plastic",
+            type: "plastic",
+          });
+        }
+
+        // Add non-plastic materials
+        for (const material of nonPlasticMaterials) {
+          if (newDivertItems.length >= 5) {
+            break;
           }
 
-          //check if an item with this type already exists
-          const existingItem = divertItems.find(
+          const existingItem = newDivertItems.find(
             (item) => item.type === material.category
           );
 
           if (!existingItem) {
-            divertItems.push({
+            newDivertItems.push({
               name: material.name,
               type: material.category,
             });
           }
-        });
+        }
 
-        setDivertItems(divertItems);
+        setDivertItems(newDivertItems);
       } catch (err) {
         console.error("Failed to fetch materials:", err);
       }
     };
     fetchUser();
     fetchMaterials();
-  }, [dispatch, localUser?._id, divertItems]);
+  }, [dispatch, localUser?._id]);
 
   if (!user) {
     return <div className="p-10 text-center">Loading user data...</div>;
@@ -221,7 +237,7 @@ const Dashboard = () => {
                 }
               `}
             >
-              {item.name}
+              {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
             </button>
           ))}
         </div>

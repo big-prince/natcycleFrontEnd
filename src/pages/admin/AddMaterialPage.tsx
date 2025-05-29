@@ -7,11 +7,16 @@ import { toast } from "react-toastify";
 import { IMaterial } from "./AdminMaterials";
 
 const materialCategories: IMaterial["category"][] = [
-  "plastic",
-  "food",
-  "fabric",
-  "ewaste",
+  "500ml plastic",
+  "1000ml plastic",
+  "1500ml plastic",
   "glass",
+  "paper",
+  "metal",
+  "food",
+  "organic",
+  "fabric",
+  "eWaste",
   "other",
 ];
 

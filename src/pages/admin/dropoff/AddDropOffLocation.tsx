@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -6,40 +7,123 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaSave, FaSpinner, FaArrowLeft } from "react-icons/fa";
 import AddressAutocomplete from "./AddressAutocomplete";
 import { NormalizedPlaceData } from "../../../types";
+import materialApi from "../../../api/materialApi";
 
 interface LocationFormData {
   name: string;
+  locationType: string;
   itemType: string;
   description: string;
-  address: string; // This will store the formatted address from autocomplete
+  address: string;
   latitude: string;
   longitude: string;
+  plasticSpecifics: string;
 }
 
 const GEOAPIFY_API_KEY = "58fbdbc730e0425d8701cdc5ca6cb6dc";
 
 const AddDropOffLocation = () => {
   const navigate = useNavigate();
-  const [loadingPage, setLoadingPage] = useState(false);
   const [searchParams] = useSearchParams();
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentLocationId, setCurrentLocationId] = useState<string | null>(
-    null
-  );
 
   const [formData, setFormData] = useState<LocationFormData>({
     name: "",
+    locationType: "",
     itemType: "",
+    plasticSpecifics: "",
+
     description: "",
     address: "",
     latitude: "",
     longitude: "",
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentLocationId, setCurrentLocationId] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [areMaterialsLoaded, setAreMaterialsLoaded] = useState(false);
+
+  const [mainItemTypeList] = useState([
+    { label: "Select item type...", value: "" },
+    { label: "Fabric", value: "fabric" },
+    { label: "Plastic", value: "plastic" },
+    { label: "E-waste", value: "ewaste" },
+    { label: "Glass", value: "glass" },
+    { label: "Food Waste", value: "food" },
+    { label: "Paper & Cardboard", value: "paper" },
+    { label: "Metals", value: "metals" },
+    { label: "Batteries", value: "batteries" },
+    { label: "Other", value: "other" },
+  ]);
+
+  const [plasticSpecificsOptions, setPlasticSpecificsOptions] = useState([
+    { label: "Select plastic type...", value: "" },
+  ]);
+
+  useEffect(() => {
+    const fetchMaterialTypes = async () => {
+      console.log(
+        "Fetching all material types for plastic specifics dropdown..."
+      );
+      try {
+        const response = await materialApi.getAllMaterials();
+        const materials = response.data.data.materials;
+
+        const specificPlastics = materials
+          .filter((item: any) => {
+            const categoryLower = item.category?.toLowerCase();
+            return (
+              categoryLower &&
+              categoryLower.includes("ml") &&
+              categoryLower.includes("plastic")
+            );
+          })
+          .map((item: any) => ({
+            label: item.name,
+            value: item.category,
+          }));
+
+        const uniqueSpecificPlastics: typeof specificPlastics = Array.from(
+          new Map(specificPlastics.map((item) => [item.value, item])).values()
+        );
+        console.log(
+          "Derived specific plastic options:",
+          uniqueSpecificPlastics
+        );
+
+        if (uniqueSpecificPlastics.length > 0) {
+          setPlasticSpecificsOptions([
+            { label: "Select plastic type...", value: "" },
+            ...uniqueSpecificPlastics,
+          ]);
+        } else {
+          setPlasticSpecificsOptions([
+            { label: "Select plastic type...", value: "" },
+          ]);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to fetch material types for plastic specifics:",
+          error
+        );
+        toast.error("Failed to load plastic type options.");
+      } finally {
+        setAreMaterialsLoaded(true);
+        console.log("Plastic specifics options loading finished.");
+      }
+    };
+    fetchMaterialTypes();
+  }, []);
 
   useEffect(() => {
     const locationId = searchParams.get("id");
-    if (locationId) {
+    if (locationId && areMaterialsLoaded) {
+      console.log(
+        `Attempting to load data for editing. Location ID: ${locationId}. Materials loaded: ${areMaterialsLoaded}`
+      );
       setIsEditing(true);
       setCurrentLocationId(locationId);
       setLoadingPage(true);
@@ -47,25 +131,69 @@ const AddDropOffLocation = () => {
         .getDropOffLocationById(locationId)
         .then((res) => {
           const data = res.data.data;
-          setFormData({
+          console.log("Fetched location data for editing:", data);
+          const dbItemType = data.itemType || "";
+
+          let formItemType = dbItemType;
+          let formPlasticSpecifics = "";
+
+          const isSpecificPlastic = plasticSpecificsOptions.some(
+            (opt) => opt.value === dbItemType && opt.value !== ""
+          );
+
+          if (isSpecificPlastic) {
+            formItemType = "plastic";
+            formPlasticSpecifics = dbItemType;
+          } else if (dbItemType === "plastic" && data.plasticSpecifics) {
+            formPlasticSpecifics = data.plasticSpecifics;
+          } else if (dbItemType !== "plastic") {
+            formPlasticSpecifics = "";
+          }
+
+          const newFormData = {
             name: data.name || "",
-            itemType: data.itemType || "",
+            locationType: data.locationType || "",
+            itemType: formItemType,
             description: data.description || "",
+            plasticSpecifics: formPlasticSpecifics,
             address: data.address || "",
             latitude: data.location?.coordinates[1]?.toString() || "",
             longitude: data.location?.coordinates[0]?.toString() || "",
-          });
+          };
+          setFormData(newFormData);
+          console.log("Form data set for editing:", newFormData);
         })
         .catch((err) => {
-          console.error("Failed to load location data:", err);
+          console.error("Failed to load location data for editing:", err);
           toast.error("Failed to load location data for editing.");
           navigate("/admin/dropoff-locations");
         })
         .finally(() => {
           setLoadingPage(false);
+          console.log("Location data loading/editing setup finished.");
         });
+    } else if (locationId && !areMaterialsLoaded) {
+      console.log(
+        `Edit mode for ID: ${locationId}, but plastic specifics options not yet loaded. Waiting.`
+      );
+      setLoadingPage(true);
+    } else if (!locationId) {
+      console.log("Not in edit mode. Resetting form.");
+      setIsEditing(false);
+      setCurrentLocationId(null);
+      setFormData({
+        name: "",
+        locationType: "",
+        itemType: "",
+        plasticSpecifics: "",
+        description: "",
+        address: "",
+        latitude: "",
+        longitude: "",
+      });
+      setLoadingPage(false);
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, areMaterialsLoaded, plasticSpecificsOptions]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -73,10 +201,18 @@ const AddDropOffLocation = () => {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    console.log(`Input change - Name: ${name}, Value: ${value}`);
+    setFormData((prev) => {
+      const newState = { ...prev, [name]: value };
+      if (name === "itemType" && value !== "plastic") {
+        newState.plasticSpecifics = "";
+        console.log(
+          "ItemType changed from plastic, clearing plasticSpecifics in formData."
+        );
+      }
+      console.log("New formData state after input change:", newState);
+      return newState;
+    });
   };
 
   const handlePlaceSelect = (place: NormalizedPlaceData | null) => {
@@ -100,29 +236,69 @@ const AddDropOffLocation = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submitted. Current formData:", formData);
+
     if (!formData.address || !formData.latitude || !formData.longitude) {
       toast.error("Please select a valid address using the address search.");
       return;
     }
-    if (!formData.name || !formData.itemType) {
-      toast.error(
-        "Please fill in the Location Name and Accepted Item Type fields."
-      );
+    if (!formData.name) {
+      toast.error("Please fill in the Location Name field.");
+      return;
+    }
+    if (!formData.itemType) {
+      toast.error("Please select a Primary Accepted Item Type.");
       return;
     }
 
+    let itemTypeForSubmission = formData.itemType;
+
+    if (formData.itemType === "plastic") {
+      if (!formData.plasticSpecifics || formData.plasticSpecifics === "") {
+        toast.error("Please select a specific plastic type from the dropdown.");
+        console.log(
+          "Validation failed: Plastic selected, but no specific type chosen. formData.plasticSpecifics:",
+          formData.plasticSpecifics
+        );
+        return;
+      }
+      itemTypeForSubmission = formData.plasticSpecifics;
+      console.log(
+        "Plastic type selected. Using specific type for submission:",
+        itemTypeForSubmission
+      );
+    }
+
     setLoading(true);
-    const payload: LocationFormData = { ...formData };
+
+    const latNum = parseFloat(formData.latitude);
+    const lonNum = parseFloat(formData.longitude);
+
+    if (isNaN(latNum) || isNaN(lonNum)) {
+      toast.error("Invalid latitude or longitude. Please re-select address.");
+      setLoading(false);
+      return;
+    }
+
+    const submissionPayload = {
+      name: formData.name,
+      itemType: itemTypeForSubmission,
+      description: formData.description,
+      address: formData.address,
+      latitude: latNum,
+      longitude: lonNum,
+    };
+    console.log("Final submissionPayload:", submissionPayload);
 
     try {
       if (isEditing && currentLocationId) {
         await dropOffLocationApi.updateDropOffLocation(
           currentLocationId,
-          payload
+          submissionPayload
         );
         toast.success("Location updated successfully!");
       } else {
-        await dropOffLocationApi.addDropOffLocation(payload);
+        await dropOffLocationApi.addDropOffLocation(submissionPayload);
         toast.success("Location added successfully!");
       }
       navigate("/admin/dropoff-locations");
@@ -136,18 +312,6 @@ const AddDropOffLocation = () => {
       setLoading(false);
     }
   };
-
-  const itemTypesList = [
-    { label: "Fabric", value: "fabric" },
-    { label: "Plastic", value: "plastic" },
-    { label: "E-waste", value: "ewaste" },
-    { label: "Glass", value: "glass" },
-    { label: "Food Waste", value: "food" },
-    { label: "Paper & Cardboard", value: "paper" },
-    { label: "Metals", value: "metals" },
-    { label: "Batteries", value: "batteries" },
-    { label: "Other", value: "other" },
-  ];
 
   if (loadingPage) {
     return (
@@ -175,7 +339,7 @@ const AddDropOffLocation = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
-              htmlFor="address-search-component" // ID for the component wrapper if needed, not the input itself
+              htmlFor="address-search-component"
               className="block text-sm font-semibold text-slate-700 mb-1.5"
             >
               Search Address & Auto-fill <span className="text-red-500">*</span>
@@ -189,7 +353,7 @@ const AddDropOffLocation = () => {
             />
             <p className="text-xs text-slate-500 mt-1">
               Selecting an address will auto-populate Address, Latitude, and
-              Longitude fields.
+              Longitude fields. Location Name might also be suggested.
             </p>
           </div>
 
@@ -214,6 +378,27 @@ const AddDropOffLocation = () => {
 
           <div>
             <label
+              htmlFor="locationType"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Location Type
+            </label>
+            <select
+              className="input w-full"
+              name="locationType"
+              id="locationType"
+              value={formData.locationType || ""}
+              onChange={handleInputChange}
+            >
+              <option value="">Select location type...</option>
+              <option value="redeem centre">Redeem Centre</option>
+              <option value="collection point">Collection Point</option>
+              <option value="sewage unit">Sewage Unit</option>
+            </select>
+          </div>
+
+          <div>
+            <label
               htmlFor="itemType"
               className="block text-sm font-semibold text-slate-700 mb-1.5"
             >
@@ -227,16 +412,48 @@ const AddDropOffLocation = () => {
               onChange={handleInputChange}
               required
             >
-              <option value="" disabled>
-                Select item type...
-              </option>
-              {itemTypesList.map((item) => (
-                <option key={item.value} value={item.value}>
+              {mainItemTypeList.map((item) => (
+                <option
+                  key={item.value || `main-opt-${item.label}`}
+                  value={item.value}
+                  disabled={item.value === "" && formData.itemType !== ""}
+                >
                   {item.label}
                 </option>
               ))}
             </select>
           </div>
+
+          {formData.itemType === "plastic" && (
+            <div>
+              <label
+                htmlFor="plasticSpecifics"
+                className="block text-sm font-semibold text-slate-700 mb-1.5"
+              >
+                Specific Plastic Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                className="input w-full"
+                name="plasticSpecifics"
+                id="plasticSpecifics"
+                value={formData.plasticSpecifics}
+                onChange={handleInputChange}
+                required={formData.itemType === "plastic"}
+              >
+                {plasticSpecificsOptions.map((item) => (
+                  <option
+                    key={item.value || `plastic-opt-${item.label}`}
+                    value={item.label}
+                    disabled={
+                      item.value === "" && formData.plasticSpecifics !== ""
+                    }
+                  >
+                    {item.value}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label
@@ -255,7 +472,6 @@ const AddDropOffLocation = () => {
             />
           </div>
 
-          {/* Display Address, Latitude, Longitude (read-only, populated by autocomplete) */}
           <div className="p-4 bg-slate-50 rounded-md border border-slate-200 space-y-3">
             <h3 className="text-sm font-semibold text-slate-600">
               Verified Location Details:

@@ -47,14 +47,20 @@ const subItemsData: {
 } = {
   plastic: [
     {
-      id: "plastic_bottle_500ml",
-      name: "500ml plastic bottle",
+      id: "500ml plastic",
+      name: "500ml Plastic Bottle",
       icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
       unit: "bottles",
     },
     {
-      id: "plastic_bottle_1l",
-      name: "1L plastic bottle",
+      id: "1000ml plastic",
+      name: "1L Plastic Bottle",
+      icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
+      unit: "bottles",
+    },
+    {
+      id: "1500ml plastic",
+      name: "1.5L Plastic Bottle",
       icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
       unit: "bottles",
     },
@@ -67,7 +73,6 @@ const subItemsData: {
       unit: "items",
     },
   ],
-  // Define for other types as needed
 };
 
 const CreateDropOff = () => {
@@ -109,34 +114,70 @@ const CreateDropOff = () => {
     const fetchMaterials = async () => {
       try {
         const res = await MaterialApi.getAllMaterials();
-        const materials = res.data.data.materials;
-        materials.forEach((material) => {
-          //check for the arrays length
-          if (itemTypesForDisplay.length > 5) {
-            console.log("Limit reached");
-            return; // Limit to 5 items
+        const materials = res.data.data.materials as {
+          name: string;
+          category: string;
+        }[];
+
+        const plasticMaterials = materials.filter((m) =>
+          m.category.toLowerCase().includes("plastic")
+        );
+        const nonPlasticMaterials = materials.filter(
+          (m) => !m.category.toLowerCase().includes("plastic")
+        );
+
+        const newItemTypesForDisplay: { label: string; value: string }[] = [];
+
+        if (plasticMaterials.length > 0) {
+          const plasticCategoryExists = newItemTypesForDisplay.find(
+            (item) => item.value === "plastic"
+          );
+          if (!plasticCategoryExists) {
+            newItemTypesForDisplay.push({
+              label: "Plastic",
+              value: "plastic",
+            });
+          }
+        }
+
+        // Add non-plastic materials
+        for (const material of nonPlasticMaterials) {
+          if (newItemTypesForDisplay.length >= 5) {
+            break;
           }
 
-          //check if an item with this type already exists
-          const existingItem = itemTypesForDisplay.find(
-            (item) => item.value === material.category
+          // Check if an item with this category (value) already exists
+          const existingItem = newItemTypesForDisplay.find(
+            (item) => item.value === material.category.toLowerCase()
           );
 
           if (!existingItem) {
-            itemTypesForDisplay.push({
-              label: material.name,
-              value: material.category,
+            newItemTypesForDisplay.push({
+              label: material.name, // Use the material's name as label
+              value: material.category.toLowerCase(), // Use the material's category as value
             });
           }
-        });
+        }
+        if (plasticMaterials.length > 0 && newItemTypesForDisplay.length < 5) {
+          const genericPlasticExists = newItemTypesForDisplay.find(
+            (item) => item.value === "plastic"
+          );
+          if (!genericPlasticExists) {
+            newItemTypesForDisplay.push({
+              label: "Plastic",
+              value: "plastic",
+            });
+          }
+        }
 
-        setItemsForDisplay(itemTypesForDisplay);
+        setItemsForDisplay(newItemTypesForDisplay);
       } catch (err) {
         console.error("Failed to fetch materials:", err);
+        toast.error("Could not load item types.");
       }
     };
     fetchMaterials();
-  }, [itemTypesForDisplay]);
+  }, [setItemsForDisplay]);
 
   const handleItemTypeSelect = (itemValue: string) => {
     setSearchParams({ type: itemValue }); // This will trigger the useEffect above
@@ -170,11 +211,10 @@ const CreateDropOff = () => {
     //   });
     //   return toast.info("Please login or Signup to create a drop off");
     // }
-    console.log("LOCAL USER AVAILBLE");
 
     if (!selectedLocationId)
       return toast.error("Please select a drop-off location.");
-    if (!file) return toast.error("Please capture a receipt image."); // Updated message
+    if (!file) return toast.error("Please capture a receipt image.");
 
     const totalQuantity = Object.values(detailedQuantities).reduce(
       (sum, qty) => sum + (parseInt(qty, 10) || 0),
@@ -193,6 +233,27 @@ const CreateDropOff = () => {
     formData.append("itemType", typeFromQuery);
     formData.append("file", file as Blob);
     if (campaignIdFromQuery) formData.append("campaignId", campaignIdFromQuery);
+
+    // Log detailed quantities for plastic items if that's the selected type
+    if (typeFromQuery === "plastic") {
+      console.log("Plastic item breakdown:");
+      for (const [itemId, quantity] of Object.entries(detailedQuantities)) {
+        if (parseInt(quantity) > 0) {
+          formData.set("itemType", itemId);
+          console.log(`Setting itemType to specific plastic type: ${itemId}`);
+          break;
+        }
+      }
+    }
+
+    // Log all formData entries
+    formData.forEach((value, key) => {
+      if (key === "file") {
+        console.log(`${key}: [File object]`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    });
 
     // ... (DropOffApi.addDropOff call - existing logic)
     DropOffApi.addDropOff(formData)

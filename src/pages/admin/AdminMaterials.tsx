@@ -9,7 +9,18 @@ import { toast } from "react-toastify";
 // Define an interface for your Material data
 export interface IMaterial {
   _id: string;
-  category: "plastic" | "food" | "fabric" | "ewaste" | "glass" | "other";
+  category:
+    | "500ml plastic"
+    | "1000ml plastic"
+    | "1500ml plastic"
+    | "food"
+    | "fabric"
+    | "glass"
+    | "metal"
+    | "paper"
+    | "eWaste"
+    | "organic"
+    | "other";
   name: string;
   weight: number;
   cuValue: number;
