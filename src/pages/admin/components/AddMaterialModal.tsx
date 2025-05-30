@@ -9,15 +9,17 @@ import { IMaterial } from "../AdminMaterials"; // Import the interface
 type Props = {
   isModalOpen: boolean;
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setNotify: React.Dispatch<React.SetStateAction<boolean>>; // To trigger refetch in parent
-  materialToEdit?: IMaterial | null; // For editing functionality later
+  setNotify: React.Dispatch<React.SetStateAction<boolean>>;
+  materialToEdit?: IMaterial | null;
 };
 
 const materialCategories: IMaterial["category"][] = [
-  "plastic",
+  "1000ml plastic",
+  "500ml plastic",
+  "1500ml plastic",
   "food",
   "fabric",
-  "ewaste",
+  "eWaste",
   "glass",
   "other",
 ];
