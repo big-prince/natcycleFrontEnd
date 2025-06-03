@@ -35,8 +35,8 @@ export interface DropoffPoint {
   address: string;
   __v: number;
   distance?: string;
-  numericDistance?: number; 
-  isTooFar?: boolean; 
+  numericDistance?: number;
+  isTooFar?: boolean;
 }
 
 // Sample structure for detailed quantity input based on item type
@@ -344,31 +344,64 @@ const CreateDropOff = () => {
     setSelectedLocationId(null);
     try {
       const userCoords = await getUserLocation();
-      console.log("User's current location (lat, lon):", userCoords.latitude, userCoords.longitude);
+      console.log(
+        "User's current location (lat, lon):",
+        userCoords.latitude,
+        userCoords.longitude
+      );
 
-      const params = {
+      const baseApiParams = {
         latitude: userCoords.latitude,
         longitude: userCoords.longitude,
-        distance: 0, 
-        itemType: itemTypeValue,
+        distance: 0,
       };
+
+      let actualApiParams: any;
+      let applyClientSidePlasticFilter = false;
+
+      if (itemTypeValue.toLowerCase() === "plastic") {
+        actualApiParams = { ...baseApiParams }; // Omit itemType to fetch broader results
+        applyClientSidePlasticFilter = true;
+        console.log(
+          "Selected type is 'plastic'. Fetching broadly and will filter client-side."
+        );
+      } else {
+        actualApiParams = { ...baseApiParams, itemType: itemTypeValue };
+        console.log(`Fetching for specific type: ${itemTypeValue}`);
+      }
+
       let fetchedLocations = (
-        await dropOffLocationApi.getNearestDropOffLocations(params)
+        await dropOffLocationApi.getNearestDropOffLocations(actualApiParams)
       ).data.data;
 
-      if (fetchedLocations.length === 0) {
+      if (fetchedLocations.length === 0 && actualApiParams.distance === 0) {
         toast.info("No locations found nearby. Expanding search to 300km...");
-        params.distance = 300000; 
+        actualApiParams.distance = 300000;
         fetchedLocations = (
-          await dropOffLocationApi.getNearestDropOffLocations(params)
+          await dropOffLocationApi.getNearestDropOffLocations(actualApiParams)
         ).data.data;
       }
-      
-      console.log("Raw fetched locations from backend:", fetchedLocations);
 
-      const MAX_DISTANCE_KM = 500; 
+      console.log(
+        "Locations received from backend (before any client-side 'plastic' filtering):",
+        fetchedLocations
+      );
 
-      const locationsWithDistance = fetchedLocations
+      let processedLocations = fetchedLocations;
+      if (applyClientSidePlasticFilter) {
+        processedLocations = fetchedLocations.filter(
+          (loc: DropoffPoint) =>
+            loc.itemType && loc.itemType.toLowerCase().includes("plastic")
+        );
+        console.log(
+          "Locations after client-side 'plastic' filter:",
+          processedLocations
+        );
+      }
+
+      const MAX_DISTANCE_KM = 500;
+
+      const locationsWithDistance = processedLocations
         .map((loc: DropoffPoint) => {
           let distanceKm = Infinity;
           let locationCoordsString = "N/A";
@@ -384,14 +417,15 @@ const CreateDropOff = () => {
             distanceKm = calculateHaversineDistance(
               userCoords.latitude,
               userCoords.longitude,
-              latitude, 
-              longitude 
+              latitude,
+              longitude
             );
           }
-          
-          console.log(
-            `Processing Location: Name: "${loc.name}", Coords: ${locationCoordsString}, Calculated Distance: ${distanceKm.toFixed(1)} km`
-          );
+
+          // This console.log was here before, kept for individual processing visibility
+          // console.log(
+          //   `Processing Location: Name: "${loc.name}", Coords: ${locationCoordsString}, Calculated Distance: ${distanceKm.toFixed(1)} km`
+          // );
 
           return {
             ...loc,
@@ -401,16 +435,21 @@ const CreateDropOff = () => {
           };
         })
         .sort((a, b) => a.numericDistance - b.numericDistance);
-      
-      console.log("Locations after distance calculation and sorting:", locationsWithDistance);
+
+      console.log(
+        "Final locations after distance calculation and sorting:",
+        locationsWithDistance
+      );
 
       setLocations(locationsWithDistance);
 
-      const firstSelectableLocation = locationsWithDistance.find(loc => !loc.isTooFar);
+      const firstSelectableLocation = locationsWithDistance.find(
+        (loc) => !loc.isTooFar
+      );
       if (firstSelectableLocation) {
         setSelectedLocationId(firstSelectableLocation._id);
       } else if (locationsWithDistance.length > 0) {
-         toast.info(
+        toast.info(
           `All locations for ${itemTypeValue} are quite far. Closest is ${locationsWithDistance[0].distance} away.`
         );
       } else {
@@ -569,7 +608,7 @@ const CreateDropOff = () => {
     <div className="pb-20 px-4 max-w-md mx-auto">
       {localUser && (
         <button
-          onClick={() => navigate('/home')}
+          onClick={() => navigate("/home")}
           className="mb-5 mt-3 inline-flex items-center text-sm text-slate-600 hover:text-green-700 font-medium transition-colors group"
         >
           <MdArrowBack className="mr-2 transition-transform group-hover:-translate-x-1 h-5 w-5" />
@@ -648,7 +687,11 @@ const CreateDropOff = () => {
                     <p className="font-semibold text-slate-800">{loc.name}</p>
                     <p className="text-xs text-gray-500">{loc.address}</p>
                     {loc.distance && (
-                      <p className={`text-xs mt-0.5 ${loc.isTooFar ? 'text-red-500' : 'text-green-600'}`}>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          loc.isTooFar ? "text-red-500" : "text-green-600"
+                        }`}
+                      >
                         {loc.distance} away
                       </p>
                     )}
@@ -830,7 +873,7 @@ function calculateHaversineDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; 
+  const R = 6371;
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
   const a =
@@ -840,7 +883,7 @@ function calculateHaversineDistance(
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; 
+  return R * c;
 }
 
 function deg2rad(deg: number): number {
