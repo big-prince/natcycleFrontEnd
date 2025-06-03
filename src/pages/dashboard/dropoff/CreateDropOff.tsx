@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef } from "react";
@@ -360,7 +359,7 @@ const CreateDropOff = () => {
       let applyClientSidePlasticFilter = false;
 
       if (itemTypeValue.toLowerCase() === "plastic") {
-        actualApiParams = { ...baseApiParams }; // Omit itemType to fetch broader results
+        actualApiParams = { ...baseApiParams };
         applyClientSidePlasticFilter = true;
         console.log(
           "Selected type is 'plastic'. Fetching broadly and will filter client-side."
@@ -422,10 +421,13 @@ const CreateDropOff = () => {
             );
           }
 
-          // This console.log was here before, kept for individual processing visibility
-          // console.log(
-          //   `Processing Location: Name: "${loc.name}", Coords: ${locationCoordsString}, Calculated Distance: ${distanceKm.toFixed(1)} km`
-          // );
+          console.log(
+            `Processing Location: Name: "${
+              loc.name
+            }", Coords: ${locationCoordsString}, Calculated Distance: ${distanceKm.toFixed(
+              1
+            )} km`
+          );
 
           return {
             ...loc,
