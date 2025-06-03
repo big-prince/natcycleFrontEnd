@@ -150,7 +150,7 @@ const Impact = () => {
       {" "}
       {/* Added max-width and centering */}
       {/* Top Summary Stats */}
-      <div className="flex justify-around bg-slate-800 text-white p-5 rounded-xl shadow-lg">
+      <div className="flex justify-around bg-black text-white p-5 rounded-xl shadow-lg">
         <div className="text-center">
           <FaLeaf className="text-3xl text-green-400 mx-auto mb-1" />
           <p className="text-2xl font-bold">
