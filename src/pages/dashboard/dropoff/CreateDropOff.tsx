@@ -16,6 +16,7 @@ import {
   MdCheckroom,
   MdClose,
   MdFlipCameraAndroid,
+  MdArrowBack, // Added for back button
 } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
 
@@ -34,6 +35,8 @@ export interface DropoffPoint {
   address: string;
   __v: number;
   distance?: string;
+  numericDistance?: number; 
+  isTooFar?: boolean; 
 }
 
 // Sample structure for detailed quantity input based on item type
@@ -78,7 +81,7 @@ const subItemsData: {
 const CreateDropOff = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams(); // Allow setting params
+  const [searchParams, setSearchParams] = useSearchParams();
   const campaignIdFromQuery = searchParams.get("campaignId") || "";
   const campaignNameFromQuery = searchParams.get("campaignName") || "";
   const typeFromQuery = searchParams.get("type") || "plastic";
@@ -90,6 +93,9 @@ const CreateDropOff = () => {
   const [detailedQuantities, setDetailedQuantities] = useState<{
     [key: string]: string;
   }>({});
+  const [activePlasticSubItemId, setActivePlasticSubItemId] = useState<
+    string | null
+  >(null); // For plastic sub-item exclusivity
 
   const [dropOffForm, setDropOffForm] = useState({
     description: "", // Kept if needed, though not prominent in new UI
@@ -106,6 +112,7 @@ const CreateDropOff = () => {
     if (typeFromQuery) {
       getNearestDropOffLocations(typeFromQuery);
       setDetailedQuantities({});
+      setActivePlasticSubItemId(null); // Reset when main type changes
     }
   }, [typeFromQuery]);
 
@@ -180,12 +187,41 @@ const CreateDropOff = () => {
   }, [setItemsForDisplay]);
 
   const handleItemTypeSelect = (itemValue: string) => {
-    setSearchParams({ type: itemValue }); // This will trigger the useEffect above
-    setSelectedLocationId(null); // Reset selected location
+    setSearchParams({ type: itemValue });
+    setSelectedLocationId(null);
+    setDetailedQuantities({}); // Reset quantities for the new type
+    setActivePlasticSubItemId(null); // Reset active plastic item
   };
 
   const handleQuantityChange = (itemId: string, value: string) => {
-    setDetailedQuantities((prev) => ({ ...prev, [itemId]: value }));
+    const numericValue = parseInt(value, 10) || 0;
+
+    setDetailedQuantities((prev) => {
+      const updatedQuantities = { ...prev };
+
+      if (
+        typeFromQuery === "plastic" &&
+        (subItemsData[typeFromQuery] || []).length > 0
+      ) {
+        if (numericValue > 0) {
+          updatedQuantities[itemId] = value;
+          (subItemsData[typeFromQuery] || []).forEach((subItem) => {
+            if (subItem.id !== itemId) {
+              updatedQuantities[subItem.id] = "";
+            }
+          });
+          setActivePlasticSubItemId(itemId);
+        } else {
+          updatedQuantities[itemId] = value;
+          if (activePlasticSubItemId === itemId) {
+            setActivePlasticSubItemId(null);
+          }
+        }
+      } else {
+        updatedQuantities[itemId] = value;
+      }
+      return updatedQuantities;
+    });
   };
 
   const handleDropOffFormSubmit = async (e: any) => {
@@ -233,6 +269,15 @@ const CreateDropOff = () => {
     formData.append("itemType", typeFromQuery);
     formData.append("file", file as Blob);
     if (campaignIdFromQuery) formData.append("campaignId", campaignIdFromQuery);
+
+    if (
+      typeFromQuery === "plastic" &&
+      activePlasticSubItemId &&
+      detailedQuantities[activePlasticSubItemId] &&
+      parseInt(detailedQuantities[activePlasticSubItemId]) > 0
+    ) {
+      formData.set("itemType", activePlasticSubItemId);
+    }
 
     // Log detailed quantities for plastic items if that's the selected type
     if (typeFromQuery === "plastic") {
@@ -296,13 +341,15 @@ const CreateDropOff = () => {
 
   const getNearestDropOffLocations = async (itemTypeValue = typeFromQuery) => {
     setLoadingLocations(true);
-    setSelectedLocationId(null); // Reset selection when fetching new locations
+    setSelectedLocationId(null);
     try {
       const userCoords = await getUserLocation();
+      console.log("User's current location (lat, lon):", userCoords.latitude, userCoords.longitude);
+
       const params = {
         latitude: userCoords.latitude,
         longitude: userCoords.longitude,
-        distance: 0, // Initial search radius
+        distance: 0, 
         itemType: itemTypeValue,
       };
       let fetchedLocations = (
@@ -311,23 +358,61 @@ const CreateDropOff = () => {
 
       if (fetchedLocations.length === 0) {
         toast.info("No locations found nearby. Expanding search to 300km...");
-        params.distance = 300000; // 300km
+        params.distance = 300000; 
         fetchedLocations = (
           await dropOffLocationApi.getNearestDropOffLocations(params)
         ).data.data;
       }
+      
+      console.log("Raw fetched locations from backend:", fetchedLocations);
 
-      // Add a placeholder distance for UI demo purposes
-      const locationsWithDistance = fetchedLocations.map(
-        (loc: DropoffPoint, index: number) => ({
-          ...loc,
-          distance: `${(index + 1) * 2 + index * 0.5} miles`, // Placeholder
+      const MAX_DISTANCE_KM = 500; 
+
+      const locationsWithDistance = fetchedLocations
+        .map((loc: DropoffPoint) => {
+          let distanceKm = Infinity;
+          let locationCoordsString = "N/A";
+
+          if (
+            loc.location &&
+            loc.location.coordinates &&
+            loc.location.coordinates.length === 2
+          ) {
+            const longitude = loc.location.coordinates[0];
+            const latitude = loc.location.coordinates[1];
+            locationCoordsString = `[lon: ${longitude}, lat: ${latitude}]`;
+            distanceKm = calculateHaversineDistance(
+              userCoords.latitude,
+              userCoords.longitude,
+              latitude, 
+              longitude 
+            );
+          }
+          
+          console.log(
+            `Processing Location: Name: "${loc.name}", Coords: ${locationCoordsString}, Calculated Distance: ${distanceKm.toFixed(1)} km`
+          );
+
+          return {
+            ...loc,
+            numericDistance: distanceKm,
+            distance: `${distanceKm.toFixed(1)} km`,
+            isTooFar: distanceKm > MAX_DISTANCE_KM,
+          };
         })
-      );
+        .sort((a, b) => a.numericDistance - b.numericDistance);
+      
+      console.log("Locations after distance calculation and sorting:", locationsWithDistance);
 
       setLocations(locationsWithDistance);
-      if (locationsWithDistance.length > 0) {
-        setSelectedLocationId(locationsWithDistance[0]._id); // Auto-select first one
+
+      const firstSelectableLocation = locationsWithDistance.find(loc => !loc.isTooFar);
+      if (firstSelectableLocation) {
+        setSelectedLocationId(firstSelectableLocation._id);
+      } else if (locationsWithDistance.length > 0) {
+         toast.info(
+          `All locations for ${itemTypeValue} are quite far. Closest is ${locationsWithDistance[0].distance} away.`
+        );
       } else {
         toast.info(
           `No drop-off locations found for ${itemTypeValue} even within 300km.`
@@ -482,7 +567,15 @@ const CreateDropOff = () => {
 
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
-      {" "}
+      {localUser && (
+        <button
+          onClick={() => navigate('/home')}
+          className="mb-5 mt-3 inline-flex items-center text-sm text-slate-600 hover:text-green-700 font-medium transition-colors group"
+        >
+          <MdArrowBack className="mr-2 transition-transform group-hover:-translate-x-1 h-5 w-5" />
+          Back
+        </button>
+      )}
       <div className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide">
         {itemTypesForDisplay.map((item) => (
           <button
@@ -536,14 +629,18 @@ const CreateDropOff = () => {
 
           <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
             {locations.map((loc) => (
+              // TODO: In production, locations where loc.isTooFar is true can be filtered out entirely
+              // For now, they are faded and unselectable.
               <div
                 key={loc._id}
-                onClick={() => setSelectedLocationId(loc._id)}
-                className={`p-3 rounded-lg border cursor-pointer transition-all
+                onClick={() => !loc.isTooFar && setSelectedLocationId(loc._id)}
+                className={`p-3 rounded-lg border transition-all
                   ${
-                    selectedLocationId === loc._id
-                      ? "bg-teal-50 border-teal-500 ring-2 ring-teal-500"
-                      : "bg-white border-gray-200 hover:border-gray-400"
+                    selectedLocationId === loc._id && !loc.isTooFar
+                      ? "bg-teal-50 border-teal-500 ring-2 ring-teal-500 cursor-pointer"
+                      : loc.isTooFar
+                      ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                      : "bg-white border-gray-200 hover:border-gray-400 cursor-pointer"
                   }`}
               >
                 <div className="flex justify-between items-start">
@@ -551,12 +648,12 @@ const CreateDropOff = () => {
                     <p className="font-semibold text-slate-800">{loc.name}</p>
                     <p className="text-xs text-gray-500">{loc.address}</p>
                     {loc.distance && (
-                      <p className="text-xs text-green-600 mt-0.5">
+                      <p className={`text-xs mt-0.5 ${loc.isTooFar ? 'text-red-500' : 'text-green-600'}`}>
                         {loc.distance} away
                       </p>
                     )}
                   </div>
-                  {selectedLocationId === loc._id && (
+                  {selectedLocationId === loc._id && !loc.isTooFar && (
                     <MdCheckCircle className="text-green-600 text-2xl flex-shrink-0 ml-2" />
                   )}
                 </div>
@@ -573,29 +670,40 @@ const CreateDropOff = () => {
               were recycled?
             </h2>
             <div className="space-y-4">
-              {currentSubItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
-                    {item.icon}
+              {currentSubItems.map((item) => {
+                const isPlasticAndInactive =
+                  typeFromQuery === "plastic" &&
+                  activePlasticSubItemId !== null &&
+                  activePlasticSubItemId !== item.id;
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300 ${
+                      isPlasticAndInactive
+                        ? "opacity-40 pointer-events-none"
+                        : ""
+                    }`}
+                  >
+                    <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
+                      {item.icon}
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-sm text-slate-600">{item.name}</p>
+                      <input
+                        type="number"
+                        placeholder="How many"
+                        min="0"
+                        value={detailedQuantities[item.id] || ""}
+                        onChange={(e) =>
+                          handleQuantityChange(item.id, e.target.value)
+                        }
+                        disabled={isPlasticAndInactive}
+                        className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      />
+                    </div>
                   </div>
-                  <div className="flex-grow">
-                    <p className="text-sm text-slate-600">{item.name}</p>
-                    <input
-                      type="number"
-                      placeholder="How many"
-                      min="0"
-                      value={detailedQuantities[item.id] || ""}
-                      onChange={(e) =>
-                        handleQuantityChange(item.id, e.target.value)
-                      }
-                      className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -715,5 +823,28 @@ const CreateDropOff = () => {
     </div>
   );
 };
+
+function calculateHaversineDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; 
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; 
+}
+
+function deg2rad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
 
 export default CreateDropOff;

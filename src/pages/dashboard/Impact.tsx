@@ -48,12 +48,28 @@ type IDropOff = {
 };
 
 // Define or import mileStoneNumbers, similar to Dashboard.tsx
-const mileStoneNumbers = [
-  { level: 1, pointsRange: [0, 1000], name: "Seedling" },
-  { level: 2, pointsRange: [1001, 2000], name: "Sprout" },
-  { level: 3, pointsRange: [2001, 5000], name: "Tree" },
-  { level: 4, pointsRange: [5001, 10000], name: "Forest" },
-];
+// const mileStoneNumbers = [ // This can be removed if no longer used after milestone section removal
+//   { level: 1, pointsRange: [0, 1000], name: "Seedling" },
+//   { level: 2, pointsRange: [1001, 2000], name: "Sprout" },
+//   { level: 3, pointsRange: [2001, 5000], name: "Tree" },
+//   { level: 4, pointsRange: [5001, 10000], name: "Forest" },
+// };
+
+const formatLargeNumber = (num: number | null | undefined): string => {
+  if (num == null) return "0";
+  if (Math.abs(num) < 1000) return num.toString();
+
+  const suffixes = ["", "K", "M", "B", "T"];
+  const i = Math.floor(Math.log10(Math.abs(num)) / 3);
+
+  const val = num / Math.pow(1000, i);
+
+  if (val % 1 === 0) {
+    return val.toFixed(0) + suffixes[i];
+  } else {
+    return val.toFixed(1) + suffixes[i];
+  }
+};
 
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
@@ -116,34 +132,34 @@ const Impact = () => {
 
   console.log("🚀 ~ Impact ~ pendingDropoff:", pendingDropoff);
 
-  const currentCarbonUnits = localUser.carbonUnits || 0;
-  const currentMilestoneData =
-    mileStoneNumbers.find(
-      (m) =>
-        currentCarbonUnits >= m.pointsRange[0] &&
-        currentCarbonUnits <= m.pointsRange[1]
-    ) ||
-    (currentCarbonUnits >
-    mileStoneNumbers[mileStoneNumbers.length - 1].pointsRange[1]
-      ? mileStoneNumbers[mileStoneNumbers.length - 1]
-      : mileStoneNumbers[0]);
+  // const currentCarbonUnits = localUser.carbonUnits || 0;
+  // const currentMilestoneData = // Remove this block
+  //   mileStoneNumbers.find(
+  //     (m) =>
+  //       currentCarbonUnits >= m.pointsRange[0] &&
+  //       currentCarbonUnits <= m.pointsRange[1]
+  //   ) ||
+  //   (currentCarbonUnits >
+  //   mileStoneNumbers[mileStoneNumbers.length - 1].pointsRange[1]
+  //     ? mileStoneNumbers[mileStoneNumbers.length - 1]
+  //     : mileStoneNumbers[0]);
 
-  const milestoneStart = currentMilestoneData.pointsRange[0];
-  const milestoneEnd = currentMilestoneData.pointsRange[1];
-  let progressPercentage = 0;
-  if (milestoneEnd > milestoneStart) {
-    progressPercentage = Math.min(
-      Math.max(
-        ((currentCarbonUnits - milestoneStart) /
-          (milestoneEnd - milestoneStart)) *
-          100,
-        0
-      ),
-      100
-    );
-  } else if (currentCarbonUnits >= milestoneEnd) {
-    progressPercentage = 100;
-  }
+  // const milestoneStart = currentMilestoneData.pointsRange[0]; // Remove this
+  // const milestoneEnd = currentMilestoneData.pointsRange[1]; // Remove this
+  // let progressPercentage = 0; // Remove this
+  // if (milestoneEnd > milestoneStart) { // Remove this block
+  //   progressPercentage = Math.min(
+  //     Math.max(
+  //       ((currentCarbonUnits - milestoneStart) /
+  //         (milestoneEnd - milestoneStart)) *
+  //         100,
+  //       0
+  //     ),
+  //     100
+  //   );
+  // } else if (currentCarbonUnits >= milestoneEnd) {
+  //   progressPercentage = 100;
+  // }
 
   return (
     <div className="pb-20 max-w-md mx-auto">
@@ -230,7 +246,8 @@ const Impact = () => {
           </div>
         </div>
       )}
-      {/* Milestone Section - Integrated */}
+      {/* Milestone Section - Removed */}
+      {/* 
       <div className="mt-6 p-4 bg-white rounded-xl shadow">
         <h3 className="text-md font-semibold text-slate-700 mb-1">Milestone</h3>
         <p className="text-xs text-gray-500 mb-2">Current</p>
@@ -240,7 +257,7 @@ const Impact = () => {
               className="h-full bg-slate-800 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out px-2"
               style={{ width: `${progressPercentage}%` }}
             >
-              {progressPercentage > 15 && ( // Show only if there's enough space
+              {progressPercentage > 15 && ( 
                 <span className="text-xs font-bold text-white">
                   {Math.floor(currentCarbonUnits)}
                 </span>
@@ -252,7 +269,8 @@ const Impact = () => {
             <span>{milestoneEnd}</span>
           </div>
         </div>
-      </div>
+      </div> 
+      */}
       {/* Breakdown Section */}
       <div className="mt-6">
         <div className="flex justify-between items-center mb-3">
@@ -278,7 +296,7 @@ const Impact = () => {
               <div className="flex justify-between items-end">
                 <div>
                   <p className="text-2xl font-bold text-slate-900">
-                    {itemsCount[item.item] || 0}
+                    {formatLargeNumber(itemsCount[item.item] || 0)}
                   </p>
                   <p className="text-xs text-gray-700 -mt-1">{item.unit}</p>
                 </div>

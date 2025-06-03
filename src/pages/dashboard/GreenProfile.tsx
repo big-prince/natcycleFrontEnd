@@ -247,7 +247,7 @@ const GreenProfile: React.FC = () => {
           className="mb-6 inline-flex items-center text-sm text-slate-600 hover:text-green-700 font-medium transition-colors group"
         >
           <FaArrowLeft className="mr-2 transition-transform group-hover:-translate-x-1" />
-          Back to Impact
+          Back
         </button>
 
         {/* User Info - Flattened */}

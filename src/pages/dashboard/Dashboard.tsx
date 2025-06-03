@@ -22,9 +22,10 @@ const mileStoneNumbers = [
 const Dashboard = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [user, setUser] = useState(localUser);
   const [selectedItemType, setSelectedItemType] = useState<string | null>(null);
+  const [materialsLoading, setMaterialsLoading] = useState(true); // Added loading state
 
   const [divertItems, setDivertItems] = useState<
     { name: string; type: string }[]
@@ -51,10 +52,10 @@ const Dashboard = () => {
       }
     };
     const fetchMaterials = async () => {
+      setMaterialsLoading(true); // Set loading to true before fetching
       try {
         const res = await MaterialApi.getAllMaterials();
         const materials = res.data.data.materials;
-        // First collect all materials
         const plasticMaterials = materials.filter((m) =>
           m.category.toLowerCase().includes("plastic")
         );
@@ -64,35 +65,38 @@ const Dashboard = () => {
 
         const newDivertItems: { name: string; type: string }[] = [];
 
-        // Add plastic first if it exists
         if (plasticMaterials.length > 0) {
           newDivertItems.push({
-            name: "Plastic",
-            type: "plastic",
+            name: "Plastic", // Using "Plastic" as name for consistency if used as key
+            type: "plastic",  // Type for logic and display
           });
         }
 
-        // Add non-plastic materials
         for (const material of nonPlasticMaterials) {
           if (newDivertItems.length >= 5) {
             break;
           }
-
+          // Ensure we don't add "Plastic" again if it was already added
+          if (material.category.toLowerCase() === "plastic" && newDivertItems.find(item => item.type === "plastic")) {
+            continue;
+          }
           const existingItem = newDivertItems.find(
-            (item) => item.type === material.category
+            (item) => item.type === material.category.toLowerCase()
           );
 
           if (!existingItem) {
             newDivertItems.push({
-              name: material.name,
-              type: material.category,
+              name: material.name, // Use material.name for key if needed
+              type: material.category.toLowerCase(), // Store type as lowercase
             });
           }
         }
-
         setDivertItems(newDivertItems);
       } catch (err) {
         console.error("Failed to fetch materials:", err);
+        toast.error("Could not load divertable items.");
+      } finally {
+        setMaterialsLoading(false); // Set loading to false after fetching (or error)
       }
     };
     fetchUser();
@@ -222,24 +226,31 @@ const Dashboard = () => {
           <FaChevronRight className="mr-1 text-xs" />
           SELECT
         </div>
-        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide ">
-          {divertItems.map((item) => (
-            <button
-              type="button"
-              key={item.name}
-              onClick={() => handleDivertItemClick(item.type)}
-              className={`
-                font-medium py-3 px-5 rounded-full shadow-sm text-xs sm:text-sm text-center flex-shrink-0 min-w-[110px] transition-colors duration-150
-                ${
-                  selectedItemType === item.type
-                    ? "bg-slate-800 text-white ring-2 ring-slate-800" // Selected style
-                    : "bg-white/90 hover:bg-white text-slate-700" // Default style
-                }
-              `}
-            >
-              {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-            </button>
-          ))}
+        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide min-h-[50px]"> {/* Added min-h for consistent height during load */}
+          {materialsLoading ? (
+            <p className="text-slate-600 text-sm italic px-3">Loading items...</p>
+          ) : divertItems.length > 0 ? (
+            divertItems.map((item) => (
+              <button
+                type="button"
+                key={item.name} // Using item.name as key, as in user's current code
+                onClick={() => handleDivertItemClick(item.type)}
+                className={`
+                  font-medium py-3 px-5 rounded-full shadow-sm text-xs sm:text-sm text-center flex-shrink-0 min-w-[110px] transition-colors duration-150
+                  ${
+                    selectedItemType === item.type
+                      ? "bg-slate-800 text-white ring-2 ring-slate-800" // Selected style from user's current code
+                      : "bg-white/90 hover:bg-white text-slate-700" // Default style from user's current code
+                  }
+                `}
+              >
+                {/* Displaying item.type capitalized, as in user's current code */}
+                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+              </button>
+            ))
+          ) : (
+            <p className="text-slate-600 text-sm px-3">No divertable items found.</p>
+          )}
         </div>
         <Link
           to="/public/dropoff/create"
@@ -247,13 +258,12 @@ const Dashboard = () => {
         >
           Want to divert others?
         </Link>
-        <div className="absolute bottom-[-26px] left-1 w-auto transform -translate-x-1/2 translate-x-8">
-          {" "}
-          {/* Adjusted positioning */}
+        {/* Button container positioned to the far right */}
+        <div className="absolute bottom-[-26px] right-6 w-auto"> {/* Adjusted for far right positioning */}
           <button
             type="button"
             onClick={handleLogImpact}
-            className="flex items-center justify-between bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72"
+            className="flex items-center justify-between bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72" // Retained w-72 from user's current code
           >
             <div className="text-left">
               <p className="text-base font-semibold">Log impact</p>
