@@ -30,7 +30,9 @@ const AddMaterialPage = () => {
   );
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [weight, setWeight] = useState<number | string>("");
+  // const [weight, setWeight] = useState<number | string>(""); // Remove this
+  const [quantity, setQuantity] = useState<number | string>(""); // New state for quantity
+  const [weightInGrams, setWeightInGrams] = useState<number | string>(""); // New state for weight
   const [cuValue, setCuValue] = useState<number | string>("");
   const [natPoints, setNatPoints] = useState<number | string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -55,7 +57,19 @@ const AddMaterialPage = () => {
           //set all states
           setName(mainData?.name);
           setDescription(mainData?.description);
-          setWeight(mainData?.weight);
+          // setWeight(mainData?.weight); // Remove this
+          // Assuming backend provides 'weight' for weightInGrams or 'quantity'
+          // Prioritize weight if both somehow exist, or adjust based on backend structure
+          if (mainData?.weight !== undefined && mainData?.weight !== null) {
+            setWeightInGrams(mainData.weight);
+            setQuantity("");
+          } else if (
+            mainData?.quantity !== undefined &&
+            mainData?.quantity !== null
+          ) {
+            setQuantity(mainData.quantity);
+            setWeightInGrams("");
+          }
           setCuValue(mainData?.cuValue);
           setNatPoints(mainData?.natPoints);
           if (mainData?.image) {
@@ -89,17 +103,48 @@ const AddMaterialPage = () => {
     }
   };
 
+  const handleQuantityChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = parseInt(value, 10);
+
+    if (value === "") {
+      setQuantity("");
+    } else if (!isNaN(numValue) && numValue >= 0) {
+      setQuantity(numValue);
+      setWeightInGrams(""); // Clear weight if quantity is entered
+    } else if (value !== "" && quantity === "") {
+      // handles if user types non-numeric first
+      setQuantity(value); // keep the invalid input for a moment so user sees it
+    }
+  };
+
+  const handleWeightChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const numValue = parseFloat(value);
+
+    if (value === "") {
+      setWeightInGrams("");
+    } else if (!isNaN(numValue) && numValue >= 0) {
+      setWeightInGrams(numValue);
+      setQuantity(""); // Clear quantity if weight is entered
+    } else if (value !== "" && weightInGrams === "") {
+      // handles if user types non-numeric first
+      setWeightInGrams(value); // keep the invalid input for a moment so user sees it
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !name ||
-      !weight ||
+      (!quantity && !weightInGrams) || // Check if either quantity or weight is provided
       !cuValue ||
+      !natPoints || // Assuming Natcycle Points are also required
       (!imageFile && !isEditing) ||
       !category
     ) {
       toast.error(
-        "Please fill in all required fields. Image is required for new materials."
+        "Please fill in all required fields (Name, Category, Amount (Quantity or Weight), CU Value, Natcycle Points). Image is required for new materials."
       );
       return;
     }
@@ -109,7 +154,13 @@ const AddMaterialPage = () => {
     formData.append("name", name);
     formData.append("category", category);
     formData.append("description", description);
-    formData.append("weight", String(weight));
+
+    if (quantity !== "" && quantity !== null) {
+      formData.append("quantity", String(quantity));
+    } else if (weightInGrams !== "" && weightInGrams !== null) {
+      formData.append("weight", String(weightInGrams)); // Assuming backend expects 'weight'
+    }
+
     formData.append("cuValue", String(cuValue));
     formData.append("natPoints", String(natPoints));
     if (imageFile) {
@@ -219,30 +270,65 @@ const AddMaterialPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label
-                htmlFor="materialWeight"
-                className="block text-sm font-semibold text-slate-700 mb-1.5"
-              >
-                Weight (grams) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                id="materialWeight"
-                value={weight}
-                onChange={(e) =>
-                  setWeight(
-                    e.target.value === "" ? "" : parseFloat(e.target.value)
-                  )
-                }
-                className="input w-full"
-                placeholder="e.g., 20"
-                min="0"
-                step="any"
-                required
-              />
+          {/* New Amount Section */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Amount <span className="text-red-500">*</span>
+              <span className="text-xs text-slate-500 font-normal ml-1">
+                (fill quantity or weight)
+              </span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-1 p-4 border border-slate-200 rounded-lg bg-slate-50/50">
+              <div>
+                <label
+                  htmlFor="materialQuantity"
+                  className="block text-xs font-medium text-slate-600 mb-1"
+                >
+                  Quantity (units)
+                </label>
+                <input
+                  type="number"
+                  id="materialQuantity"
+                  value={quantity}
+                  onChange={handleQuantityChange}
+                  className="input w-full disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  placeholder="e.g., 10"
+                  min="0"
+                  disabled={
+                    weightInGrams !== "" &&
+                    weightInGrams !== null &&
+                    !isNaN(parseFloat(String(weightInGrams)))
+                  }
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="materialWeightGrams"
+                  className="block text-xs font-medium text-slate-600 mb-1"
+                >
+                  Weight (grams)
+                </label>
+                <input
+                  type="number"
+                  id="materialWeightGrams"
+                  value={weightInGrams}
+                  onChange={handleWeightChange}
+                  className="input w-full disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  placeholder="e.g., 20"
+                  min="0"
+                  step="any"
+                  disabled={
+                    quantity !== "" &&
+                    quantity !== null &&
+                    !isNaN(parseInt(String(quantity)))
+                  }
+                />
+              </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Removed Weight from here, CU Value and NatPoints remain */}
             <div>
               <label
                 htmlFor="materialCU"
@@ -255,7 +341,9 @@ const AddMaterialPage = () => {
                 id="materialCU"
                 value={cuValue}
                 onChange={(e) =>
-                  setCuValue(e.target.value === "" ? "" : e.target.value)
+                  setCuValue(
+                    e.target.value === "" ? "" : parseFloat(e.target.value)
+                  )
                 }
                 className="input w-full"
                 placeholder="e.g., 5"
@@ -276,7 +364,9 @@ const AddMaterialPage = () => {
                 id="materialNatPoints"
                 value={natPoints}
                 onChange={(e) =>
-                  setNatPoints(e.target.value === "" ? "" : e.target.value)
+                  setNatPoints(
+                    e.target.value === "" ? "" : parseFloat(e.target.value)
+                  )
                 }
                 className="input w-full"
                 placeholder="e.g., 5"

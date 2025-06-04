@@ -47,6 +47,13 @@ import UserDropOffs from "./pages/dashboard/dropoff/UserDropOffs";
 import PublicLayout from "./pages/components/PublicLayout";
 import GreenProfile from "./pages/dashboard/GreenProfile";
 
+// ThingsMatch Admin Pages
+import ThingsMatchDashboard from "./pages/admin/thingsmatch/ThingsMatchDashboard";
+import TMUsers from "./pages/admin/thingsmatch/TMUsers";
+import TMItems from "./pages/admin/thingsmatch/TMItems";
+import TMMatches from "./pages/admin/thingsmatch/TMMatches";
+import TMBreakdown from "./pages/admin/thingsmatch/TMBreakdown";
+
 const App = () => {
   return (
     <div>
@@ -140,6 +147,12 @@ const App = () => {
               element={<MaterialDetails />}
             />{" "}
             {/* Route for details */}
+            {/* ThingsMatch Routes */}
+            <Route path="thingsmatch" element={<ThingsMatchDashboard />} />
+            <Route path="thingsmatch/users" element={<TMUsers />} />
+            <Route path="thingsmatch/items" element={<TMItems />} />
+            <Route path="thingsmatch/matches" element={<TMMatches />} />
+            <Route path="thingsmatch/breakdown" element={<TMBreakdown />} />
           </Route>
 
           {/* the pickup side of things */}
