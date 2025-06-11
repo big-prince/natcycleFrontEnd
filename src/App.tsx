@@ -51,8 +51,11 @@ import GreenProfile from "./pages/dashboard/GreenProfile";
 import ThingsMatchDashboard from "./pages/admin/thingsmatch/ThingsMatchDashboard";
 import TMUsers from "./pages/admin/thingsmatch/TMUsers";
 import TMItems from "./pages/admin/thingsmatch/TMItems";
+import TMItemDetails from "./pages/admin/thingsmatch/TMItemDetails";
 import TMMatches from "./pages/admin/thingsmatch/TMMatches";
+import TMMatchDetails from "./pages/admin/thingsmatch/TMMatchDetails";
 import TMBreakdown from "./pages/admin/thingsmatch/TMBreakdown";
+import EPantry from "./pages/admin/thingsmatch/EPantry"; // Import the new EPantry component
 
 const App = () => {
   return (
@@ -151,8 +154,18 @@ const App = () => {
             <Route path="thingsmatch" element={<ThingsMatchDashboard />} />
             <Route path="thingsmatch/users" element={<TMUsers />} />
             <Route path="thingsmatch/items" element={<TMItems />} />
+            <Route
+              path="thingsmatch/items/:itemId"
+              element={<TMItemDetails />}
+            />
             <Route path="thingsmatch/matches" element={<TMMatches />} />
+            <Route
+              path="thingsmatch/matches/:matchId"
+              element={<TMMatchDetails />}
+            />
             <Route path="thingsmatch/breakdown" element={<TMBreakdown />} />
+            <Route path="thingsmatch/epantry" element={<EPantry />} />{" "}
+            {/* Add route for ePantry */}
           </Route>
 
           {/* the pickup side of things */}

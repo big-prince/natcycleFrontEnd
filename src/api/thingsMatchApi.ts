@@ -2,7 +2,6 @@ import api from "./api";
 
 const thingsMatchApi = {
   async getAllUsers(signal?: AbortSignal) {
-    // Accept optional signal
     return await api.get("thingsMatch/TMadmin/users", { signal });
   },
   async getUserById(id: string, signal?: AbortSignal) {

@@ -18,6 +18,7 @@ import {
   FiBox as FiBoxIcon,
   FiShuffle,
   FiPieChart,
+  FiClipboard,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -94,6 +95,12 @@ const thingsMatchSubLinks = [
     title: "TM Breakdown",
     icon: <FiPieChart size={18} />,
     path: "/admin/thingsmatch/breakdown",
+  },
+  {
+    // New ePantry Link
+    title: "ePantry",
+    icon: <FiClipboard size={18} />,
+    path: "/admin/thingsmatch/epantry",
   },
 ];
 
