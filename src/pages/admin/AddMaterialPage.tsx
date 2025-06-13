@@ -6,19 +6,7 @@ import materialApi from "../../api/materialApi";
 import { toast } from "react-toastify";
 import { IMaterial } from "./AdminMaterials";
 
-const materialCategories: IMaterial["category"][] = [
-  "500ml plastic",
-  "1000ml plastic",
-  "1500ml plastic",
-  "glass",
-  "paper",
-  "metal",
-  "food",
-  "organic",
-  "fabric",
-  "eWaste",
-  "other",
-];
+let materialCategories: IMaterial["category"][] = [];
 
 const AddMaterialPage = () => {
   const navigate = useNavigate();
@@ -28,20 +16,65 @@ const AddMaterialPage = () => {
   const [category, setCategory] = useState<IMaterial["category"]>(
     materialCategories[0]
   );
+  const [subcategories, setSubcategories] = useState<string[]>([]);
+  const [subCategory, setSubCategory] = useState<string>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  // const [weight, setWeight] = useState<number | string>(""); // Remove this
-  const [quantity, setQuantity] = useState<number | string>(""); // New state for quantity
-  const [weightInGrams, setWeightInGrams] = useState<number | string>(""); // New state for weight
+  const [quantity, setQuantity] = useState<number | string>("");
+  const [weightInGrams, setWeightInGrams] = useState<number | string>("");
   const [cuValue, setCuValue] = useState<number | string>("");
   const [natPoints, setNatPoints] = useState<number | string>("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialImageURL, setInitialImageURL] = useState<string | null>(null);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
+
+  async function getMaterialTypes() {
+    await materialApi.getMaterialsCategory().then((d) => {
+      const data = d.data.data.primaryTypes;
+      materialCategories = data.map((cat: string) => cat.toLowerCase());
+      setCategory(data[0].toLowerCase() as IMaterial["category"]);
+      // Fetch subcategories for the first primary type
+      fetchSubcategories(data[0].toLowerCase());
+    });
+  }
+
+  // Function to fetch subcategories for a selected primary type
+  const fetchSubcategories = async (primaryType: string) => {
+    setLoadingSubcategories(true);
+    console.log(primaryType);
+    try {
+      const response = await materialApi.getSubCategories(primaryType);
+      const subCats = response.data.data.subtypes || [];
+      setSubcategories(subCats);
+
+      // Set the first subcategory as default or clear if none available
+      if (subCats.length > 0) {
+        setSubCategory(subCats[0]);
+      } else {
+        setSubCategory("");
+      }
+    } catch (err: any) {
+      console.error("Error fetching subcategories:", err);
+      toast.error("Failed to load subcategories");
+      setSubcategories([]);
+      setSubCategory("");
+    } finally {
+      setLoadingSubcategories(false);
+    }
+  };
+
+  // Handle primary category change
+  const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newCategory = e.target.value as IMaterial["category"];
+    setCategory(newCategory);
+    fetchSubcategories(newCategory);
+  };
 
   // Fetch material data if editing
   useEffect(() => {
+    getMaterialTypes();
     if (isEditing && materialId) {
       setLoading(true);
       const fetchMaterialDetails = async () => {
@@ -56,10 +89,17 @@ const AddMaterialPage = () => {
 
           //set all states
           setName(mainData?.name);
+          setCategory(mainData?.category);
+
+          // Fetch subcategories for the material's category
+          if (mainData?.category) {
+            await fetchSubcategories(mainData.category);
+            if (mainData?.subCategory) {
+              setSubCategory(mainData.subCategory);
+            }
+          }
+
           setDescription(mainData?.description);
-          // setWeight(mainData?.weight); // Remove this
-          // Assuming backend provides 'weight' for weightInGrams or 'quantity'
-          // Prioritize weight if both somehow exist, or adjust based on backend structure
           if (mainData?.weight !== undefined && mainData?.weight !== null) {
             setWeightInGrams(mainData.weight);
             setQuantity("");
@@ -136,24 +176,25 @@ const AddMaterialPage = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
-      !name ||
-      (!quantity && !weightInGrams) || // Check if either quantity or weight is provided
+      !subCategory ||
+      (!quantity && !weightInGrams) ||
       !cuValue ||
-      !natPoints || // Assuming Natcycle Points are also required
+      !natPoints ||
       (!imageFile && !isEditing) ||
       !category
     ) {
       toast.error(
-        "Please fill in all required fields (Name, Category, Amount (Quantity or Weight), CU Value, Natcycle Points). Image is required for new materials."
+        "Please fill in all required fields (Subcategory, Category, Amount (Quantity or Weight), CU Value, Natcycle Points). Image is required for new materials."
       );
       return;
     }
     setLoading(true);
 
     const formData = new FormData();
-    formData.append("name", name);
+    formData.append("name", name); //for backward compatibility
     formData.append("category", category);
-    formData.append("description", description);
+    formData.append("subCategory", subCategory);
+    formData.append("description", description || "");
 
     if (quantity !== "" && quantity !== null) {
       formData.append("quantity", String(quantity));
@@ -175,7 +216,7 @@ const AddMaterialPage = () => {
       if (isEditing && materialId) {
         const response = await materialApi.updateMaterial(materialId, formData);
         if (response) {
-          toast.success("Material Succesfully Edited");
+          toast.success("Material Successfully Edited");
           navigate("/admin/materials");
         }
       } else {
@@ -214,35 +255,15 @@ const AddMaterialPage = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
-              htmlFor="materialName"
-              className="block text-sm font-semibold text-slate-700 mb-1.5"
-            >
-              Material Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="materialName"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input w-full"
-              placeholder="e.g., PET Bottle, Cotton T-Shirt"
-              required
-            />
-          </div>
-
-          <div>
-            <label
               htmlFor="materialCategory"
               className="block text-sm font-semibold text-slate-700 mb-1.5"
             >
-              Category <span className="text-red-500">*</span>
+              Primary Type <span className="text-red-500">*</span>
             </label>
             <select
               id="materialCategory"
               value={category}
-              onChange={(e) =>
-                setCategory(e.target.value as IMaterial["category"])
-              }
+              onChange={handleCategoryChange}
               className="input w-full"
               required
             >
@@ -256,10 +277,61 @@ const AddMaterialPage = () => {
 
           <div>
             <label
+              htmlFor="materialSubCategory"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Subcategory <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="materialSubCategory"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              className="input w-full"
+              required
+              disabled={loadingSubcategories || subcategories.length === 0}
+            >
+              {loadingSubcategories ? (
+                <option value="">Loading subcategories...</option>
+              ) : subcategories.length === 0 ? (
+                <option value="">No subcategories available</option>
+              ) : (
+                subcategories.map((subCat) => (
+                  <option key={subCat} value={subCat}>
+                    {subCat}
+                  </option>
+                ))
+              )}
+            </select>
+            {loadingSubcategories && (
+              <p className="text-xs text-slate-500 mt-1">
+                Loading subcategories...
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="materialName"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Custom Name
+            </label>
+            <input
+              type="text"
+              id="materialName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input w-full"
+              placeholder="Optional custom name (e.g., My special cotton)"
+            />
+          </div>
+
+          <div>
+            <label
               htmlFor="materialDescription"
               className="block text-sm font-semibold text-slate-700 mb-1.5"
             >
-              Description
+              Description (optional)
             </label>
             <textarea
               id="materialDescription"
@@ -270,7 +342,7 @@ const AddMaterialPage = () => {
             />
           </div>
 
-          {/* New Amount Section */}
+          {/* Amount Section */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
               Amount <span className="text-red-500">*</span>
@@ -328,7 +400,6 @@ const AddMaterialPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Removed Weight from here, CU Value and NatPoints remain */}
             <div>
               <label
                 htmlFor="materialCU"

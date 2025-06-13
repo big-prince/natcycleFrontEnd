@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { FaChevronRight, FaArrowRight } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
 import { useState, useEffect } from "react";
 import ProfileApi from "../../api/profile.Api";
@@ -25,11 +25,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(localUser);
   const [selectedItemType, setSelectedItemType] = useState<string | null>(null);
-  const [materialsLoading, setMaterialsLoading] = useState(true); // Added loading state
-
-  const [divertItems, setDivertItems] = useState<
-    { name: string; type: string }[]
-  >([]);
+  const [materialsLoading, setMaterialsLoading] = useState(true);
+  const [divertItems, setDivertItems] = useState<string[]>([]);
 
   function getTimeOfDay() {
     const now = new Date();
@@ -51,56 +48,29 @@ const Dashboard = () => {
         }
       }
     };
-    const fetchMaterials = async () => {
-      setMaterialsLoading(true); // Set loading to true before fetching
+
+    const fetchMaterialCategories = async () => {
+      setMaterialsLoading(true);
       try {
-        const res = await MaterialApi.getAllMaterials();
-        const materials = res.data.data.materials;
-        const plasticMaterials = materials.filter((m) =>
-          m.category.toLowerCase().includes("plastic")
-        );
-        const nonPlasticMaterials = materials.filter(
-          (m) => !m.category.toLowerCase().includes("plastic")
-        );
+        const response = await MaterialApi.getMaterialsCategory();
+        const categories = response.data.data.primaryTypes || [];
 
-        const newDivertItems: { name: string; type: string }[] = [];
+        // Take only the first 6 categories if there are more
+        const limitedCategories = categories
+          .slice(0, 8)
+          .map((category: string) => category.toLowerCase());
 
-        if (plasticMaterials.length > 0) {
-          newDivertItems.push({
-            name: "Plastic", // Using "Plastic" as name for consistency if used as key
-            type: "plastic",  // Type for logic and display
-          });
-        }
-
-        for (const material of nonPlasticMaterials) {
-          if (newDivertItems.length >= 5) {
-            break;
-          }
-          // Ensure we don't add "Plastic" again if it was already added
-          if (material.category.toLowerCase() === "plastic" && newDivertItems.find(item => item.type === "plastic")) {
-            continue;
-          }
-          const existingItem = newDivertItems.find(
-            (item) => item.type === material.category.toLowerCase()
-          );
-
-          if (!existingItem) {
-            newDivertItems.push({
-              name: material.name, // Use material.name for key if needed
-              type: material.category.toLowerCase(), // Store type as lowercase
-            });
-          }
-        }
-        setDivertItems(newDivertItems);
+        setDivertItems(limitedCategories);
       } catch (err) {
-        console.error("Failed to fetch materials:", err);
+        console.error("Failed to fetch material categories:", err);
         toast.error("Could not load divertable items.");
       } finally {
-        setMaterialsLoading(false); // Set loading to false after fetching (or error)
+        setMaterialsLoading(false);
       }
     };
+
     fetchUser();
-    fetchMaterials();
+    fetchMaterialCategories();
   }, [dispatch, localUser?._id]);
 
   if (!user) {
@@ -123,9 +93,6 @@ const Dashboard = () => {
   }
 
   const currentMilestoneDetails = mileStoneNumbers[currentMilestoneIndex];
-  // const nextMilestoneDetails =
-  //   mileStoneNumbers[currentMilestoneIndex + 1] || currentMilestoneDetails;
-
   const milestoneStart = currentMilestoneDetails.pointsRange[0];
   const milestoneEndTarget = currentMilestoneDetails.pointsRange[1];
 
@@ -145,7 +112,7 @@ const Dashboard = () => {
   }
 
   const handleDivertItemClick = (itemType: string) => {
-    setSelectedItemType(itemType === selectedItemType ? null : itemType); // Toggle selection or allow unselecting
+    setSelectedItemType(itemType === selectedItemType ? null : itemType);
   };
 
   const handleLogImpact = () => {
@@ -215,7 +182,6 @@ const Dashboard = () => {
 
       {/* Green "Divert Today" Card */}
       <div className="p-6 mt-4 rounded-3xl bg-[#D4FF4F] text-slate-800 shadow-lg relative pb-14 z-10">
-        {" "}
         <p className="text-lg font-semibold">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
@@ -226,44 +192,47 @@ const Dashboard = () => {
           <FaChevronRight className="mr-1 text-xs" />
           SELECT
         </div>
-        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide min-h-[50px]"> {/* Added min-h for consistent height during load */}
+        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide min-h-[50px]">
           {materialsLoading ? (
-            <p className="text-slate-600 text-sm italic px-3">Loading items...</p>
+            <p className="text-slate-600 text-sm italic px-3">
+              Loading items...
+            </p>
           ) : divertItems.length > 0 ? (
-            divertItems.map((item) => (
+            divertItems.map((itemType) => (
               <button
                 type="button"
-                key={item.name} // Using item.name as key, as in user's current code
-                onClick={() => handleDivertItemClick(item.type)}
+                key={itemType}
+                onClick={() => handleDivertItemClick(itemType)}
                 className={`
                   font-medium py-3 px-5 rounded-full shadow-sm text-xs sm:text-sm text-center flex-shrink-0 min-w-[110px] transition-colors duration-150
                   ${
-                    selectedItemType === item.type
-                      ? "bg-slate-800 text-white ring-2 ring-slate-800" // Selected style from user's current code
-                      : "bg-white/90 hover:bg-white text-slate-700" // Default style from user's current code
+                    selectedItemType === itemType
+                      ? "bg-slate-800 text-white ring-2 ring-slate-800"
+                      : "bg-white/90 hover:bg-white text-slate-700"
                   }
                 `}
               >
-                {/* Displaying item.type capitalized, as in user's current code */}
-                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
               </button>
             ))
           ) : (
-            <p className="text-slate-600 text-sm px-3">No divertable items found.</p>
+            <p className="text-slate-600 text-sm px-3">
+              No divertable items found.
+            </p>
           )}
         </div>
         <Link
           to="/public/dropoff/create"
-          className="block  text-xs underline text-green-700 hover:text-green-800 font-medium"
+          className="block text-xs underline text-green-700 hover:text-green-800 font-medium"
         >
           Want to divert others?
         </Link>
         {/* Button container positioned to the far right */}
-        <div className="absolute bottom-[-26px] right-6 w-auto"> {/* Adjusted for far right positioning */}
+        <div className="absolute bottom-[-26px] right-6 w-auto">
           <button
             type="button"
             onClick={handleLogImpact}
-            className="flex items-center justify-between bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72" // Retained w-72 from user's current code
+            className="flex items-center justify-between bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72"
           >
             <div className="text-left">
               <p className="text-base font-semibold">Log impact</p>

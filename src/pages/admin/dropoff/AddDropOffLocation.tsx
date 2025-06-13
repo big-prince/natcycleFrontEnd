@@ -17,7 +17,7 @@ interface LocationFormData {
   address: string;
   latitude: string;
   longitude: string;
-  plasticSpecifics: string;
+  acceptedSubCategories: string[];
 }
 
 const GEOAPIFY_API_KEY = "58fbdbc730e0425d8701cdc5ca6cb6dc";
@@ -30,12 +30,11 @@ const AddDropOffLocation = () => {
     name: "",
     locationType: "",
     itemType: "",
-    plasticSpecifics: "",
-
     description: "",
     address: "",
     latitude: "",
     longitude: "",
+    acceptedSubCategories: [],
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -45,78 +44,81 @@ const AddDropOffLocation = () => {
   const [loading, setLoading] = useState(false);
   const [loadingPage, setLoadingPage] = useState(false);
   const [areMaterialsLoaded, setAreMaterialsLoaded] = useState(false);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
 
-  const [mainItemTypeList] = useState([
+  const [materialCategories, setMaterialCategories] = useState<string[]>([]);
+  console.log(materialCategories);
+  const [subcategories, setSubcategories] = useState<string[]>([]);
+
+  const [mainItemTypeList, setMainItemTypeList] = useState([
     { label: "Select item type...", value: "" },
-    { label: "Fabric", value: "fabric" },
-    { label: "Plastic", value: "plastic" },
-    { label: "E-waste", value: "ewaste" },
-    { label: "Glass", value: "glass" },
-    { label: "Food Waste", value: "food" },
-    { label: "Paper & Cardboard", value: "paper" },
-    { label: "Metals", value: "metals" },
-    { label: "Batteries", value: "batteries" },
-    { label: "Other", value: "other" },
   ]);
 
-  const [plasticSpecificsOptions, setPlasticSpecificsOptions] = useState([
-    { label: "Select plastic type...", value: "" },
-  ]);
-
+  // Fetch all material categories on component mount
   useEffect(() => {
-    const fetchMaterialTypes = async () => {
-      console.log(
-        "Fetching all material types for plastic specifics dropdown..."
-      );
+    const fetchMaterialCategories = async () => {
+      console.log("Fetching all material categories...");
       try {
-        const response = await materialApi.getAllMaterials();
-        const materials = response.data.data.materials;
-
-        const specificPlastics = materials
-          .filter((item: any) => {
-            const categoryLower = item.category?.toLowerCase();
-            return (
-              categoryLower &&
-              categoryLower.includes("ml") &&
-              categoryLower.includes("plastic")
-            );
-          })
-          .map((item: any) => ({
-            label: item.name,
-            value: item.category,
-          }));
-
-        const uniqueSpecificPlastics: typeof specificPlastics = Array.from(
-          new Map(specificPlastics.map((item) => [item.value, item])).values()
-        );
-        console.log(
-          "Derived specific plastic options:",
-          uniqueSpecificPlastics
+        const response = await materialApi.getMaterialsCategory();
+        const categories = response.data.data.primaryTypes;
+        setMaterialCategories(
+          categories.map((cat: string) => cat.toLowerCase())
         );
 
-        if (uniqueSpecificPlastics.length > 0) {
-          setPlasticSpecificsOptions([
-            { label: "Select plastic type...", value: "" },
-            ...uniqueSpecificPlastics,
-          ]);
-        } else {
-          setPlasticSpecificsOptions([
-            { label: "Select plastic type...", value: "" },
-          ]);
-        }
-      } catch (error) {
-        console.error(
-          "Failed to fetch material types for plastic specifics:",
-          error
-        );
-        toast.error("Failed to load plastic type options.");
-      } finally {
+        // Update main item type list
+        const itemTypes = categories.map((cat: string) => ({
+          label: cat.charAt(0).toUpperCase() + cat.slice(1),
+          value: cat.toLowerCase(),
+        }));
+
+        setMainItemTypeList([
+          { label: "Select item type...", value: "" },
+          ...itemTypes,
+        ]);
+
+        console.log("Fetched material categories:", categories);
         setAreMaterialsLoaded(true);
-        console.log("Plastic specifics options loading finished.");
+      } catch (error) {
+        console.error("Failed to fetch material categories:", error);
+        toast.error("Failed to load material categories.");
       }
     };
-    fetchMaterialTypes();
+
+    fetchMaterialCategories();
   }, []);
+
+  // Function to fetch subcategories for a selected primary type
+  const fetchSubcategories = async (primaryType: string) => {
+    if (!primaryType) {
+      setSubcategories([]);
+      return;
+    }
+
+    setLoadingSubcategories(true);
+    console.log(`Fetching subcategories for ${primaryType}...`);
+
+    try {
+      const response = await materialApi.getSubCategories(primaryType);
+      const subCats = response.data.data.subtypes || [];
+      setSubcategories(subCats);
+      console.log(
+        `Fetched ${subCats.length} subcategories for ${primaryType}:`,
+        subCats
+      );
+
+      // Clear previously selected subcategories when changing primary type
+      setFormData((prev) => ({
+        ...prev,
+        acceptedSubCategories: [],
+      }));
+    } catch (err: any) {
+      console.error("Error fetching subcategories:", err);
+      toast.error("Failed to load subcategories");
+      setSubcategories([]);
+    } finally {
+      setLoadingSubcategories(false);
+    }
+  };
 
   useEffect(() => {
     const locationId = searchParams.get("id");
@@ -132,35 +134,25 @@ const AddDropOffLocation = () => {
         .then((res) => {
           const data = res.data.data;
           console.log("Fetched location data for editing:", data);
-          const dbItemType = data.itemType || "";
-
-          let formItemType = dbItemType;
-          let formPlasticSpecifics = "";
-
-          const isSpecificPlastic = plasticSpecificsOptions.some(
-            (opt) => opt.value === dbItemType && opt.value !== ""
-          );
-
-          if (isSpecificPlastic) {
-            formItemType = "plastic";
-            formPlasticSpecifics = dbItemType;
-          } else if (dbItemType === "plastic" && data.plasticSpecifics) {
-            formPlasticSpecifics = data.plasticSpecifics;
-          } else if (dbItemType !== "plastic") {
-            formPlasticSpecifics = "";
-          }
 
           const newFormData = {
             name: data.name || "",
             locationType: data.locationType || "",
-            itemType: formItemType,
+            itemType: data.itemType || "",
             description: data.description || "",
-            plasticSpecifics: formPlasticSpecifics,
             address: data.address || "",
             latitude: data.location?.coordinates[1]?.toString() || "",
             longitude: data.location?.coordinates[0]?.toString() || "",
+            acceptedSubCategories: data.acceptedSubCategories || [],
           };
+
           setFormData(newFormData);
+
+          // Fetch subcategories for the material's category
+          if (newFormData.itemType) {
+            fetchSubcategories(newFormData.itemType);
+          }
+
           console.log("Form data set for editing:", newFormData);
         })
         .catch((err) => {
@@ -174,7 +166,7 @@ const AddDropOffLocation = () => {
         });
     } else if (locationId && !areMaterialsLoaded) {
       console.log(
-        `Edit mode for ID: ${locationId}, but plastic specifics options not yet loaded. Waiting.`
+        `Edit mode for ID: ${locationId}, but material options not yet loaded. Waiting.`
       );
       setLoadingPage(true);
     } else if (!locationId) {
@@ -185,15 +177,15 @@ const AddDropOffLocation = () => {
         name: "",
         locationType: "",
         itemType: "",
-        plasticSpecifics: "",
         description: "",
         address: "",
         latitude: "",
         longitude: "",
+        acceptedSubCategories: [],
       });
       setLoadingPage(false);
     }
-  }, [searchParams, navigate, areMaterialsLoaded, plasticSpecificsOptions]);
+  }, [searchParams, navigate, areMaterialsLoaded]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -202,16 +194,41 @@ const AddDropOffLocation = () => {
   ) => {
     const { name, value } = e.target;
     console.log(`Input change - Name: ${name}, Value: ${value}`);
+
     setFormData((prev) => {
       const newState = { ...prev, [name]: value };
-      if (name === "itemType" && value !== "plastic") {
-        newState.plasticSpecifics = "";
-        console.log(
-          "ItemType changed from plastic, clearing plasticSpecifics in formData."
-        );
+
+      if (name === "itemType") {
+        // Fetch subcategories when item type changes
+        fetchSubcategories(value);
       }
+
       console.log("New formData state after input change:", newState);
       return newState;
+    });
+  };
+
+  const handleSubcategoryChange = (subCategory: string) => {
+    setFormData((prev) => {
+      const updatedSubCategories = prev.acceptedSubCategories.includes(
+        subCategory
+      )
+        ? prev.acceptedSubCategories.filter((sc) => sc !== subCategory) // Remove if already selected
+        : [...prev.acceptedSubCategories, subCategory]; // Add if not selected
+
+      console.log(
+        `Subcategory ${subCategory} ${
+          prev.acceptedSubCategories.includes(subCategory)
+            ? "removed from"
+            : "added to"
+        } selection`
+      );
+      console.log("Updated acceptedSubCategories:", updatedSubCategories);
+
+      return {
+        ...prev,
+        acceptedSubCategories: updatedSubCategories,
+      };
     });
   };
 
@@ -250,23 +267,11 @@ const AddDropOffLocation = () => {
       toast.error("Please select a Primary Accepted Item Type.");
       return;
     }
-
-    let itemTypeForSubmission = formData.itemType;
-
-    if (formData.itemType === "plastic") {
-      if (!formData.plasticSpecifics || formData.plasticSpecifics === "") {
-        toast.error("Please select a specific plastic type from the dropdown.");
-        console.log(
-          "Validation failed: Plastic selected, but no specific type chosen. formData.plasticSpecifics:",
-          formData.plasticSpecifics
-        );
-        return;
-      }
-      itemTypeForSubmission = formData.plasticSpecifics;
-      console.log(
-        "Plastic type selected. Using specific type for submission:",
-        itemTypeForSubmission
+    if (formData.acceptedSubCategories.length === 0) {
+      toast.error(
+        "Please select at least one subcategory that this location accepts."
       );
+      return;
     }
 
     setLoading(true);
@@ -282,11 +287,12 @@ const AddDropOffLocation = () => {
 
     const submissionPayload = {
       name: formData.name,
-      itemType: itemTypeForSubmission,
+      itemType: formData.itemType,
       description: formData.description,
       address: formData.address,
       latitude: latNum,
       longitude: lonNum,
+      acceptedSubCategories: formData.acceptedSubCategories,
     };
     console.log("Final submissionPayload:", submissionPayload);
 
@@ -424,34 +430,49 @@ const AddDropOffLocation = () => {
             </select>
           </div>
 
-          {formData.itemType === "plastic" && (
+          {/* Subcategories Selection */}
+          {formData.itemType && (
             <div>
-              <label
-                htmlFor="plasticSpecifics"
-                className="block text-sm font-semibold text-slate-700 mb-1.5"
-              >
-                Specific Plastic Type <span className="text-red-500">*</span>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Accepted Subcategories <span className="text-red-500">*</span>
               </label>
-              <select
-                className="input w-full"
-                name="plasticSpecifics"
-                id="plasticSpecifics"
-                value={formData.plasticSpecifics}
-                onChange={handleInputChange}
-                required={formData.itemType === "plastic"}
-              >
-                {plasticSpecificsOptions.map((item) => (
-                  <option
-                    key={item.value || `plastic-opt-${item.label}`}
-                    value={item.label}
-                    disabled={
-                      item.value === "" && formData.plasticSpecifics !== ""
-                    }
-                  >
-                    {item.value}
-                  </option>
-                ))}
-              </select>
+
+              {loadingSubcategories ? (
+                <div className="flex items-center space-x-2 text-slate-500 p-3 border border-slate-200 rounded-lg">
+                  <FaSpinner className="animate-spin" />
+                  <span>Loading subcategories...</span>
+                </div>
+              ) : subcategories.length === 0 ? (
+                <div className="p-3 border border-slate-200 rounded-lg text-slate-500">
+                  No subcategories available for this material type.
+                </div>
+              ) : (
+                <div className="p-4 border border-slate-200 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {subcategories.map((subCat) => (
+                    <div key={subCat} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`subcategory-${subCat}`}
+                        checked={formData.acceptedSubCategories.includes(
+                          subCat
+                        )}
+                        onChange={() => handleSubcategoryChange(subCat)}
+                        className="w-4 h-4 text-sky-600 border-slate-300 rounded focus:ring-sky-500"
+                      />
+                      <label
+                        htmlFor={`subcategory-${subCat}`}
+                        className="ml-2 text-sm text-slate-700 cursor-pointer"
+                      >
+                        {subCat}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-xs text-slate-500 mt-1">
+                Select all subcategories that this location accepts.
+              </p>
             </div>
           )}
 

@@ -4,6 +4,12 @@ const materialApi = {
   getAllMaterials: () => {
     return api.get("/materials");
   },
+  getMaterialsCategory: () => {
+    return api.get("/materials/primary-types");
+  },
+  getSubCategories: (primaryType: string) => {
+    return api.get(`/materials/subtypes/${primaryType}`);
+  },
   getMaterialById: (id: string) => {
     return api.get(`/materials/${id}`);
   },

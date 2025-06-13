@@ -15,7 +15,7 @@ import {
   MdCheckroom,
   MdClose,
   MdFlipCameraAndroid,
-  MdArrowBack, // Added for back button
+  MdArrowBack,
 } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
 
@@ -83,7 +83,7 @@ const CreateDropOff = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const campaignIdFromQuery = searchParams.get("campaignId") || "";
   const campaignNameFromQuery = searchParams.get("campaignName") || "";
-  const typeFromQuery = searchParams.get("type") || "plastic";
+  const typeFromQuery = searchParams.get("type") || ""; // Initialize as empty, will be set by useEffect
 
   const [loading, setLoading] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
@@ -94,10 +94,10 @@ const CreateDropOff = () => {
   }>({});
   const [activePlasticSubItemId, setActivePlasticSubItemId] = useState<
     string | null
-  >(null); // For plastic sub-item exclusivity
+  >(null);
 
   const [dropOffForm, setDropOffForm] = useState({
-    description: "", // Kept if needed, though not prominent in new UI
+    description: "",
   });
   const [itemTypesForDisplay, setItemsForDisplay] = useState<
     {
@@ -105,91 +105,134 @@ const CreateDropOff = () => {
       value: string;
     }[]
   >([]);
+  const itemTypeButtonsContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
 
+  // Effect to fetch primary material types for the filter buttons and set initial type
   useEffect(() => {
-    // If there's a type from query, ensure it's set.
-    if (typeFromQuery) {
-      getNearestDropOffLocations(typeFromQuery);
-      setDetailedQuantities({});
-      setActivePlasticSubItemId(null); // Reset when main type changes
-    }
-  }, [typeFromQuery]);
-
-  //use effect to set items for Display
-  useEffect(() => {
-    const fetchMaterials = async () => {
+    const fetchPrimaryMaterialTypes = async () => {
+      // Consider a more specific loading state e.g., setLoadingCategories(true)
       try {
-        const res = await MaterialApi.getAllMaterials();
-        const materials = res.data.data.materials as {
-          name: string;
-          category: string;
-        }[];
+        const res = await MaterialApi.getMaterialsCategory();
+        const primaryTypesFromServer = res.data.data.primaryTypes as string[];
 
-        const plasticMaterials = materials.filter((m) =>
-          m.category.toLowerCase().includes("plastic")
-        );
-        const nonPlasticMaterials = materials.filter(
-          (m) => !m.category.toLowerCase().includes("plastic")
-        );
+        if (primaryTypesFromServer && primaryTypesFromServer.length > 0) {
+          const newTypes = primaryTypesFromServer.map((type: string) => ({
+            label: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(),
+            value: type.toLowerCase(),
+          }));
+          setItemsForDisplay(newTypes);
 
-        const newItemTypesForDisplay: { label: string; value: string }[] = [];
-
-        if (plasticMaterials.length > 0) {
-          const plasticCategoryExists = newItemTypesForDisplay.find(
-            (item) => item.value === "plastic"
-          );
-          if (!plasticCategoryExists) {
-            newItemTypesForDisplay.push({
-              label: "Plastic",
-              value: "plastic",
-            });
+          const currentTypeIsValid =
+            typeFromQuery && newTypes.some((nt) => nt.value === typeFromQuery);
+          if (!currentTypeIsValid && newTypes.length > 0) {
+            const paramsToSet: {
+              type: string;
+              campaignId?: string;
+              campaignName?: string;
+            } = { type: newTypes[0].value };
+            if (campaignIdFromQuery)
+              paramsToSet.campaignId = campaignIdFromQuery;
+            if (campaignNameFromQuery)
+              paramsToSet.campaignName = campaignNameFromQuery;
+            setSearchParams(paramsToSet, { replace: true });
           }
+        } else {
+          setItemsForDisplay([]);
+          toast.info("No item categories found.");
         }
-
-        // Add non-plastic materials
-        for (const material of nonPlasticMaterials) {
-          if (newItemTypesForDisplay.length >= 5) {
-            break;
-          }
-
-          // Check if an item with this category (value) already exists
-          const existingItem = newItemTypesForDisplay.find(
-            (item) => item.value === material.category.toLowerCase()
-          );
-
-          if (!existingItem) {
-            newItemTypesForDisplay.push({
-              label: material.name, // Use the material's name as label
-              value: material.category.toLowerCase(), // Use the material's category as value
-            });
-          }
-        }
-        if (plasticMaterials.length > 0 && newItemTypesForDisplay.length < 5) {
-          const genericPlasticExists = newItemTypesForDisplay.find(
-            (item) => item.value === "plastic"
-          );
-          if (!genericPlasticExists) {
-            newItemTypesForDisplay.push({
-              label: "Plastic",
-              value: "plastic",
-            });
-          }
-        }
-
-        setItemsForDisplay(newItemTypesForDisplay);
       } catch (err) {
-        console.error("Failed to fetch materials:", err);
+        console.error("Failed to fetch primary material types:", err);
         toast.error("Could not load item types.");
+        setItemsForDisplay([]);
+      } finally {
+        // setLoadingCategories(false);
       }
     };
-    fetchMaterials();
-  }, [setItemsForDisplay]);
+    fetchPrimaryMaterialTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setSearchParams, campaignIdFromQuery, campaignNameFromQuery]); // typeFromQuery is intentionally omitted
+
+  // This useEffect reacts to changes in typeFromQuery and ensures item types are loaded for scrolling & fetching locations
+  useEffect(() => {
+    if (typeFromQuery && itemTypesForDisplay.length > 0) {
+      const isValidType = itemTypesForDisplay.some(
+        (item) => item.value === typeFromQuery
+      );
+
+      if (isValidType) {
+        getNearestDropOffLocations(typeFromQuery);
+        setDetailedQuantities({});
+        setActivePlasticSubItemId(null);
+
+        // Auto-scroll to the selected item type button
+        if (itemTypeButtonsContainerRef.current) {
+          const activeButton =
+            itemTypeButtonsContainerRef.current.querySelector(
+              `button[data-item-type-value="${typeFromQuery}"]`
+            ) as HTMLElement;
+
+          if (activeButton) {
+            activeButton.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+              inline: "center",
+            });
+          }
+        }
+      } else {
+        // If typeFromQuery is somehow invalid despite the previous useEffect,
+        // and we have types, default to the first one.
+        // This is a fallback.
+        if (itemTypesForDisplay.length > 0) {
+          const paramsToSet: {
+            type: string;
+            campaignId?: string;
+            campaignName?: string;
+          } = { type: itemTypesForDisplay[0].value };
+          if (campaignIdFromQuery) paramsToSet.campaignId = campaignIdFromQuery;
+          if (campaignNameFromQuery)
+            paramsToSet.campaignName = campaignNameFromQuery;
+          setSearchParams(paramsToSet, { replace: true });
+        }
+      }
+    } else if (!typeFromQuery && itemTypesForDisplay.length > 0) {
+      // If typeFromQuery is initially empty and we have types, set to the first one.
+      // This ensures locations are loaded for the default type.
+      const paramsToSet: {
+        type: string;
+        campaignId?: string;
+        campaignName?: string;
+      } = { type: itemTypesForDisplay[0].value };
+      if (campaignIdFromQuery) paramsToSet.campaignId = campaignIdFromQuery;
+      if (campaignNameFromQuery)
+        paramsToSet.campaignName = campaignNameFromQuery;
+      setSearchParams(paramsToSet, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    typeFromQuery,
+    itemTypesForDisplay,
+    setSearchParams,
+    campaignIdFromQuery,
+    campaignNameFromQuery,
+  ]);
+  // Note: getNearestDropOffLocations is called within this effect. If it's not memoized and causes re-renders,
+  // it might lead to issues. Assuming it's stable or handled.
+
+  // REMOVE THE OLD useEffect that was here for setItemsForDisplay (previously lines ~88-150)
 
   const handleItemTypeSelect = (itemValue: string) => {
-    setSearchParams({ type: itemValue });
-    setSelectedLocationId(null);
-    setDetailedQuantities({}); // Reset quantities for the new type
-    setActivePlasticSubItemId(null); // Reset active plastic item
+    const paramsToSet: {
+      type: string;
+      campaignId?: string;
+      campaignName?: string;
+    } = { type: itemValue };
+    if (campaignIdFromQuery) paramsToSet.campaignId = campaignIdFromQuery;
+    if (campaignNameFromQuery) paramsToSet.campaignName = campaignNameFromQuery;
+    setSearchParams(paramsToSet);
+    // setSelectedLocationId(null); // This will be handled by the useEffect reacting to typeFromQuery
+    // setDetailedQuantities({});
+    // setActivePlasticSubItemId(null);
   };
 
   const handleQuantityChange = (itemId: string, value: string) => {
@@ -339,6 +382,7 @@ const CreateDropOff = () => {
   };
 
   const getNearestDropOffLocations = async (itemTypeValue = typeFromQuery) => {
+    if (!itemTypeValue) return; // Do not fetch if itemTypeValue is empty
     setLoadingLocations(true);
     setSelectedLocationId(null);
     try {
@@ -617,10 +661,17 @@ const CreateDropOff = () => {
           Back
         </button>
       )}
-      <div className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide">
+      <div
+        ref={itemTypeButtonsContainerRef}
+        className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide"
+      >
+        {itemTypesForDisplay.length === 0 && !loading && (
+          <p className="text-sm text-slate-500">No item types available.</p>
+        )}
         {itemTypesForDisplay.map((item) => (
           <button
             key={item.value}
+            data-item-type-value={item.value} // Added data attribute for scrolling
             onClick={() => handleItemTypeSelect(item.value)}
             className={`px-6 py-3 text-sm font-semibold rounded-full transition-colors whitespace-nowrap
               ${

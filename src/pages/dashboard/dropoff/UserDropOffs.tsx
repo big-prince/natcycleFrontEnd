@@ -50,9 +50,9 @@ const UserDropOffs = () => {
     setLoading(true);
     DropOffApi.getUserDropOffs(localUser._id)
       .then((res) => {
-        const dropOffs = res.data.data.docs.map((d: any) => ({
+        console.log(res.data.data);
+        const dropOffs = res.data.data.map((d: any) => ({
           ...d,
-          // Ensure dropOffLocation is an object, provide defaults if necessary
           dropOffLocation:
             d.dropOffLocation && typeof d.dropOffLocation === "object"
               ? d.dropOffLocation

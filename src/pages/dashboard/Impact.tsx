@@ -96,7 +96,7 @@ const Impact = () => {
     if (!localUser?._id) return;
     DropOffApi.getUserDropOffs(localUser._id)
       .then((res) => {
-        setUserDropOffs(res.data.data.docs);
+        setUserDropOffs(res.data.data);
       })
       .catch((err) => {
         console.log(err);
