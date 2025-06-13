@@ -82,7 +82,8 @@ const GreenProfile: React.FC = () => {
       setLoading(true);
       DropOffApi.getUserDropOffs(localUser._id)
         .then((res) => {
-          const allUserDropOffs: IDropOff[] = res.data.data.docs || [];
+          console.log(res.data.data, "THE RES");
+          const allUserDropOffs: IDropOff[] = res.data.data || [];
           const yearlyDropOffs = allUserDropOffs.filter(
             (d) => new Date(d.createdAt).getFullYear() === selectedYear
           );
