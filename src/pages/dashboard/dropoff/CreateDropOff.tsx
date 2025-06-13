@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { toast } from "react-toastify";
@@ -16,8 +16,11 @@ import {
   MdClose,
   MdFlipCameraAndroid,
   MdArrowBack,
+  MdRecycling, // Added for generic recycling
 } from "react-icons/md";
+import { FaBox, FaRecycle, FaWineBottle, FaTrashAlt } from "react-icons/fa"; // Added more icons
 import { FaBottleWater } from "react-icons/fa6";
+import { GiPaperBagFolded } from "react-icons/gi";
 
 interface Location {
   type: string;
@@ -30,51 +33,52 @@ export interface DropoffPoint {
   _id: string;
   name: string;
   itemType: string;
+  primaryMaterialType?: string;
+  acceptedSubtypes?: string[];
   description: string;
   address: string;
   __v: number;
   distance?: string;
-  numericDistance?: number;
-  isTooFar?: boolean;
+  numericDistance: number; // Ensure this is always calculated
+  isTooFar: boolean; // Ensure this is always calculated
 }
 
-// Sample structure for detailed quantity input based on item type
-const subItemsData: {
-  [key: string]: {
-    id: string;
-    name: string;
-    icon: JSX.Element;
-    unit: string;
-  }[];
-} = {
-  plastic: [
-    {
-      id: "500ml plastic",
-      name: "500ml Plastic Bottle",
-      icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
-      unit: "bottles",
-    },
-    {
-      id: "1000ml plastic",
-      name: "1L Plastic Bottle",
-      icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
-      unit: "bottles",
-    },
-    {
-      id: "1500ml plastic",
-      name: "1.5L Plastic Bottle",
-      icon: <FaBottleWater className="w-7 h-7 text-blue-500" />,
-      unit: "bottles",
-    },
-  ],
-  fabric: [
-    {
-      id: "fabric_shirt",
-      name: "T-Shirt",
-      icon: <MdCheckroom className="w-7 h-7 text-green-600" />,
-      unit: "items",
-    },
-  ],
+// Helper function to get an icon for a subtype
+const getIconForSubtype = (
+  subtype: string,
+  primaryType?: string
+): JSX.Element => {
+  const lowerSubtype = subtype.toLowerCase();
+  const lowerPrimaryType = primaryType?.toLowerCase();
+
+  if (lowerSubtype.includes("bottle") && lowerSubtype.includes("plastic"))
+    return <FaBottleWater className="w-7 h-7 text-blue-500" />;
+  if (
+    lowerSubtype.includes("shirt") ||
+    lowerSubtype.includes("fabric") ||
+    lowerPrimaryType === "fabric"
+  )
+    return <MdCheckroom className="w-7 h-7 text-green-600" />;
+  if (lowerSubtype.includes("glass") || lowerPrimaryType === "glass")
+    return <FaWineBottle className="w-7 h-7 text-green-400" />;
+  if (
+    lowerSubtype.includes("can") ||
+    lowerPrimaryType === "aluminium" ||
+    lowerPrimaryType === "metal"
+  )
+    return <FaTrashAlt className="w-7 h-7 text-gray-500" />;
+  if (lowerSubtype.includes("paper") || lowerPrimaryType === "paper")
+    return <GiPaperBagFolded className="w-7 h-7 text-yellow-600" />;
+  if (lowerSubtype.includes("bag") && lowerSubtype.includes("plastic"))
+    return <FaRecycle className="w-7 h-7 text-blue-400" />;
+
+  // Fallback to primary type or generic
+  if (lowerPrimaryType === "plastic")
+    return <FaRecycle className="w-7 h-7 text-blue-400" />;
+  if (lowerPrimaryType === "ewaste")
+    return <MdRecycling className="w-7 h-7 text-purple-500" />;
+
+  return <FaBox className="w-7 h-7 text-gray-400" />; // Default generic box
 };
 
 const CreateDropOff = () => {
@@ -83,7 +87,7 @@ const CreateDropOff = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const campaignIdFromQuery = searchParams.get("campaignId") || "";
   const campaignNameFromQuery = searchParams.get("campaignName") || "";
-  const typeFromQuery = searchParams.get("type") || ""; // Initialize as empty, will be set by useEffect
+  const typeFromQuery = searchParams.get("type") || "";
 
   const [loading, setLoading] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
@@ -92,9 +96,6 @@ const CreateDropOff = () => {
   const [detailedQuantities, setDetailedQuantities] = useState<{
     [key: string]: string;
   }>({});
-  const [activePlasticSubItemId, setActivePlasticSubItemId] = useState<
-    string | null
-  >(null);
 
   const [dropOffForm, setDropOffForm] = useState({
     description: "",
@@ -105,7 +106,7 @@ const CreateDropOff = () => {
       value: string;
     }[]
   >([]);
-  const itemTypeButtonsContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
+  const itemTypeButtonsContainerRef = useRef<HTMLDivElement>(null);
 
   // Effect to fetch primary material types for the filter buttons and set initial type
   useEffect(() => {
@@ -144,15 +145,12 @@ const CreateDropOff = () => {
         console.error("Failed to fetch primary material types:", err);
         toast.error("Could not load item types.");
         setItemsForDisplay([]);
-      } finally {
-        // setLoadingCategories(false);
       }
     };
     fetchPrimaryMaterialTypes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setSearchParams, campaignIdFromQuery, campaignNameFromQuery]); // typeFromQuery is intentionally omitted
+  }, [setSearchParams, campaignIdFromQuery, campaignNameFromQuery]);
 
-  // This useEffect reacts to changes in typeFromQuery and ensures item types are loaded for scrolling & fetching locations
+  // This useEffect reacts to changes in typeFromQuery
   useEffect(() => {
     if (typeFromQuery && itemTypesForDisplay.length > 0) {
       const isValidType = itemTypesForDisplay.some(
@@ -160,10 +158,7 @@ const CreateDropOff = () => {
       );
 
       if (isValidType) {
-        getNearestDropOffLocations(typeFromQuery);
-        setDetailedQuantities({});
-        setActivePlasticSubItemId(null);
-
+        getNearestDropOffLocations(typeFromQuery); // This will also reset selectedLocationId, detailedQuantities, selectedSubtypeForLogging
         // Auto-scroll to the selected item type button
         if (itemTypeButtonsContainerRef.current) {
           const activeButton =
@@ -180,9 +175,6 @@ const CreateDropOff = () => {
           }
         }
       } else {
-        // If typeFromQuery is somehow invalid despite the previous useEffect,
-        // and we have types, default to the first one.
-        // This is a fallback.
         if (itemTypesForDisplay.length > 0) {
           const paramsToSet: {
             type: string;
@@ -196,8 +188,6 @@ const CreateDropOff = () => {
         }
       }
     } else if (!typeFromQuery && itemTypesForDisplay.length > 0) {
-      // If typeFromQuery is initially empty and we have types, set to the first one.
-      // This ensures locations are loaded for the default type.
       const paramsToSet: {
         type: string;
         campaignId?: string;
@@ -208,7 +198,6 @@ const CreateDropOff = () => {
         paramsToSet.campaignName = campaignNameFromQuery;
       setSearchParams(paramsToSet, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     typeFromQuery,
     itemTypesForDisplay,
@@ -216,10 +205,6 @@ const CreateDropOff = () => {
     campaignIdFromQuery,
     campaignNameFromQuery,
   ]);
-  // Note: getNearestDropOffLocations is called within this effect. If it's not memoized and causes re-renders,
-  // it might lead to issues. Assuming it's stable or handled.
-
-  // REMOVE THE OLD useEffect that was here for setItemsForDisplay (previously lines ~88-150)
 
   const handleItemTypeSelect = (itemValue: string) => {
     const paramsToSet: {
@@ -230,37 +215,22 @@ const CreateDropOff = () => {
     if (campaignIdFromQuery) paramsToSet.campaignId = campaignIdFromQuery;
     if (campaignNameFromQuery) paramsToSet.campaignName = campaignNameFromQuery;
     setSearchParams(paramsToSet);
-    // setSelectedLocationId(null); // This will be handled by the useEffect reacting to typeFromQuery
-    // setDetailedQuantities({});
-    // setActivePlasticSubItemId(null);
+    // getNearestDropOffLocations will be called by the useEffect watching typeFromQuery,
+    // which will also reset selectedLocationId and detailedQuantities.
   };
 
-  const handleQuantityChange = (itemId: string, value: string) => {
-    const numericValue = parseInt(value, 10) || 0;
-
+  const handleQuantityChange = (subtypeId: string, value: string) => {
     setDetailedQuantities((prev) => {
       const updatedQuantities = { ...prev };
-
-      if (
-        typeFromQuery === "plastic" &&
-        (subItemsData[typeFromQuery] || []).length > 0
-      ) {
-        if (numericValue > 0) {
-          updatedQuantities[itemId] = value;
-          (subItemsData[typeFromQuery] || []).forEach((subItem) => {
-            if (subItem.id !== itemId) {
-              updatedQuantities[subItem.id] = "";
-            }
-          });
-          setActivePlasticSubItemId(itemId);
-        } else {
-          updatedQuantities[itemId] = value;
-          if (activePlasticSubItemId === itemId) {
-            setActivePlasticSubItemId(null);
-          }
-        }
+      const numericValue = parseInt(value, 10);
+      if (!isNaN(numericValue) && numericValue > 0) {
+        updatedQuantities[subtypeId] = value;
+      } else if (value === "" || (numericValue === 0 && value !== "")) {
+        // Allow clearing or explicit zero
+        updatedQuantities[subtypeId] = value; // Store empty or "0" to allow user to clear
       } else {
-        updatedQuantities[itemId] = value;
+        // If invalid (e.g. negative, non-numeric not handled by type="number" but good to be safe)
+        // delete updatedQuantities[subtypeId]; // Or keep as is, input type="number" helps
       }
       return updatedQuantities;
     });
@@ -268,72 +238,41 @@ const CreateDropOff = () => {
 
   const handleDropOffFormSubmit = async (e: any) => {
     e.preventDefault();
-    // if (!localUser || !localUser.isAuthenticated) {
-    //   const formDataToStore = {
-    //     selectedLocationId,
-    //     detailedQuantities,
-    //     typeFromQuery,
-    //     description: dropOffForm.description,
-    //     campaignId: campaignIdFromQuery,
-    //     campaignName: campaignNameFromQuery,
-    //     timestamp: new Date().toISOString(),
-    //   };
-    //   sessionStorage.setItem("pendingDropoff", JSON.stringify(formDataToStore));
-    //   if (file) {
-    //     /* ... store file ... */
-    //   }
-    //   navigate("/", {
-    //     state: {
-    //       redirectAfterLogin: `/public/dropoff/create?type=${typeFromQuery}`,
-    //     },
-    //   });
-    //   return toast.info("Please login or Signup to create a drop off");
-    // }
 
     if (!selectedLocationId)
       return toast.error("Please select a drop-off location.");
     if (!file) return toast.error("Please capture a receipt image.");
+    if (!typeFromQuery) return toast.error("Primary item type is missing.");
 
-    const totalQuantity = Object.values(detailedQuantities).reduce(
-      (sum, qty) => sum + (parseInt(qty, 10) || 0),
-      0
-    );
-    if (totalQuantity === 0 && Object.keys(detailedQuantities).length > 0) {
-      // Only error if quantity inputs were shown but all are zero or empty
-      return toast.error("Please enter the quantity for at least one item.");
+    const dropOffQuantityArray = Object.entries(detailedQuantities)
+      .map(([materialType, quantityString]) => {
+        const units = parseInt(quantityString, 10);
+        if (!isNaN(units) && units > 0) {
+          return { materialType, units };
+        }
+        return null;
+      })
+      .filter((item) => item !== null) as {
+      materialType: string;
+      units: number;
+    }[];
+
+    if (dropOffQuantityArray.length === 0) {
+      return toast.error(
+        "Please enter a valid quantity for at least one item type."
+      );
     }
 
     setLoading(true);
     const formData = new FormData();
     formData.append("location", selectedLocationId);
-    formData.append("description", dropOffForm.description); // Optional
-    formData.append("itemQuantity", totalQuantity.toString()); // Sum of detailed quantities
     formData.append("itemType", typeFromQuery);
+    formData.append("dropOffQuantity", JSON.stringify(dropOffQuantityArray));
+    formData.append("description", dropOffForm.description);
     formData.append("file", file as Blob);
     if (campaignIdFromQuery) formData.append("campaignId", campaignIdFromQuery);
 
-    if (
-      typeFromQuery === "plastic" &&
-      activePlasticSubItemId &&
-      detailedQuantities[activePlasticSubItemId] &&
-      parseInt(detailedQuantities[activePlasticSubItemId]) > 0
-    ) {
-      formData.set("itemType", activePlasticSubItemId);
-    }
-
-    // Log detailed quantities for plastic items if that's the selected type
-    if (typeFromQuery === "plastic") {
-      console.log("Plastic item breakdown:");
-      for (const [itemId, quantity] of Object.entries(detailedQuantities)) {
-        if (parseInt(quantity) > 0) {
-          formData.set("itemType", itemId);
-          console.log(`Setting itemType to specific plastic type: ${itemId}`);
-          break;
-        }
-      }
-    }
-
-    // Log all formData entries
+    console.log("Submitting Drop Off Data:");
     formData.forEach((value, key) => {
       if (key === "file") {
         console.log(`${key}: [File object]`);
@@ -342,10 +281,11 @@ const CreateDropOff = () => {
       }
     });
 
-    // ... (DropOffApi.addDropOff call - existing logic)
     DropOffApi.addDropOff(formData)
       .then(() => {
         toast.success("Drop off created successfully");
+        sessionStorage.removeItem("pendingDropoff"); // Clear any pending data
+        sessionStorage.removeItem("pendingDropoffFile");
         navigate("/home");
       })
       .catch((error) => {
@@ -382,97 +322,78 @@ const CreateDropOff = () => {
   };
 
   const getNearestDropOffLocations = async (itemTypeValue = typeFromQuery) => {
-    if (!itemTypeValue) return; // Do not fetch if itemTypeValue is empty
+    if (!itemTypeValue) return;
     setLoadingLocations(true);
     setSelectedLocationId(null);
+    setDetailedQuantities({});
+    setLocations([]);
+
     try {
       const userCoords = await getUserLocation();
-      console.log(
-        "User's current location (lat, lon):",
-        userCoords.latitude,
-        userCoords.longitude
-      );
-
       const baseApiParams = {
         latitude: userCoords.latitude,
         longitude: userCoords.longitude,
         distance: 0,
+        itemType: itemTypeValue,
       };
 
-      let actualApiParams: any;
-      let applyClientSidePlasticFilter = false;
+      console.log(
+        `Fetching locations for primary type: ${itemTypeValue} with params:`,
+        baseApiParams
+      );
 
-      if (itemTypeValue.toLowerCase() === "plastic") {
-        actualApiParams = { ...baseApiParams };
-        applyClientSidePlasticFilter = true;
-        console.log(
-          "Selected type is 'plastic'. Fetching broadly and will filter client-side."
-        );
-      } else {
-        actualApiParams = { ...baseApiParams, itemType: itemTypeValue };
-        console.log(`Fetching for specific type: ${itemTypeValue}`);
-      }
-
-      let fetchedLocations = (
-        await dropOffLocationApi.getNearestDropOffLocations(actualApiParams)
+      let fetchedLocationsData = (
+        await dropOffLocationApi.getNearestDropOffLocations(baseApiParams)
       ).data.data;
 
-      if (fetchedLocations.length === 0 && actualApiParams.distance === 0) {
+      if (fetchedLocationsData.length === 0 && baseApiParams.distance === 0) {
         toast.info("No locations found nearby. Expanding search to 300km...");
-        actualApiParams.distance = 300000;
-        fetchedLocations = (
-          await dropOffLocationApi.getNearestDropOffLocations(actualApiParams)
+        const expandedApiParams = { ...baseApiParams, distance: 300000 };
+        fetchedLocationsData = (
+          await dropOffLocationApi.getNearestDropOffLocations(expandedApiParams)
         ).data.data;
       }
 
-      console.log(
-        "Locations received from backend (before any client-side 'plastic' filtering):",
-        fetchedLocations
-      );
+      console.log("Locations received from backend:", fetchedLocationsData);
 
-      let processedLocations = fetchedLocations;
-      if (applyClientSidePlasticFilter) {
-        processedLocations = fetchedLocations.filter(
-          (loc: DropoffPoint) =>
-            loc.itemType && loc.itemType.toLowerCase().includes("plastic")
-        );
-        console.log(
-          "Locations after client-side 'plastic' filter:",
-          processedLocations
-        );
-      }
-
-      const MAX_DISTANCE_KM = 500;
-
-      const locationsWithDistance = processedLocations
-        .map((loc: DropoffPoint) => {
-          let distanceKm = Infinity;
-          let locationCoordsString = "N/A";
-
-          if (
+      const relevantLocations = fetchedLocationsData.filter(
+        (loc: any): loc is DropoffPoint => {
+          // Type guard for stricter typing
+          const locPrimaryType = (
+            loc.primaryMaterialType || loc.itemType
+          )?.toLowerCase();
+          const matchesPrimaryType =
+            locPrimaryType === itemTypeValue.toLowerCase();
+          const hasAcceptedSubtypes =
+            loc.acceptedSubtypes && loc.acceptedSubtypes.length > 0;
+          return (
+            matchesPrimaryType &&
+            hasAcceptedSubtypes &&
             loc.location &&
             loc.location.coordinates &&
             loc.location.coordinates.length === 2
-          ) {
-            const longitude = loc.location.coordinates[0];
-            const latitude = loc.location.coordinates[1];
-            locationCoordsString = `[lon: ${longitude}, lat: ${latitude}]`;
-            distanceKm = calculateHaversineDistance(
-              userCoords.latitude,
-              userCoords.longitude,
-              latitude,
-              longitude
-            );
-          }
-
-          console.log(
-            `Processing Location: Name: "${
-              loc.name
-            }", Coords: ${locationCoordsString}, Calculated Distance: ${distanceKm.toFixed(
-              1
-            )} km`
           );
+        }
+      );
 
+      console.log(
+        `Locations after filtering for primary type "${itemTypeValue}", acceptedSubtypes, and valid coordinates:`,
+        relevantLocations
+      );
+
+      const MAX_DISTANCE_KM = 500; // Adjust as needed
+
+      const locationsWithDistanceProcessing = relevantLocations
+        .map((loc: DropoffPoint) => {
+          // Ensure coordinates exist before calculating distance
+          const longitude = loc.location.coordinates[0];
+          const latitude = loc.location.coordinates[1];
+          const distanceKm = calculateHaversineDistance(
+            userCoords.latitude,
+            userCoords.longitude,
+            latitude,
+            longitude
+          );
           return {
             ...loc,
             numericDistance: distanceKm,
@@ -480,32 +401,38 @@ const CreateDropOff = () => {
             isTooFar: distanceKm > MAX_DISTANCE_KM,
           };
         })
-        .sort((a, b) => a.numericDistance - b.numericDistance);
+        .sort((a, b) => a.numericDistance - b.numericDistance); // Sort by closest first
 
       console.log(
-        "Final locations after distance calculation and sorting:",
-        locationsWithDistance
+        "Processed and sorted locations:",
+        locationsWithDistanceProcessing
       );
+      setLocations(locationsWithDistanceProcessing);
 
-      setLocations(locationsWithDistance);
-
-      const firstSelectableLocation = locationsWithDistance.find(
-        (loc) => !loc.isTooFar
-      );
-      if (firstSelectableLocation) {
-        setSelectedLocationId(firstSelectableLocation._id);
-      } else if (locationsWithDistance.length > 0) {
-        toast.info(
-          `All locations for ${itemTypeValue} are quite far. Closest is ${locationsWithDistance[0].distance} away.`
+      if (locationsWithDistanceProcessing.length > 0) {
+        const firstSelectableLocation = locationsWithDistanceProcessing.find(
+          (loc) => !loc.isTooFar
         );
+        if (firstSelectableLocation) {
+          setSelectedLocationId(firstSelectableLocation._id); // Auto-select the first available location
+          // Quantities and subtype logging will be reset by this state change if needed by other effects,
+          // or handled when currentSubItems recomputes.
+        } else {
+          // No locations within the MAX_DISTANCE_KM
+          toast.info(
+            `All found locations for ${itemTypeValue} are further than ${MAX_DISTANCE_KM}km.`
+          );
+        }
       } else {
         toast.info(
-          `No drop-off locations found for ${itemTypeValue} even within 300km.`
+          `No drop-off locations found that accept specific ${itemTypeValue} items, even within 300km.`
         );
       }
     } catch (error: any) {
       console.error("Error fetching locations:", error);
-      toast.error("Error fetching locations: " + error.message);
+      toast.error(
+        "Error fetching locations: " + (error.message || "Unknown error")
+      );
     } finally {
       setLoadingLocations(false);
     }
@@ -520,7 +447,7 @@ const CreateDropOff = () => {
   );
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null); // For capturing photo
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Cleanup object URL and video stream
   useEffect(() => {
@@ -591,11 +518,11 @@ const CreateDropOff = () => {
               setFile(capturedFile);
               setPreviewUrl(URL.createObjectURL(capturedFile));
             }
-            closeCamera(); // Close camera after capture
+            closeCamera();
           },
           "image/jpeg",
           0.95
-        ); // Adjust quality if needed
+        );
       }
     }
   };
@@ -621,34 +548,64 @@ const CreateDropOff = () => {
     if (localUser && localUser.isAuthenticated && pendingDropoffRaw) {
       try {
         const pendingData = JSON.parse(pendingDropoffRaw);
+        // Restore basic form data, but avoid restoring file or complex states like selected location directly
+        // as data might be stale. User should re-select location and re-capture image.
         if (pendingData.typeFromQuery)
-          setSearchParams({ type: pendingData.typeFromQuery });
-        if (pendingData.selectedLocationId)
-          setSelectedLocationId(pendingData.selectedLocationId);
-        if (pendingData.detailedQuantities)
-          setDetailedQuantities(pendingData.detailedQuantities);
+          setSearchParams((prevParams) => {
+            const newParams = new URLSearchParams(prevParams);
+            newParams.set("type", pendingData.typeFromQuery);
+            if (pendingData.campaignId)
+              newParams.set("campaignId", pendingData.campaignId);
+            if (pendingData.campaignName)
+              newParams.set("campaignName", pendingData.campaignName);
+            return newParams;
+          });
         if (pendingData.description)
           setDropOffForm((prev) => ({
             ...prev,
             description: pendingData.description,
           }));
 
-        const pendingFileRaw = sessionStorage.getItem("pendingDropoffFile");
-        if (pendingFileRaw) {
-          // Logic to convert DataURL back to File and set preview
-          // Example: setFile(dataURLtoFile(pendingFileRaw, "restored-image.jpg"));
-          // Example: setPreviewUrl(pendingFileRaw); // If it was stored as a DataURL
-        }
-        toast.success("Your previous dropoff information has been restored.");
-        sessionStorage.removeItem("pendingDropoff");
+        toast.info(
+          "Some of your previous dropoff information has been restored. Please re-select location and receipt."
+        );
+        sessionStorage.removeItem("pendingDropoff"); // Clear after attempting restore
         sessionStorage.removeItem("pendingDropoffFile");
       } catch (error) {
         console.error("Error restoring dropoff data:", error);
+        sessionStorage.removeItem("pendingDropoff"); // Clear if corrupt
+        sessionStorage.removeItem("pendingDropoffFile");
       }
     }
   }, [localUser, setSearchParams]);
 
-  const currentSubItems = subItemsData[typeFromQuery] || [];
+  const currentSubItems = useMemo(() => {
+    if (!selectedLocationId) return [];
+    const selectedLocation = locations.find(
+      (loc) => loc._id === selectedLocationId
+    );
+    if (
+      selectedLocation &&
+      selectedLocation.acceptedSubtypes &&
+      selectedLocation.acceptedSubtypes.length > 0
+    ) {
+      return selectedLocation.acceptedSubtypes.map((subtype) => ({
+        id: subtype, // The subtype string itself is the ID
+        name: subtype.charAt(0).toUpperCase() + subtype.slice(1), // Capitalize for display
+        icon: getIconForSubtype(
+          subtype,
+          selectedLocation.primaryMaterialType || typeFromQuery
+        ),
+        unit: subtype.toLowerCase().includes("bottle") ? "bottles" : "items", // Basic unit inference
+      }));
+    }
+    return [];
+  }, [selectedLocationId, locations, typeFromQuery]);
+
+  // Calculate if any valid quantity has been entered for enabling submit button
+  const hasValidQuantities = useMemo(() => {
+    return Object.values(detailedQuantities).some((q) => parseInt(q, 10) > 0);
+  }, [detailedQuantities]);
 
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
@@ -665,13 +622,14 @@ const CreateDropOff = () => {
         ref={itemTypeButtonsContainerRef}
         className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide"
       >
-        {itemTypesForDisplay.length === 0 && !loading && (
-          <p className="text-sm text-slate-500">No item types available.</p>
-        )}
+        {itemTypesForDisplay.length === 0 &&
+          !loadingLocations && ( // Check loadingLocations too
+            <p className="text-sm text-slate-500">No item types available.</p>
+          )}
         {itemTypesForDisplay.map((item) => (
           <button
             key={item.value}
-            data-item-type-value={item.value} // Added data attribute for scrolling
+            data-item-type-value={item.value}
             onClick={() => handleItemTypeSelect(item.value)}
             className={`px-6 py-3 text-sm font-semibold rounded-full transition-colors whitespace-nowrap
               ${
@@ -700,38 +658,47 @@ const CreateDropOff = () => {
             <button
               type="button"
               onClick={() => getNearestDropOffLocations()}
-              disabled={loadingLocations}
+              disabled={loadingLocations || !typeFromQuery}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center transition-opacity disabled:opacity-50"
             >
               <MdLocationOn className="mr-1.5" />
-              {loadingLocations ? "Locating..." : "Locate"}
+              {loadingLocations ? "Locating..." : "Find Locations"}
             </button>
           </div>
 
-          {loadingLocations && !locations.length && (
+          {loadingLocations && ( // Show loading indicator more consistently
             <p className="text-center text-gray-500 py-4">
               Finding locations...
             </p>
           )}
-          {!loadingLocations && locations.length === 0 && (
+          {!loadingLocations && locations.length === 0 && typeFromQuery && (
             <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
-              No locations found for {typeFromQuery}. Try a different item type.
+              No locations found for "{typeFromQuery}" that accept specific
+              items. Try another primary type or check back later.
+            </p>
+          )}
+          {!typeFromQuery && !loadingLocations && (
+            <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
+              Please select an item type above to see available locations.
             </p>
           )}
 
           <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
             {locations.map((loc) => (
-              // TODO: In production, locations where loc.isTooFar is true can be filtered out entirely
-              // For now, they are faded and unselectable.
               <div
                 key={loc._id}
-                onClick={() => !loc.isTooFar && setSelectedLocationId(loc._id)}
+                onClick={() => {
+                  if (!loc.isTooFar) {
+                    setSelectedLocationId(loc._id);
+                    // setDetailedQuantities({}); // This is now handled by useEffect on selectedLocationId change
+                  }
+                }}
                 className={`p-3 rounded-lg border transition-all
                   ${
                     selectedLocationId === loc._id && !loc.isTooFar
                       ? "bg-teal-50 border-teal-500 ring-2 ring-teal-500 cursor-pointer"
                       : loc.isTooFar
-                      ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                      ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed" // Faded and not allowed
                       : "bg-white border-gray-200 hover:border-gray-400 cursor-pointer"
                   }`}
               >
@@ -739,13 +706,25 @@ const CreateDropOff = () => {
                   <div>
                     <p className="font-semibold text-slate-800">{loc.name}</p>
                     <p className="text-xs text-gray-500">{loc.address}</p>
-                    {loc.distance && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Accepts: {loc.primaryMaterialType || loc.itemType}
+                    </p>
+                    {loc.acceptedSubtypes &&
+                      loc.acceptedSubtypes.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Specific items:{" "}
+                          {loc.acceptedSubtypes.slice(0, 3).join(", ")}
+                          {loc.acceptedSubtypes.length > 3 ? "..." : ""}
+                        </p>
+                      )}
+                    {loc.distance && ( // loc.distance should always be present now
                       <p
                         className={`text-xs mt-0.5 ${
                           loc.isTooFar ? "text-red-500" : "text-green-600"
                         }`}
                       >
                         {loc.distance} away
+                        {loc.isTooFar && " (Too far)"}
                       </p>
                     )}
                   </div>
@@ -758,27 +737,22 @@ const CreateDropOff = () => {
           </div>
         </div>
 
-        {/* Quantity Input Section - Dynamic */}
-        {currentSubItems.length > 0 && (
+        {/* Quantity Input Section - Dynamic based on selected location */}
+        {selectedLocationId && currentSubItems.length > 0 && (
           <div className="mb-6">
             <h2 className="text-md font-semibold text-slate-700 mb-3">
-              How many <span className="lowercase">{typeFromQuery}</span> items
-              were recycled?
+              How many items were recycled at the selected location?
+              <p className="text-xs text-gray-500 font-normal">
+                Enter quantities for items you dropped off.
+              </p>
             </h2>
             <div className="space-y-4">
               {currentSubItems.map((item) => {
-                const isPlasticAndInactive =
-                  typeFromQuery === "plastic" &&
-                  activePlasticSubItemId !== null &&
-                  activePlasticSubItemId !== item.id;
+                // const isInactive = selectedSubtypeForLogging !== null && selectedSubtypeForLogging !== item.id; // Remove this logic
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300 ${
-                      isPlasticAndInactive
-                        ? "opacity-40 pointer-events-none"
-                        : ""
-                    }`}
+                    className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300`} // Removed inactive class logic
                   >
                     <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
                       {item.icon}
@@ -787,13 +761,13 @@ const CreateDropOff = () => {
                       <p className="text-sm text-slate-600">{item.name}</p>
                       <input
                         type="number"
-                        placeholder="How many"
-                        min="0"
+                        placeholder={`Quantity of ${item.unit}`}
+                        min="0" // Allow 0 for clearing, validation handles submission
                         value={detailedQuantities[item.id] || ""}
                         onChange={(e) =>
                           handleQuantityChange(item.id, e.target.value)
                         }
-                        disabled={isPlasticAndInactive}
+                        // disabled={isInactive} // Remove disabled logic
                         className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                       />
                     </div>
@@ -803,29 +777,15 @@ const CreateDropOff = () => {
             </div>
           </div>
         )}
-        {/* Fallback for types without sub-items, or keep existing generic quantity if preferred */}
-        {currentSubItems.length === 0 && typeFromQuery && (
-          <div className="mb-6">
-            <label
-              htmlFor="generic_quantity"
-              className="block text-md font-semibold text-slate-700 mb-1"
-            >
-              Quantity of {typeFromQuery}
-            </label>
-            <input
-              type="number"
-              id="generic_quantity"
-              name="generic_quantity"
-              min="0"
-              placeholder="Enter quantity"
-              value={detailedQuantities["generic"] || ""}
-              onChange={(e) => handleQuantityChange("generic", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-            />
+        {selectedLocationId && currentSubItems.length === 0 && (
+          <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
+            The selected location does not have specific item types listed for
+            individual quantity entry. You can still log a general drop-off if
+            applicable, or contact support if this seems incorrect.
+            {/* Consider if a generic quantity input should appear here if no subtypes */}
           </div>
         )}
 
-        {/* Receipt Upload Section */}
         <div className="mb-8">
           <h2 className="text-md font-semibold text-slate-700 mb-3">
             Confirm your drop-off
@@ -840,7 +800,7 @@ const CreateDropOff = () => {
                   <img
                     src={previewUrl}
                     alt="Receipt preview"
-                    className="max-h-full max-w-full object-contain rounded-md" // Ensures preview fits
+                    className="max-h-full max-w-full object-contain rounded-md"
                   />
                   <span className="mt-2 text-xs text-blue-600 font-medium">
                     Tap to retake
@@ -862,24 +822,21 @@ const CreateDropOff = () => {
 
           {isCameraOpen && (
             <div className="relative aspect-square bg-black rounded-lg overflow-hidden">
-              {" "}
-              {/* Changed from aspect-video to aspect-square */}
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-cover" // object-cover will fill the square, cropping if necessary
+                className="w-full h-full object-cover"
                 style={{
                   transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
-                }} // Mirror front camera
+                }}
               />
-              <canvas ref={canvasRef} className="hidden"></canvas>{" "}
-              {/* Hidden canvas for capture */}
+              <canvas ref={canvasRef} className="hidden"></canvas>
               <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4 z-10">
                 <button
                   type="button"
                   onClick={handleSwitchCamera}
-                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm" // Added backdrop-blur
+                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm"
                   aria-label="Switch camera"
                 >
                   <MdFlipCameraAndroid size={24} />
@@ -887,7 +844,7 @@ const CreateDropOff = () => {
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600 shadow-lg" // Added shadow
+                  className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600 shadow-lg"
                   aria-label="Capture photo"
                 >
                   <MdCameraAlt size={28} />
@@ -895,7 +852,7 @@ const CreateDropOff = () => {
                 <button
                   type="button"
                   onClick={closeCamera}
-                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm" // Added backdrop-blur
+                  className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm"
                   aria-label="Close camera"
                 >
                   <MdClose size={24} />
@@ -904,12 +861,10 @@ const CreateDropOff = () => {
             </div>
           )}
         </div>
-        {/* Removed the second "SCAN REDEEM RECEIPT" button as its functionality is merged */}
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || loadingLocations || !file} // Disable if no file captured
+          disabled={loading || loadingLocations || !file || !hasValidQuantities} // Updated disabled condition
           className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3.5 px-6 rounded-full flex items-center justify-center text-lg transition-opacity disabled:opacity-60"
         >
           {loading ? "Submitting..." : "Submit Drop-off"}
