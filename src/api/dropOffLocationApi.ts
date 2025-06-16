@@ -8,6 +8,9 @@ const dropOffLocationApi = {
   async getDropOffLocations() {
     return await api.get('dropOff-location')
   },
+  async adminGetDropOffLocations() {
+    return await api.get('dropOff-location/all')
+  },
 
   async getNearestDropOffLocations(userLocation: any) {
     return await api.get('dropOff-location/nearest/location', { params: userLocation })
@@ -27,4 +30,3 @@ const dropOffLocationApi = {
 }
 
 export default dropOffLocationApi
-

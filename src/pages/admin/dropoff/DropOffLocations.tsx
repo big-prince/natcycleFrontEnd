@@ -12,10 +12,9 @@ const DropOffLocations = () => {
   const fetchData = async () => {
     setLoading(true);
     dropOffLocationApi
-      .getDropOffLocations()
+      .adminGetDropOffLocations()
       .then((res) => {
-        console.log(res.data.data.docs);
-        setData(res.data.data.docs);
+        setData(res.data.data);
       })
       .catch((err) => {
         console.log(err);
