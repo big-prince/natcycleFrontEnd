@@ -337,11 +337,6 @@ const CreateDropOff = () => {
         itemType: itemTypeValue,
       };
 
-      console.log(
-        `Fetching locations for primary type: ${itemTypeValue} with params:`,
-        baseApiParams
-      );
-
       let fetchedLocationsData = (
         await dropOffLocationApi.getNearestDropOffLocations(baseApiParams)
       ).data.data;
@@ -353,8 +348,6 @@ const CreateDropOff = () => {
           await dropOffLocationApi.getNearestDropOffLocations(expandedApiParams)
         ).data.data;
       }
-
-      console.log("Locations received from backend:", fetchedLocationsData);
 
       const relevantLocations = fetchedLocationsData.filter(
         (loc: any): loc is DropoffPoint => {
@@ -374,11 +367,6 @@ const CreateDropOff = () => {
             loc.location.coordinates.length === 2
           );
         }
-      );
-
-      console.log(
-        `Locations after filtering for primary type "${itemTypeValue}", acceptedSubtypes, and valid coordinates:`,
-        relevantLocations
       );
 
       const MAX_DISTANCE_KM = 500; // Adjust as needed
@@ -401,12 +389,7 @@ const CreateDropOff = () => {
             isTooFar: distanceKm > MAX_DISTANCE_KM,
           };
         })
-        .sort((a, b) => a.numericDistance - b.numericDistance); // Sort by closest first
-
-      console.log(
-        "Processed and sorted locations:",
-        locationsWithDistanceProcessing
-      );
+        .sort((a, b) => a.numericDistance - b.numericDistance);
       setLocations(locationsWithDistanceProcessing);
 
       if (locationsWithDistanceProcessing.length > 0) {
@@ -414,9 +397,7 @@ const CreateDropOff = () => {
           (loc) => !loc.isTooFar
         );
         if (firstSelectableLocation) {
-          setSelectedLocationId(firstSelectableLocation._id); // Auto-select the first available location
-          // Quantities and subtype logging will be reset by this state change if needed by other effects,
-          // or handled when currentSubItems recomputes.
+          setSelectedLocationId(firstSelectableLocation._id);
         } else {
           // No locations within the MAX_DISTANCE_KM
           toast.info(

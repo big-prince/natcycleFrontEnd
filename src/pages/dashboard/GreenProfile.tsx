@@ -82,10 +82,8 @@ const GreenProfile: React.FC = () => {
       setLoading(true);
       DropOffApi.getUserDropOffs(localUser._id)
         .then((res) => {
-          console.log(res.data.data, "THE RES");
           const allUserDropOffs: IDropOff[] = res.data.data || [];
           const yearlyDropOffs = allUserDropOffs.filter(
-            // .getFullYear() uses local timezone, which is fine for filtering by selectedYear
             (d) => new Date(d.createdAt).getFullYear() === selectedYear
           );
           setAllDropOffsForYear(yearlyDropOffs);
@@ -96,7 +94,6 @@ const GreenProfile: React.FC = () => {
           yearlyDropOffs.forEach((dropOff) => {
             const localEventDate = new Date(dropOff.createdAt);
             const year = localEventDate.getFullYear();
-            // getMonth is 0-indexed, so add 1. Pad to ensure two digits.
             const month = (localEventDate.getMonth() + 1)
               .toString()
               .padStart(2, "0");
@@ -120,10 +117,9 @@ const GreenProfile: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, [localUser?._id, selectedYear, selectedMonth]); // selectedMonth dependency will re-run this, which is acceptable.
+  }, [localUser?._id, selectedYear, selectedMonth]);
 
   useEffect(() => {
-    // This effect now only processes monthly data when selectedMonth or yearly data changes
     processDropOffDataForMonth(allDropOffsForYear, selectedMonth);
   }, [selectedMonth, allDropOffsForYear]);
 
@@ -288,7 +284,7 @@ const GreenProfile: React.FC = () => {
 
   const monthGrid = getDaysInMonthGrid(selectedYear, selectedMonth);
   const yearGrid = generateYearlyGrid(selectedYear);
-  console.log("Year Grid:", yearGrid);
+  console.log("Year Grid:", yearGrid.length);
   // Updated progress percentage calculation
   const progressPercentage = Math.min(
     (uniqueDiversionDaysInYear / ANNUAL_DAYS_GOAL) * 100,
@@ -369,18 +365,18 @@ const GreenProfile: React.FC = () => {
             <div className="w-full h-6 bg-green-100 rounded-full relative overflow-hidden">
               {/* Filled portion of the bar */}
               <div
-                className={`h-full bg-slate-800 rounded-full flex items-center justify-end pr-1.5 transition-all duration-700 ease-out ${
-                  uniqueDiversionDaysInYear > 0 ? "min-w-[30px]" : "" // Apply min-width if there are active days
+                className={`h-full bg-black rounded-full flex items-center justify-end pr-1.5 transition-all duration-700 ease-out ${
+                  uniqueDiversionDaysInYear > 0 ? "min-w-[30px]" : ""
                 }`}
                 style={{ width: `${progressPercentage}%` }}
               >
-                {uniqueDiversionDaysInYear > 0 && ( // Show number inside filled bar if days > 0
+                {uniqueDiversionDaysInYear > 0 && (
                   <span className="text-xs font-bold text-white">
                     {Math.floor(uniqueDiversionDaysInYear)}
                   </span>
                 )}
               </div>
-              {uniqueDiversionDaysInYear === 0 && ( // Show "0" on the track if no active days
+              {uniqueDiversionDaysInYear === 0 && (
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
                   0
                 </span>
@@ -601,7 +597,7 @@ const GreenProfile: React.FC = () => {
 
         {/* About section - Same as before */}
         <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl text-center">
-          <h3 className="text-xl md:text-2xl font-semibold text-slate-800 mb-3">
+          <h3 className="text-xl md:text-2xl font-semibold text-black mb-3">
             What is Green Profile?
           </h3>
           <p className="text-slate-600 text-sm md:text-base max-w-lg mx-auto leading-relaxed">

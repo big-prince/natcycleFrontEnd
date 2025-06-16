@@ -47,14 +47,6 @@ type IDropOff = {
   [key: string]: any;
 };
 
-// Define or import mileStoneNumbers, similar to Dashboard.tsx
-// const mileStoneNumbers = [ // This can be removed if no longer used after milestone section removal
-//   { level: 1, pointsRange: [0, 1000], name: "Seedling" },
-//   { level: 2, pointsRange: [1001, 2000], name: "Sprout" },
-//   { level: 3, pointsRange: [2001, 5000], name: "Tree" },
-//   { level: 4, pointsRange: [5001, 10000], name: "Forest" },
-// };
-
 const formatLargeNumber = (num: number | null | undefined): string => {
   if (num == null) return "0";
   if (Math.abs(num) < 1000) return num.toString();
@@ -81,8 +73,8 @@ const Impact = () => {
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userDropOffs, setUserDropOffs] = useState<IDropOff[]>([]); // Use IDropOff type
-  const [userbadges, setUserBadges] = useState<IBadge[]>([]); // Kept for now, but UI section hidden
+  const [userDropOffs, setUserDropOffs] = useState<IDropOff[]>([]);
+  const [userbadges, setUserBadges] = useState<IBadge[]>([]);
 
   // Calculate point for each recyclable
   const calculateCarbonUnitsForItem = (itemKey: string) => {
@@ -124,42 +116,18 @@ const Impact = () => {
     return <div className="p-10 text-center">Loading user data...</div>;
   }
 
-  // Find a pending dropoff for display - assuming the latest one or one with 'pending' status
-  // This logic needs to be adapted based on how 'pending' status is stored in your IDropOff type
+  const mostRecentDropoff =
+    userDropOffs.length > 0
+      ? [...userDropOffs].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0]
+      : null;
+
   const pendingDropoff =
-    userDropOffs.find((dropoff) => dropoff.status === "Pending") ||
-    (userDropOffs.length > 0 ? userDropOffs[0] : null);
-
-  console.log("🚀 ~ Impact ~ pendingDropoff:", pendingDropoff);
-
-  // const currentCarbonUnits = localUser.carbonUnits || 0;
-  // const currentMilestoneData = // Remove this block
-  //   mileStoneNumbers.find(
-  //     (m) =>
-  //       currentCarbonUnits >= m.pointsRange[0] &&
-  //       currentCarbonUnits <= m.pointsRange[1]
-  //   ) ||
-  //   (currentCarbonUnits >
-  //   mileStoneNumbers[mileStoneNumbers.length - 1].pointsRange[1]
-  //     ? mileStoneNumbers[mileStoneNumbers.length - 1]
-  //     : mileStoneNumbers[0]);
-
-  // const milestoneStart = currentMilestoneData.pointsRange[0]; // Remove this
-  // const milestoneEnd = currentMilestoneData.pointsRange[1]; // Remove this
-  // let progressPercentage = 0; // Remove this
-  // if (milestoneEnd > milestoneStart) { // Remove this block
-  //   progressPercentage = Math.min(
-  //     Math.max(
-  //       ((currentCarbonUnits - milestoneStart) /
-  //         (milestoneEnd - milestoneStart)) *
-  //         100,
-  //       0
-  //     ),
-  //     100
-  //   );
-  // } else if (currentCarbonUnits >= milestoneEnd) {
-  //   progressPercentage = 100;
-  // }
+    mostRecentDropoff && mostRecentDropoff.status !== "Accepted"
+      ? mostRecentDropoff
+      : null;
 
   return (
     <div className="pb-20 max-w-md mx-auto">
@@ -246,31 +214,6 @@ const Impact = () => {
           </div>
         </div>
       )}
-      {/* Milestone Section - Removed */}
-      {/* 
-      <div className="mt-6 p-4 bg-white rounded-xl shadow">
-        <h3 className="text-md font-semibold text-slate-700 mb-1">Milestone</h3>
-        <p className="text-xs text-gray-500 mb-2">Current</p>
-        <div className="relative">
-          <div className="w-full h-6 rounded-full bg-lime-200 p-0.5">
-            <div
-              className="h-full bg-slate-800 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out px-2"
-              style={{ width: `${progressPercentage}%` }}
-            >
-              {progressPercentage > 15 && ( 
-                <span className="text-xs font-bold text-white">
-                  {Math.floor(currentCarbonUnits)}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1 px-1">
-            <span>{milestoneStart}</span>
-            <span>{milestoneEnd}</span>
-          </div>
-        </div>
-      </div> 
-      */}
       {/* Breakdown Section */}
       <div className="mt-6">
         <div className="flex justify-between items-center mb-3">

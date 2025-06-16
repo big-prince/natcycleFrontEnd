@@ -2,8 +2,8 @@
 import React, { useEffect } from "react";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import { Link, useNavigate } from "react-router-dom";
-import { FaEdit, FaPlus, FaRegTrashAlt } from "react-icons/fa"; // Added icons
-import { toast } from "react-toastify"; // For notifications
+import { FaEdit, FaPlus, FaRegTrashAlt } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const DropOffLocations = () => {
   const [loading, setLoading] = React.useState(false);

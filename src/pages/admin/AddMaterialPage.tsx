@@ -29,6 +29,54 @@ const AddMaterialPage = () => {
   const [loading, setLoading] = useState(false);
   const [initialImageURL, setInitialImageURL] = useState<string | null>(null);
   const [loadingSubcategories, setLoadingSubcategories] = useState(false);
+  const [uiWeightInput, setUiWeightInput] = useState<string>("");
+  const [uiWeightUnit, setUiWeightUnit] = useState<string>("g");
+
+  // Handle weight input change
+  const handleUiWeightInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow only numbers and decimal points
+    if (/^\d*\.?\d*$/.test(value)) {
+      setUiWeightInput(value);
+      // Update weightInGrams based on the selected unit
+      if (value === "") {
+        setWeightInGrams("");
+      } else {
+        const weightValue = parseFloat(value);
+        if (!isNaN(weightValue)) {
+          setWeightInGrams(
+            uiWeightUnit === "g"
+              ? weightValue
+              : uiWeightUnit === "kg"
+              ? weightValue * 1000
+              : uiWeightUnit === "lbs"
+              ? weightValue * 453.592
+              : weightValue
+          );
+        }
+      }
+    }
+  };
+  // Handle weight unit change
+  const handleUiWeightUnitChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newUnit = e.target.value;
+    setUiWeightUnit(newUnit);
+    // Update weightInGrams based on the current input value
+    if (uiWeightInput !== "") {
+      const weightValue = parseFloat(uiWeightInput);
+      if (!isNaN(weightValue)) {
+        setWeightInGrams(
+          newUnit === "g"
+            ? weightValue
+            : newUnit === "kg"
+            ? weightValue * 1000
+            : newUnit === "lbs"
+            ? weightValue * 453.592
+            : weightValue
+        );
+      }
+    }
+  };
 
   async function getMaterialTypes() {
     await materialApi.getMaterialsCategory().then((d) => {
@@ -158,20 +206,20 @@ const AddMaterialPage = () => {
     }
   };
 
-  const handleWeightChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const numValue = parseFloat(value);
+  // const handleWeightChange = (e: ChangeEvent<HTMLInputElement>) => {
+  //   const value = e.target.value;
+  //   const numValue = parseFloat(value);
 
-    if (value === "") {
-      setWeightInGrams("");
-    } else if (!isNaN(numValue) && numValue >= 0) {
-      setWeightInGrams(numValue);
-      setQuantity(""); // Clear quantity if weight is entered
-    } else if (value !== "" && weightInGrams === "") {
-      // handles if user types non-numeric first
-      setWeightInGrams(value); // keep the invalid input for a moment so user sees it
-    }
-  };
+  //   if (value === "") {
+  //     setWeightInGrams("");
+  //   } else if (!isNaN(numValue) && numValue >= 0) {
+  //     setWeightInGrams(numValue);
+  //     setQuantity(""); // Clear quantity if weight is entered
+  //   } else if (value !== "" && weightInGrams === "") {
+  //     // handles if user types non-numeric first
+  //     setWeightInGrams(value); // keep the invalid input for a moment so user sees it
+  //   }
+  // };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -375,26 +423,43 @@ const AddMaterialPage = () => {
               </div>
               <div>
                 <label
-                  htmlFor="materialWeightGrams"
+                  htmlFor="materialWeightValue"
                   className="block text-xs font-medium text-slate-600 mb-1"
                 >
-                  Weight (grams)
+                  Weight
                 </label>
-                <input
-                  type="number"
-                  id="materialWeightGrams"
-                  value={weightInGrams}
-                  onChange={handleWeightChange}
-                  className="input w-full disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed"
-                  placeholder="e.g., 20"
-                  min="0"
-                  step="any"
-                  disabled={
-                    quantity !== "" &&
-                    quantity !== null &&
-                    !isNaN(parseInt(String(quantity)))
-                  }
-                />
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    id="materialWeightValue"
+                    value={uiWeightInput}
+                    onChange={handleUiWeightInputChange}
+                    className="input w-2/3 disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    placeholder="e.g., 20"
+                    pattern="^\d*\.?\d*$"
+                    title="Please enter a valid weight (e.g., 20 or 20.5)"
+                    disabled={
+                      quantity !== "" &&
+                      quantity !== null &&
+                      !isNaN(parseInt(String(quantity)))
+                    }
+                  />
+                  <select
+                    id="materialWeightUnit"
+                    value={uiWeightUnit}
+                    onChange={handleUiWeightUnitChange}
+                    className="input w-1/5 disabled:opacity-60 disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    disabled={
+                      quantity !== "" &&
+                      quantity !== null &&
+                      !isNaN(parseInt(String(quantity)))
+                    }
+                  >
+                    {/* <option value="g">g</option> */}
+                    <option value="lbs">lbs</option>
+                    {/* <option value="kg">kg</option> */}
+                  </select>
+                </div>
               </div>
             </div>
           </div>

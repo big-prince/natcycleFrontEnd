@@ -162,7 +162,7 @@ const Dashboard = () => {
           </div>
           <div className="w-full h-5 rounded-full bg-lime-200 p-0.5">
             <div
-              className="h-full bg-slate-800 rounded-full flex items-center justify-end transition-all duration-500 ease-in-out pr-2"
+              className="h-full bg-black rounded-full flex items-center justify-end transition-all duration-500 ease-in-out pr-2"
               style={{ width: `${progressPercentage}%` }}
             >
               {progressPercentage > 10 && (
@@ -207,7 +207,7 @@ const Dashboard = () => {
                   font-medium py-3 px-5 rounded-full shadow-sm text-xs sm:text-sm text-center flex-shrink-0 min-w-[110px] transition-colors duration-150
                   ${
                     selectedItemType === itemType
-                      ? "bg-slate-800 text-white ring-2 ring-slate-800"
+                      ? "bg-black text-white ring-2 ring-slate-800"
                       : "bg-white/90 hover:bg-white text-slate-700"
                   }
                 `}
@@ -232,7 +232,7 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={handleLogImpact}
-            className="flex items-center justify-between bg-slate-800 hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72"
+            className="flex items-center justify-between bg-black hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72"
           >
             <div className="text-left">
               <p className="text-base font-semibold">Log impact</p>

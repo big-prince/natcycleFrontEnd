@@ -43,12 +43,10 @@ const Signin = () => {
 
     AuthApi.signin(signinData)
       .then((res: any) => {
-        console.log(res);
         const payload = {
           token: res.token,
           user: res.user,
         };
-        console.log(payload.user);
         dispatch(login(payload));
 
         // Check if there's a pending dropoff in sessionStorage
