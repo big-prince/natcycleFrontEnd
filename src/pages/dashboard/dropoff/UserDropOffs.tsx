@@ -12,12 +12,20 @@ interface IDropOffLocation {
   address: string;
 }
 
+interface IDropOffQuantityItem {
+  materialType: string;
+  units: number;
+  _id?: string;
+}
+
 interface IDropOff {
   _id: string;
   createdAt: string;
   dropOffLocation: IDropOffLocation;
+  dropOffQuantity: IDropOffQuantityItem[];
   pointsEarned?: number;
   status?: string;
+  itemType?: string; // Primary item type
 }
 
 const formatDateAndTime = (dateString: string): string => {
@@ -110,21 +118,13 @@ const UserDropOffs: React.FC = () => {
     setCurrentDisplayDate((prevDate) => {
       const newDate = new Date(prevDate);
       newDate.setMonth(newDate.getMonth() + 1);
-      // Prevent going into future months beyond current real-world month/year
       const today = new Date();
-      if (
-        newDate > today &&
-        newDate.getFullYear() === today.getFullYear() &&
-        newDate.getMonth() === today.getMonth()
-      ) {
-        return today; // Cap at current month
-      }
       if (
         newDate.getFullYear() > today.getFullYear() ||
         (newDate.getFullYear() === today.getFullYear() &&
           newDate.getMonth() > today.getMonth())
       ) {
-        return prevDate; // Don't allow going past current month
+        return prevDate;
       }
       return newDate;
     });
@@ -204,7 +204,7 @@ const UserDropOffs: React.FC = () => {
           {filteredAndSortedDropOffs.map((dropOff) => (
             <div
               key={dropOff._id}
-              className="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"
+              className="bg-white p-4 rounded-lg shadow-md flex justify-between items-start"
             >
               <div className="flex-grow">
                 <h2 className="text-lg font-semibold text-slate-700">
@@ -213,15 +213,28 @@ const UserDropOffs: React.FC = () => {
                 <p className="text-sm text-slate-500">
                   {formatDateAndTime(dropOff.createdAt)}
                 </p>
-                <p className="text-sm text-slate-500 mt-1">
-                  {dropOff.dropOffLocation?.address || "No address provided"}
-                </p>
+                <div className="text-xs text-slate-500 mt-1 space-y-0.5">
+                  {dropOff.dropOffQuantity &&
+                  dropOff.dropOffQuantity.length > 0 ? (
+                    dropOff.dropOffQuantity.map((item, index) => (
+                      <span key={item._id || index} className="block">
+                        {item.units} {item.materialType}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="block italic text-slate-400">
+                      No specific items listed.
+                    </span>
+                  )}
+                </div>
                 {dropOff.status && (
                   <p
-                    className={`text-xs mt-1 font-medium ${
-                      dropOff.status === "Completed"
+                    className={`text-xs mt-2 font-medium ${
+                      dropOff.status === "Approved"
                         ? "text-green-600"
-                        : "text-orange-500"
+                        : dropOff.status === "Pending"
+                        ? "text-orange-500"
+                        : "text-red-500"
                     }`}
                   >
                     Status: {dropOff.status}
