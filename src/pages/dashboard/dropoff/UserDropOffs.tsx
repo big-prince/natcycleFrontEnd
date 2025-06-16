@@ -1,27 +1,41 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import DropOffApi from "../../../api/dropOffApi";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa"; // Icons for month navigation
+import { Link } from "react-router-dom";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 
-interface DropOffLocation {
+interface IDropOffLocation {
   name: string;
-  address?: string; // Make address optional or ensure it's always there
-  // Add other location properties if needed
+  address: string;
 }
-interface DropOff {
+
+interface IDropOff {
   _id: string;
-  itemType: string;
   createdAt: string;
-  status: string; // Keep status for potential future use or internal logic, though not directly in new UI
-  pointsEarned: number;
-  dropOffLocation: DropOffLocation; // Use a more specific type
-  itemQuantity?: number; // For "744"
-  itemDescription?: string; // For "500ml plastic water bottles"
-  // Add any other relevant fields from your API response
+  dropOffLocation: IDropOffLocation;
+  pointsEarned?: number;
+  status?: string;
 }
+
+const formatDateAndTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const optionsDate: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+  };
+  const optionsTime: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  };
+  return `${date.toLocaleDateString(
+    undefined,
+    optionsDate
+  )}, ${date.toLocaleTimeString(undefined, optionsTime)}`;
+};
 
 const monthNames = [
   "January",
@@ -38,158 +52,193 @@ const monthNames = [
   "December",
 ];
 
-const UserDropOffs = () => {
+const UserDropOffs: React.FC = () => {
   const localUser = useAppSelector((state) => state.auth.user);
-  const [userDropOffs, setUserDropOffs] = useState<DropOff[]>([]);
-  const [filteredDropOffs, setFilteredDropOffs] = useState<DropOff[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date()); // For month navigation
+  const [allDropOffs, setAllDropOffs] = useState<IDropOff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchUserDropOffs = async () => {
-    if (!localUser?._id) return; // Ensure user ID exists
-    setLoading(true);
-    DropOffApi.getUserDropOffs(localUser._id)
-      .then((res) => {
-        console.log(res.data.data);
-        const dropOffs = res.data.data.map((d: any) => ({
-          ...d,
-          dropOffLocation:
-            d.dropOffLocation && typeof d.dropOffLocation === "object"
-              ? d.dropOffLocation
-              : { name: "Unknown Location", address: "N/A" },
-        }));
-        setUserDropOffs(dropOffs);
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
+  const [currentDisplayDate, setCurrentDisplayDate] = useState(new Date());
+
+  const selectedMonth = currentDisplayDate.getMonth();
+  const selectedYear = currentDisplayDate.getFullYear();
 
   useEffect(() => {
-    fetchUserDropOffs();
+    if (localUser?._id) {
+      setLoading(true);
+      DropOffApi.getUserDropOffs(localUser._id)
+        .then((res) => {
+          setAllDropOffs(res.data.data || []);
+          setError(null);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user drop-offs:", err);
+          setError("Failed to load drop-offs. Please try again later.");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
   }, [localUser?._id]);
 
-  // Filter drop-offs by the current month and year
-  useEffect(() => {
-    if (userDropOffs.length === 0) {
-      setFilteredDropOffs([]);
-      return;
-    }
-
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    const result = userDropOffs.filter((item) => {
-      const itemDate = new Date(item.createdAt);
-      return (
-        itemDate.getMonth() === currentMonth &&
-        itemDate.getFullYear() === currentYear
+  const filteredAndSortedDropOffs = useMemo(() => {
+    return allDropOffs
+      .filter((dropOff) => {
+        const dropOffDate = new Date(dropOff.createdAt);
+        return (
+          dropOffDate.getFullYear() === selectedYear &&
+          dropOffDate.getMonth() === selectedMonth
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-    });
-    setFilteredDropOffs(result);
-  }, [currentDate, userDropOffs]);
+  }, [allDropOffs, selectedMonth, selectedYear]);
 
-  const handlePreviousMonth = () => {
-    setCurrentDate((prevDate) => {
+  const goToPreviousMonth = () => {
+    setCurrentDisplayDate((prevDate) => {
       const newDate = new Date(prevDate);
       newDate.setMonth(newDate.getMonth() - 1);
       return newDate;
     });
   };
 
-  const handleNextMonth = () => {
-    setCurrentDate((prevDate) => {
+  const goToNextMonth = () => {
+    setCurrentDisplayDate((prevDate) => {
       const newDate = new Date(prevDate);
       newDate.setMonth(newDate.getMonth() + 1);
+      // Prevent going into future months beyond current real-world month/year
+      const today = new Date();
+      if (
+        newDate > today &&
+        newDate.getFullYear() === today.getFullYear() &&
+        newDate.getMonth() === today.getMonth()
+      ) {
+        return today; // Cap at current month
+      }
+      if (
+        newDate.getFullYear() > today.getFullYear() ||
+        (newDate.getFullYear() === today.getFullYear() &&
+          newDate.getMonth() > today.getMonth())
+      ) {
+        return prevDate; // Don't allow going past current month
+      }
       return newDate;
     });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+  const isNextMonthDisabled = () => {
+    const nextMonthDate = new Date(currentDisplayDate);
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+    const today = new Date();
+    return (
+      nextMonthDate.getFullYear() > today.getFullYear() ||
+      (nextMonthDate.getFullYear() === today.getFullYear() &&
+        nextMonthDate.getMonth() > today.getMonth())
+    );
   };
 
+  if (loading) {
+    return <div className="p-4 text-center">Loading your drop-offs...</div>;
+  }
+
+  if (error) {
+    return <div className="p-4 text-center text-red-500">{error}</div>;
+  }
+
+  if (!localUser) {
+    return (
+      <div className="p-4 text-center">
+        Please log in to see your drop-offs.
+      </div>
+    );
+  }
+
   return (
-    <div className="pb-16 px-2 max-w-md mx-auto">
-      {" "}
-      {/* Centered layout */}
-      {/* Month Navigation Header */}
-      <div className="flex justify-between items-center my-6 p-3 bg-slate-50 rounded-lg shadow-sm">
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-2xl font-semibold text-slate-800 mb-6 text-center">
+        My Drop-offs
+      </h1>
+
+      <div className="flex justify-between items-center mb-6 bg-slate-100 p-3 rounded-lg shadow">
         <button
-          onClick={handlePreviousMonth}
-          className="p-2 rounded-md hover:bg-slate-200 transition-colors"
+          onClick={goToPreviousMonth}
+          className="p-2 rounded-full hover:bg-slate-200 transition-colors"
           aria-label="Previous month"
         >
-          <FaChevronLeft className="text-slate-600" />
+          <MdChevronLeft size={28} className="text-slate-600" />
         </button>
-        <div className="text-center">
-          <p className="text-lg font-semibold text-slate-800">
-            {monthNames[currentDate.getMonth()]}
-          </p>
-          <p className="text-xs text-gray-500">{currentDate.getFullYear()}</p>
+        <div className="text-lg font-medium text-slate-700 text-center">
+          {monthNames[selectedMonth]} {selectedYear}
         </div>
         <button
-          onClick={handleNextMonth}
-          className="p-2 rounded-md hover:bg-slate-200 transition-colors"
+          onClick={goToNextMonth}
+          disabled={isNextMonthDisabled()}
+          className="p-2 rounded-full hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Next month"
         >
-          <FaChevronRight className="text-slate-600" />
+          <MdChevronRight size={28} className="text-slate-600" />
         </button>
       </div>
-      {/* Drop-offs List */}
-      <div className="space-y-3">
-        {loading ? (
-          <p className="text-center text-gray-500 py-8">Loading drop-offs...</p>
-        ) : filteredDropOffs.length === 0 ? (
-          <div className="text-center py-10 bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500 text-md">
-              No drop-offs recorded for {monthNames[currentDate.getMonth()]}{" "}
-              {currentDate.getFullYear()}.
+
+      {filteredAndSortedDropOffs.length === 0 ? (
+        <div className="p-4 text-center text-slate-600 bg-white rounded-lg shadow">
+          No drop-offs recorded for {monthNames[selectedMonth]} {selectedYear}.
+          {allDropOffs.length === 0 && (
+            <p className="mt-2">
+              You haven't made any drop-offs yet.
+              <Link
+                to="/create-dropoff"
+                className="text-green-600 hover:underline ml-1"
+              >
+                Make one now!
+              </Link>
             </p>
-          </div>
-        ) : (
-          filteredDropOffs.map((dropOff) => (
-            // Optional: Wrap with Link to navigate to dropoff details
-            // <Link to={`/dropoff/details/${dropOff._id}`} key={dropOff._id}>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredAndSortedDropOffs.map((dropOff) => (
             <div
               key={dropOff._id}
-              className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-md font-semibold text-slate-800">
-                    {dropOff.dropOffLocation?.name || "Unknown Location"}
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    {formatTime(dropOff.createdAt)}
+              <div className="flex-grow">
+                <h2 className="text-lg font-semibold text-slate-700">
+                  {dropOff.dropOffLocation?.name || "Unknown Location"}
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {formatDateAndTime(dropOff.createdAt)}
+                </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {dropOff.dropOffLocation?.address || "No address provided"}
+                </p>
+                {dropOff.status && (
+                  <p
+                    className={`text-xs mt-1 font-medium ${
+                      dropOff.status === "Completed"
+                        ? "text-green-600"
+                        : "text-orange-500"
+                    }`}
+                  >
+                    Status: {dropOff.status}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {dropOff.dropOffLocation?.address ||
-                      "Address not available"}
-                  </p>
-                  {dropOff.itemQuantity && dropOff.itemDescription && (
-                    <p className="text-xs text-green-600 mt-1 font-medium">
-                      {dropOff.itemQuantity} {dropOff.itemDescription}
-                    </p>
-                  )}
-                </div>
-                <div className="bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap">
-                  {Math.floor(dropOff.pointsEarned) || 0} CU
-                </div>
+                )}
+              </div>
+              <div className="ml-4 text-right flex-shrink-0">
+                <span className="bg-teal-100 text-teal-700 text-sm font-medium px-3 py-1.5 rounded-full">
+                  {dropOff.pointsEarned !== undefined
+                    ? `${Math.round(dropOff.pointsEarned)} CU`
+                    : "N/A CU"}
+                </span>
               </div>
             </div>
-            // </Link>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

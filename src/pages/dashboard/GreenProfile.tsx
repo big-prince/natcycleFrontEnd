@@ -85,24 +85,30 @@ const GreenProfile: React.FC = () => {
           console.log(res.data.data, "THE RES");
           const allUserDropOffs: IDropOff[] = res.data.data || [];
           const yearlyDropOffs = allUserDropOffs.filter(
+            // .getFullYear() uses local timezone, which is fine for filtering by selectedYear
             (d) => new Date(d.createdAt).getFullYear() === selectedYear
           );
           setAllDropOffsForYear(yearlyDropOffs);
-          setTotalDiversionsInYear(yearlyDropOffs.length); // Set total for year
+          setTotalDiversionsInYear(yearlyDropOffs.length);
 
-          // Process data for the year (daily counts)
+          // Process data for the year (daily counts) using local dates
           const dailyCounts: Record<string, number> = {};
           yearlyDropOffs.forEach((dropOff) => {
-            const date = new Date(dropOff.createdAt)
-              .toISOString()
-              .split("T")[0];
-            dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+            const localEventDate = new Date(dropOff.createdAt);
+            const year = localEventDate.getFullYear();
+            // getMonth is 0-indexed, so add 1. Pad to ensure two digits.
+            const month = (localEventDate.getMonth() + 1)
+              .toString()
+              .padStart(2, "0");
+            const day = localEventDate.getDate().toString().padStart(2, "0");
+            const localDateString = `${year}-${month}-${day}`;
+            dailyCounts[localDateString] =
+              (dailyCounts[localDateString] || 0) + 1;
           });
           setDropOffsByDay(dailyCounts);
           setYearlyActivityData(dailyCounts); // Store for year view
           setUniqueDiversionDaysInYear(Object.keys(dailyCounts).length);
 
-          // Process data for the selected month
           processDropOffDataForMonth(yearlyDropOffs, selectedMonth);
         })
         .catch((err) => {
@@ -114,7 +120,7 @@ const GreenProfile: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, [localUser?._id, selectedYear, selectedMonth]);
+  }, [localUser?._id, selectedYear, selectedMonth]); // selectedMonth dependency will re-run this, which is acceptable.
 
   useEffect(() => {
     // This effect now only processes monthly data when selectedMonth or yearly data changes
@@ -135,20 +141,18 @@ const GreenProfile: React.FC = () => {
     year: number,
     month: number
   ): (Date | null)[][] => {
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const firstDayOfMonth = new Date(year, month, 1); // Local time
+    const lastDayOfMonth = new Date(year, month + 1, 0); // Local time
     const days: (Date | null)[] = [];
-    // Add nulls for days before the first day of the month in the first week
     for (let i = 0; i < firstDayOfMonth.getDay(); i++) {
       days.push(null);
     }
-    // Add actual days of the month
     for (
       let d = new Date(firstDayOfMonth);
       d <= lastDayOfMonth;
       d.setDate(d.getDate() + 1)
     ) {
-      days.push(new Date(d));
+      days.push(new Date(d)); // Pushes local Date objects
     }
     const weeks: (Date | null)[][] = [];
     for (let i = 0; i < days.length; i += 7) {
@@ -203,17 +207,16 @@ const GreenProfile: React.FC = () => {
 
   // New function to generate yearly activity cells
   const generateYearlyGrid = (year: number) => {
-    const startOfYear = new Date(year, 0, 1);
-    const endOfYear = new Date(year, 11, 31);
+    const startOfYear = new Date(year, 0, 1); // Local time
+    const endOfYear = new Date(year, 11, 31); // Local time
 
-    // Generate all days in the year
     const allDays: Date[] = [];
     for (
       let d = new Date(startOfYear);
       d <= endOfYear;
       d.setDate(d.getDate() + 1)
     ) {
-      allDays.push(new Date(d));
+      allDays.push(new Date(d)); // Pushes local Date objects
     }
 
     // Organize days into weeks (starting on Sundays)
@@ -292,7 +295,7 @@ const GreenProfile: React.FC = () => {
     100
   );
   const userLevel = getLevelName(localUser.carbonUnits || 0);
-  const joinDate = localUser.createdAt
+  const joinDate = localUser
     ? new Date(localUser.createdAt).toLocaleDateString("en-US", {
         month: "long",
         year: "numeric",
@@ -485,7 +488,12 @@ const GreenProfile: React.FC = () => {
                     ></div>
                   );
                 }
-                const dateString = day.toISOString().split("T")[0];
+                // 'day' is a local Date object from getDaysInMonthGrid
+                const year = day.getFullYear();
+                const month = (day.getMonth() + 1).toString().padStart(2, "0");
+                const dayOfMonth = day.getDate().toString().padStart(2, "0");
+                const dateString = `${year}-${month}-${dayOfMonth}`; // Local date string "YYYY-MM-DD"
+
                 const count = dropOffsByDay[dateString] || 0;
                 const { bg, text } = getColorClasses(count);
                 return (
@@ -505,7 +513,6 @@ const GreenProfile: React.FC = () => {
             // Year Activity View - True GitHub-style Grid with Larger Boxes
             <div className="py-6">
               <div className="w-full max-w-3xl mx-auto">
-                {/* Activity grid with larger, more visible boxes */}
                 <div
                   className="overflow-x-auto pb-4"
                   ref={yearGridContainerRef}
@@ -541,7 +548,17 @@ const GreenProfile: React.FC = () => {
                         );
                       }
 
-                      const dateString = date.toISOString().split("T")[0];
+                      // 'date' is a local Date object
+                      const year = date.getFullYear();
+                      const month = (date.getMonth() + 1)
+                        .toString()
+                        .padStart(2, "0");
+                      const dayOfMonth = date
+                        .getDate()
+                        .toString()
+                        .padStart(2, "0");
+                      const dateString = `${year}-${month}-${dayOfMonth}`; // Local date string "YYYY-MM-DD"
+
                       const count = yearlyActivityData[dateString] || 0;
                       const { bg } = getYearViewColorClasses(count);
 
