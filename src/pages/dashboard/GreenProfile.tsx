@@ -7,7 +7,6 @@ import { FaChevronLeft, FaChevronRight, FaArrowLeft } from "react-icons/fa";
 import { IDropOff } from "../../types";
 import Logo from "../../assets/logo/Group 202@2x.png";
 import { BsUpcScan } from "react-icons/bs";
-import { BiCalendar, BiCalendarAlt } from "react-icons/bi";
 
 const mileStoneLevels = [
   { points: 0, name: "Novice" },
@@ -44,6 +43,13 @@ const monthNames = [
   "December",
 ];
 
+interface PopupInfo {
+  dateDisplay: string;
+  count: number;
+  x: number;
+  y: number;
+}
+
 const GreenProfile: React.FC = () => {
   const navigate = useNavigate();
   const localUser = useAppSelector((state) => state.auth.user);
@@ -56,26 +62,24 @@ const GreenProfile: React.FC = () => {
     currentYear === selectedYear ? currentMonth : 0
   );
 
-  // Add view toggle state
   const [viewMode, setViewMode] = useState<"month" | "year">("month");
 
   const [dropOffsByDay, setDropOffsByDay] = useState<Record<string, number>>(
     {}
   );
   const [allDropOffsForYear, setAllDropOffsForYear] = useState<IDropOff[]>([]);
-
-  // Add state for year view data
   const [yearlyActivityData, setYearlyActivityData] = useState<
     Record<string, number>
   >({});
   const [totalDiversionsInYear, setTotalDiversionsInYear] = useState(0);
-
   const [totalDiversionsInMonth, setTotalDiversionsInMonth] = useState(0);
   const [uniqueDiversionDaysInYear, setUniqueDiversionDaysInYear] = useState(0);
   const [loading, setLoading] = useState(true);
   const ANNUAL_DAYS_GOAL = 365;
 
   const yearGridContainerRef = useRef<HTMLDivElement>(null);
+  const [popupInfo, setPopupInfo] = useState<PopupInfo | null>(null);
+  const popupTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (localUser?._id) {
@@ -89,7 +93,6 @@ const GreenProfile: React.FC = () => {
           setAllDropOffsForYear(yearlyDropOffs);
           setTotalDiversionsInYear(yearlyDropOffs.length);
 
-          // Process data for the year (daily counts) using local dates
           const dailyCounts: Record<string, number> = {};
           yearlyDropOffs.forEach((dropOff) => {
             const localEventDate = new Date(dropOff.createdAt);
@@ -103,7 +106,7 @@ const GreenProfile: React.FC = () => {
               (dailyCounts[localDateString] || 0) + 1;
           });
           setDropOffsByDay(dailyCounts);
-          setYearlyActivityData(dailyCounts); // Store for year view
+          setYearlyActivityData(dailyCounts);
           setUniqueDiversionDaysInYear(Object.keys(dailyCounts).length);
 
           processDropOffDataForMonth(yearlyDropOffs, selectedMonth);
@@ -117,18 +120,53 @@ const GreenProfile: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, [localUser?._id, selectedYear, selectedMonth]);
+  }, [localUser?._id, selectedYear]);
 
   useEffect(() => {
     processDropOffDataForMonth(allDropOffsForYear, selectedMonth);
-  }, [selectedMonth, allDropOffsForYear]);
+  }, [selectedMonth, allDropOffsForYear, selectedYear]);
+  useEffect(() => {
+    // Cleanup timer if component unmounts
+    return () => {
+      if (popupTimerRef.current !== null) {
+        window.clearTimeout(popupTimerRef.current);
+      }
+    };
+  }, []);
 
-  const processDropOffDataForMonth = (
-    yearlyDropOffs: IDropOff[],
-    month: number
+  const handleDayCellClick = (
+    dateObj: Date,
+    count: number,
+    event: React.MouseEvent<HTMLDivElement>
   ) => {
-    const monthlyDropOffs = yearlyDropOffs.filter(
-      (d) => new Date(d.createdAt).getMonth() === month
+    if (popupTimerRef.current !== null) {
+      window.clearTimeout(popupTimerRef.current);
+    }
+
+    const formattedDate = dateObj.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    setPopupInfo({
+      dateDisplay: formattedDate,
+      count,
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    popupTimerRef.current = window.setTimeout(() => {
+      setPopupInfo(null);
+    }, 5000);
+  };
+
+  const processDropOffDataForMonth = (dropOffs: IDropOff[], month: number) => {
+    const monthlyDropOffs = dropOffs.filter(
+      (d) =>
+        new Date(d.createdAt).getMonth() === month &&
+        new Date(d.createdAt).getFullYear() === selectedYear
     );
     setTotalDiversionsInMonth(monthlyDropOffs.length);
   };
@@ -137,8 +175,8 @@ const GreenProfile: React.FC = () => {
     year: number,
     month: number
   ): (Date | null)[][] => {
-    const firstDayOfMonth = new Date(year, month, 1); // Local time
-    const lastDayOfMonth = new Date(year, month + 1, 0); // Local time
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
     const days: (Date | null)[] = [];
     for (let i = 0; i < firstDayOfMonth.getDay(); i++) {
       days.push(null);
@@ -148,7 +186,7 @@ const GreenProfile: React.FC = () => {
       d <= lastDayOfMonth;
       d.setDate(d.getDate() + 1)
     ) {
-      days.push(new Date(d)); // Pushes local Date objects
+      days.push(new Date(d));
     }
     const weeks: (Date | null)[][] = [];
     for (let i = 0; i < days.length; i += 7) {
@@ -169,74 +207,100 @@ const GreenProfile: React.FC = () => {
     return { bg: "bg-green-700 hover:bg-green-800", text: "text-white" };
   };
 
-  const handleYearChange = (increment: number) => {
-    const newYear = selectedYear + increment;
-    if (newYear > currentYear) return; // Prevent going to future years
-    setSelectedYear(newYear);
-    // Reset to current month if new year is current year, else January
-    setSelectedMonth(newYear === currentYear ? currentMonth : 0);
+  const goToPrevious = () => {
+    if (viewMode === "month") {
+      let newMonth = selectedMonth - 1;
+      let newYear = selectedYear;
+      if (newMonth < 0) {
+        newMonth = 11;
+        newYear -= 1;
+      }
+      // Add a sensible lower bound for year if desired, e.g., if (newYear < 2000) return;
+      setSelectedYear(newYear);
+      setSelectedMonth(newMonth);
+    } else {
+      // year view
+      // Add a sensible lower bound if desired
+      setSelectedYear((prevYear) => prevYear - 1);
+    }
   };
 
-  const handleMonthChange = (increment: number) => {
-    let newMonth = selectedMonth + increment;
-    let newYear = selectedYear;
+  const goToNext = () => {
+    const today = new Date();
+    const currentRealYear = today.getFullYear();
+    const currentRealMonth = today.getMonth();
 
-    if (newMonth < 0) {
-      newMonth = 11;
-      newYear -= 1;
-    } else if (newMonth > 11) {
-      newMonth = 0;
-      newYear += 1;
+    if (viewMode === "month") {
+      let newMonth = selectedMonth + 1;
+      let newYear = selectedYear;
+      if (newMonth > 11) {
+        newMonth = 0;
+        newYear += 1;
+      }
+      if (
+        newYear > currentRealYear ||
+        (newYear === currentRealYear && newMonth > currentRealMonth)
+      ) {
+        return;
+      }
+      setSelectedYear(newYear);
+      setSelectedMonth(newMonth);
+    } else {
+      // year view
+      if (selectedYear < currentRealYear) {
+        setSelectedYear((prevYear) => prevYear + 1);
+      }
     }
-
-    if (
-      newYear > currentYear ||
-      (newYear === currentYear && newMonth > currentMonth)
-    ) {
-      return;
-    }
-    if (newYear > currentYear) return;
-
-    setSelectedYear(newYear);
-    setSelectedMonth(newMonth);
   };
 
-  // New function to generate yearly activity cells
+  const isNextDisabled = () => {
+    const today = new Date();
+    const currentRealYear = today.getFullYear();
+    const currentRealMonth = today.getMonth();
+
+    if (viewMode === "month") {
+      let testMonth = selectedMonth + 1;
+      let testYear = selectedYear;
+      if (testMonth > 11) {
+        testMonth = 0;
+        testYear += 1;
+      }
+      return (
+        testYear > currentRealYear ||
+        (testYear === currentRealYear && testMonth > currentRealMonth)
+      );
+    } else {
+      // year view
+      return selectedYear >= currentRealYear;
+    }
+  };
+
   const generateYearlyGrid = (year: number) => {
-    const startOfYear = new Date(year, 0, 1); // Local time
-    const endOfYear = new Date(year, 11, 31); // Local time
-
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31);
     const allDays: Date[] = [];
     for (
       let d = new Date(startOfYear);
       d <= endOfYear;
       d.setDate(d.getDate() + 1)
     ) {
-      allDays.push(new Date(d)); // Pushes local Date objects
+      allDays.push(new Date(d));
     }
-
-    // Organize days into weeks (starting on Sundays)
     const firstDay = new Date(startOfYear);
-    const firstDayOfWeek = firstDay.getDay(); // 0-6, 0 is Sunday
-
-    // Add padding at the beginning for the first week
+    const firstDayOfWeek = firstDay.getDay();
     const paddedDays: (Date | null)[] = [];
     for (let i = 0; i < firstDayOfWeek; i++) {
       paddedDays.push(null);
     }
-
     const allPaddedDays = [...paddedDays, ...allDays];
-
-    // Group into rows of 7 for each week
     const weeks: (Date | null)[][] = [];
     for (let i = 0; i < allPaddedDays.length; i += 7) {
       weeks.push(allPaddedDays.slice(i, i + 7));
     }
-
     return weeks;
   };
+  console.log(generateYearlyGrid(selectedYear).length);
 
-  // Enhanced color function for year view (5 levels of intensity)
   const getYearViewColorClasses = (
     count: number
   ): { bg: string; text: string } => {
@@ -246,25 +310,6 @@ const GreenProfile: React.FC = () => {
     if (count <= 4) return { bg: "bg-green-400", text: "text-white" };
     return { bg: "bg-green-700", text: "text-white" };
   };
-
-  // Add this effect to scroll to recent activity when view mode changes
-  useEffect(() => {
-    if (viewMode === "year" && yearGridContainerRef.current) {
-      // Wait for render to complete
-      setTimeout(() => {
-        // Find the most recent active day
-        const today = new Date();
-        const scrollOffset =
-          today.getFullYear() === selectedYear
-            ? // If viewing current year, scroll to today's approximate position
-              yearGridContainerRef.current!.scrollWidth * 0.9
-            : // If viewing past year, scroll to December
-              yearGridContainerRef.current!.scrollWidth * 0.85;
-
-        yearGridContainerRef.current!.scrollLeft = scrollOffset;
-      }, 100);
-    }
-  }, [viewMode, selectedYear]);
 
   if (loading) {
     return (
@@ -283,9 +328,6 @@ const GreenProfile: React.FC = () => {
   }
 
   const monthGrid = getDaysInMonthGrid(selectedYear, selectedMonth);
-  const yearGrid = generateYearlyGrid(selectedYear);
-  console.log("Year Grid:", yearGrid.length);
-  // Updated progress percentage calculation
   const progressPercentage = Math.min(
     (uniqueDiversionDaysInYear / ANNUAL_DAYS_GOAL) * 100,
     100
@@ -314,7 +356,6 @@ const GreenProfile: React.FC = () => {
           </button>
         </div>
       </div>
-
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => navigate(-1)}
@@ -324,7 +365,6 @@ const GreenProfile: React.FC = () => {
           Back
         </button>
 
-        {/* User Info - Flattened */}
         <div className="text-center mb-10 pt-4">
           <img
             src={
@@ -343,7 +383,6 @@ const GreenProfile: React.FC = () => {
           <p className="text-slate-500 text-sm mt-0.5">Joined {joinDate}</p>
         </div>
 
-        {/* Green Commits Card */}
         <div className="bg-white p-5 md:p-8 rounded-xl shadow-xl mb-8">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
             <h2 className="text-2xl md:text-3xl font-semibold text-slate-800 mb-1 sm:mb-0">
@@ -361,9 +400,7 @@ const GreenProfile: React.FC = () => {
               <span>Active Days ({selectedYear})</span>
               <span className="font-medium text-slate-600">Days Goal</span>
             </div>
-            {/* Progress Bar Container */}
             <div className="w-full h-6 bg-green-100 rounded-full relative overflow-hidden">
-              {/* Filled portion of the bar */}
               <div
                 className={`h-full bg-black rounded-full flex items-center justify-end pr-1.5 transition-all duration-700 ease-out ${
                   uniqueDiversionDaysInYear > 0 ? "min-w-[30px]" : ""
@@ -382,90 +419,53 @@ const GreenProfile: React.FC = () => {
                 </span>
               )}
             </div>
-            {/* Range labels */}
             <div className="flex justify-between text-xs text-slate-500 mt-1">
               <span>0</span>
               <span>{ANNUAL_DAYS_GOAL}</span>
             </div>
           </div>
 
-          {/* New View Toggle */}
-          <div className="flex justify-center my-4">
-            <div className="bg-slate-100 rounded-full p-1 inline-flex">
+          <div className="mb-4 space-y-3">
+            <div className="flex">
               <button
-                onClick={() => setViewMode("month")}
-                className={`px-4 py-2 rounded-full text-sm font-medium flex items-center transition-colors ${
-                  viewMode === "month"
-                    ? "bg-white text-slate-800 shadow-sm"
-                    : "text-slate-600 hover:text-slate-800"
-                }`}
+                onClick={() =>
+                  setViewMode((prev) => (prev === "month" ? "year" : "month"))
+                }
+                className="text-xs font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 py-2 px-4 rounded-md shadow-sm transition-colors ease-in-out duration-150"
               >
-                <BiCalendar className="mr-1.5 text-lg" /> Month View
-              </button>
-              <button
-                onClick={() => setViewMode("year")}
-                className={`px-4 py-2 rounded-full text-sm font-medium flex items-center transition-colors ${
-                  viewMode === "year"
-                    ? "bg-white text-slate-800 shadow-sm"
-                    : "text-slate-600 hover:text-slate-800"
-                }`}
-              >
-                <BiCalendarAlt className="mr-1.5 text-lg" /> Year View
+                {viewMode === "month"
+                  ? "Switch to Year View"
+                  : "Switch to Month View"}
               </button>
             </div>
-          </div>
 
-          {/* Year and Month Navigation */}
-          <div className="flex justify-center items-center space-x-2 my-6 bg-slate-50 p-4 rounded-lg">
-            <button
-              onClick={() => handleYearChange(-1)}
-              className="p-2 rounded-full hover:bg-slate-200 transition-colors"
-              aria-label="Previous year"
-            >
-              <FaChevronLeft className="text-slate-600 h-4 w-4" />
-            </button>
-            <span className="text-lg font-semibold text-slate-700 w-20 text-center">
-              {selectedYear}
-            </span>
-            <button
-              onClick={() => handleYearChange(1)}
-              disabled={selectedYear >= currentYear}
-              className="p-2 rounded-full hover:bg-slate-200 disabled:opacity-40 transition-colors"
-              aria-label="Next year"
-            >
-              <FaChevronRight className="text-slate-600 h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Month selection - Only show in Month View */}
-          {viewMode === "month" && (
-            <div className="flex justify-center items-center space-x-2 my-6 bg-slate-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg shadow-sm">
               <button
-                onClick={() => handleMonthChange(-1)}
-                className="p-2 rounded-full hover:bg-slate-200 transition-colors"
-                aria-label="Previous month"
+                onClick={goToPrevious}
+                className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors focus:outline-none"
+                aria-label={
+                  viewMode === "month" ? "Previous month" : "Previous year"
+                }
               >
-                <FaChevronLeft className="text-slate-600 h-4 w-4" />
+                <FaChevronLeft size={20} />
               </button>
-              <span className="text-lg font-semibold text-slate-700 w-28 sm:w-32 text-center">
-                {monthNames[selectedMonth]}
+              <span className="font-semibold text-slate-700 text-md select-none">
+                {viewMode === "month"
+                  ? `${monthNames[selectedMonth]} ${selectedYear}`
+                  : selectedYear}
               </span>
               <button
-                onClick={() => handleMonthChange(1)}
-                disabled={
-                  selectedYear === currentYear && selectedMonth >= currentMonth
-                }
-                className="p-2 rounded-full hover:bg-slate-200 disabled:opacity-40 transition-colors"
-                aria-label="Next month"
+                onClick={goToNext}
+                disabled={isNextDisabled()}
+                className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none"
+                aria-label={viewMode === "month" ? "Next month" : "Next year"}
               >
-                <FaChevronRight className="text-slate-600 h-4 w-4" />
+                <FaChevronRight size={20} />
               </button>
             </div>
-          )}
+          </div>
 
-          {/* View Switcher - Conditional Rendering */}
           {viewMode === "month" ? (
-            // Monthly Activity Grid - Same as before
             <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
               {["S", "M", "T", "W", "T", "F", "S"].map((dayName, index) => (
                 <div
@@ -484,11 +484,10 @@ const GreenProfile: React.FC = () => {
                     ></div>
                   );
                 }
-                // 'day' is a local Date object from getDaysInMonthGrid
                 const year = day.getFullYear();
                 const month = (day.getMonth() + 1).toString().padStart(2, "0");
                 const dayOfMonth = day.getDate().toString().padStart(2, "0");
-                const dateString = `${year}-${month}-${dayOfMonth}`; // Local date string "YYYY-MM-DD"
+                const dateString = `${year}-${month}-${dayOfMonth}`;
 
                 const count = dropOffsByDay[dateString] || 0;
                 const { bg, text } = getColorClasses(count);
@@ -496,7 +495,8 @@ const GreenProfile: React.FC = () => {
                   <div
                     key={dateString}
                     title={`${day.toLocaleDateString()}: ${count} drop-off(s)`}
-                    className={`w-full aspect-square ${bg} rounded-md flex items-center justify-center cursor-default transition-colors`}
+                    className={`w-full aspect-square ${bg} rounded-md flex items-center justify-center cursor-pointer transition-colors`}
+                    onClick={(e) => handleDayCellClick(day, count, e)}
                   >
                     <span className={`text-xs font-medium ${text}`}>
                       {day.getDate()}
@@ -506,81 +506,115 @@ const GreenProfile: React.FC = () => {
               })}
             </div>
           ) : (
-            // Year Activity View - True GitHub-style Grid with Larger Boxes
             <div className="py-6">
               <div className="w-full max-w-3xl mx-auto">
                 <div
-                  className="overflow-x-auto pb-4"
+                  className="overflow-y-auto overflow-x-hidden pb-4 max-h-[400px]"
                   ref={yearGridContainerRef}
                 >
-                  <div
-                    className="inline-grid mx-auto"
-                    style={{
-                      gridTemplateRows: "repeat(7, 14px)",
-                      gridTemplateColumns: "repeat(52, 14px)",
-                      gridGap: "3px",
-                      width: "fit-content",
-                    }}
-                  >
-                    {Array.from({ length: 364 }).map((_, index) => {
-                      // Calculate actual date from index
-                      const weekNum = Math.floor(index / 7);
-                      const dayOfWeek = index % 7;
+                  {(() => {
+                    const CELL_SIZE_PX = 18;
+                    const GAP_PX = 3;
+                    const WEEKS_TO_DISPLAY_HORIZONTALLY = 17;
+                    const TOTAL_CONCEPTUAL_WEEKS = 53;
+                    const DAYS_IN_WEEK = 7;
 
-                      // Calculate date with proper alignment
-                      const jan1 = new Date(selectedYear, 0, 1);
-                      const jan1DayOfWeek = jan1.getDay();
-                      const dayOffset = index - jan1DayOfWeek;
-                      const date = new Date(selectedYear, 0, 1);
-                      date.setDate(date.getDate() + dayOffset);
+                    const numDisplayGridCols = WEEKS_TO_DISPLAY_HORIZONTALLY;
+                    const numMetaRows = Math.ceil(
+                      TOTAL_CONCEPTUAL_WEEKS / WEEKS_TO_DISPLAY_HORIZONTALLY
+                    );
+                    const numDisplayGridRows = numMetaRows * DAYS_IN_WEEK;
 
-                      // Skip cells outside current year
-                      if (date.getFullYear() !== selectedYear) {
-                        return (
-                          <div
-                            key={`empty-${index}`}
-                            className="w-[14px] h-[14px]"
-                          ></div>
-                        );
-                      }
+                    return (
+                      <div
+                        className="inline-grid mx-auto"
+                        style={{
+                          gridTemplateColumns: `repeat(${numDisplayGridCols}, ${CELL_SIZE_PX}px)`,
+                          gridTemplateRows: `repeat(${numDisplayGridRows}, ${CELL_SIZE_PX}px)`,
+                          gridGap: `${GAP_PX}px`,
+                        }}
+                      >
+                        {Array.from({
+                          length: TOTAL_CONCEPTUAL_WEEKS * DAYS_IN_WEEK,
+                        }).map((_, index) => {
+                          // Using 'index' as per original file
+                          const originalGridWeekNum = Math.floor(
+                            index / DAYS_IN_WEEK
+                          );
+                          const originalGridDayInWeek = index % DAYS_IN_WEEK;
 
-                      // 'date' is a local Date object
-                      const year = date.getFullYear();
-                      const month = (date.getMonth() + 1)
-                        .toString()
-                        .padStart(2, "0");
-                      const dayOfMonth = date
-                        .getDate()
-                        .toString()
-                        .padStart(2, "0");
-                      const dateString = `${year}-${month}-${dayOfMonth}`; // Local date string "YYYY-MM-DD"
+                          const displayMetaRow = Math.floor(
+                            originalGridWeekNum / WEEKS_TO_DISPLAY_HORIZONTALLY
+                          );
+                          const displayColInMetaRow =
+                            originalGridWeekNum % WEEKS_TO_DISPLAY_HORIZONTALLY;
 
-                      const count = yearlyActivityData[dateString] || 0;
-                      const { bg } = getYearViewColorClasses(count);
+                          const finalDisplayGridColumn =
+                            displayColInMetaRow + 1;
+                          const finalDisplayGridRow =
+                            displayMetaRow * DAYS_IN_WEEK +
+                            originalGridDayInWeek +
+                            1;
 
-                      return (
-                        <div
-                          key={`cell-${index}`}
-                          title={`${date.toLocaleDateString()}: ${count} drop-off(s)`}
-                          className={`w-[14px] h-[14px] ${bg} rounded-sm border border-white/20 hover:ring-1 hover:ring-slate-400`}
-                          style={{
-                            gridRow: dayOfWeek + 1,
-                            gridColumn: weekNum + 1,
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
+                          const jan1 = new Date(selectedYear, 0, 1);
+                          const jan1DayOfWeek = jan1.getDay();
+
+                          const dayOffset = index - jan1DayOfWeek;
+                          const date = new Date(selectedYear, 0, 1);
+                          date.setDate(date.getDate() + dayOffset);
+
+                          if (date.getFullYear() !== selectedYear) {
+                            return (
+                              <div
+                                key={`empty-${index}`}
+                                className="w-[18px] h-[18px]"
+                                style={{
+                                  gridRow: finalDisplayGridRow,
+                                  gridColumn: finalDisplayGridColumn,
+                                }}
+                              ></div>
+                            );
+                          }
+
+                          const yearStr = date.getFullYear();
+                          const monthStr = (date.getMonth() + 1)
+                            .toString()
+                            .padStart(2, "0");
+                          const dayOfMonthStr = date
+                            .getDate()
+                            .toString()
+                            .padStart(2, "0");
+                          const dateString = `${yearStr}-${monthStr}-${dayOfMonthStr}`;
+
+                          const count = yearlyActivityData[dateString] || 0;
+                          const { bg } = getYearViewColorClasses(count);
+
+                          return (
+                            <div
+                              key={`cell-${dateString}-${index}`}
+                              title={`${date.toLocaleDateString()}: ${count} drop-off(s)`}
+                              className={`w-[18px] h-[18px] ${bg} rounded-sm border border-white/20 hover:ring-1 hover:ring-slate-400 cursor-pointer`}
+                              style={{
+                                gridRow: finalDisplayGridRow,
+                                gridColumn: finalDisplayGridColumn,
+                              }}
+                              onClick={(e) =>
+                                handleDayCellClick(date, count, e)
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
-
-                {/* Legend with larger items to match */}
                 <div className="flex justify-center items-center mt-4 space-x-2 text-xs text-slate-500">
                   <span>Less</span>
-                  <div className="w-[14px] h-[14px] bg-slate-100 rounded-sm border border-slate-200"></div>
-                  <div className="w-[14px] h-[14px] bg-green-100 rounded-sm border border-slate-200"></div>
-                  <div className="w-[14px] h-[14px] bg-green-200 rounded-sm border border-slate-200"></div>
-                  <div className="w-[14px] h-[14px] bg-green-400 rounded-sm border border-slate-200"></div>
-                  <div className="w-[14px] h-[14px] bg-green-700 rounded-sm border border-slate-200"></div>
+                  <div className="w-[18px] h-[18px] bg-slate-100 rounded-sm border border-slate-200"></div>
+                  <div className="w-[18px] h-[18px] bg-green-100 rounded-sm border border-slate-200"></div>
+                  <div className="w-[18px] h-[18px] bg-green-200 rounded-sm border border-slate-200"></div>
+                  <div className="w-[18px] h-[18px] bg-green-400 rounded-sm border border-slate-200"></div>
+                  <div className="w-[18px] h-[18px] bg-green-700 rounded-sm border border-slate-200"></div>
                   <span>More</span>
                 </div>
               </div>
@@ -595,7 +629,6 @@ const GreenProfile: React.FC = () => {
           </p>
         </div>
 
-        {/* About section - Same as before */}
         <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl text-center">
           <h3 className="text-xl md:text-2xl font-semibold text-black mb-3">
             What is Green Profile?
@@ -613,7 +646,26 @@ const GreenProfile: React.FC = () => {
             .
           </p>
         </div>
-      </div>
+      </div>{" "}
+      {/* Popup Component */}
+      {popupInfo && (
+        <div
+          style={{
+            position: "fixed",
+            top: `${popupInfo.y}px`,
+            left: `${popupInfo.x}px`,
+            transform: "translate(15px, -110%)", // Position above and slightly to the right of cursor
+            pointerEvents: "none",
+            zIndex: 9999,
+          }}
+          className="bg-slate-900 text-white py-2 px-4 rounded-md shadow-2xl text-sm transition-opacity duration-300 ease-out"
+        >
+          <p className="font-semibold whitespace-nowrap">
+            {popupInfo.dateDisplay}
+          </p>
+          <p className="whitespace-nowrap">Drop-offs: {popupInfo.count}</p>
+        </div>
+      )}
     </div>
   );
 };
