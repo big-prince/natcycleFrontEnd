@@ -44,3 +44,60 @@ html {
   scrollbar-width: thin;
   scrollbar-color: #94a3b8 #f1f1f1; /* thumb and track color */
 }
+
+/* Add these somewhere in your CSS styles if not already present */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Additional marker styling */
+.marker-container {
+  position: relative;
+  width: 42px;
+  height: 50px;
+}
+
+.marker-base {
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.marker-pointer {
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  transform: translateY(8px) rotate(45deg);
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  z-index: 1;
+}

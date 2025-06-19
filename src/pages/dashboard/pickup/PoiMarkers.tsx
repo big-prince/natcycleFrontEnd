@@ -1,21 +1,46 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { useState } from "react";
+import { AdvancedMarker } from "@vis.gl/react-google-maps";
 
-type Poi = { key: string, location: google.maps.LatLngLiteral }
+type Poi = {
+  key: string;
+  location: google.maps.LatLngLiteral;
+  type: string;
+};
 
-const PoiMarkers = (props: { pois: Poi[], onCLick?: any }) => {
+interface PoiMarkersProps {
+  pois: Poi[];
+  onCLick: (poi: Poi) => void;
+  renderMarker?: (poi: Poi) => JSX.Element;
+}
+
+const PoiMarkers = ({ pois, onCLick, renderMarker }: PoiMarkersProps) => {
+  const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
+
   return (
-    <div>
-      {props.pois.map((poi: Poi) => (
+    <>
+      {pois.map((poi) => (
         <AdvancedMarker
           key={poi.key}
           position={poi.location}
-          onClick={() => props.onCLick(poi)}
+          onClick={() => onCLick(poi)}
         >
-          <Pin background={'#204C27'} glyphColor={'#D3FF5D'} borderColor={'#C8ECEE'} />
+          {renderMarker ? (
+            renderMarker(poi)
+          ) : (
+            <div
+              onMouseOver={() => setHoveredMarker(poi.key)}
+              onMouseOut={() => setHoveredMarker(null)}
+              className={`p-2 bg-blue-500 rounded-full text-white ${
+                hoveredMarker === poi.key ? "scale-125 z-10" : ""
+              } transition-transform duration-200`}
+            >
+              📍
+            </div>
+          )}
         </AdvancedMarker>
       ))}
-    </div>
+    </>
   );
 };
 

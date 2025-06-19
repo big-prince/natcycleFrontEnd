@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Dialog from "@radix-ui/react-dialog";
-import {
-  APIProvider,
-  Map,
-} from "@vis.gl/react-google-maps";
+import { APIProvider, Map } from "@vis.gl/react-google-maps";
 import { useEffect, useState } from "react";
 import { FaMapLocationDot } from "react-icons/fa6";
 import PoiMarkers from "../../dashboard/pickup/PoiMarkers";
 
-type Poi = { key: string; location: google.maps.LatLngLiteral };
+type Poi = { key: string; location: google.maps.LatLngLiteral; type: string };
 
 const PickupMap = ({ userPickups }: any) => {
   const GOOGLE_API_KEY = import.meta.env.VITE_APP_GOOGLE_API_KEY;
@@ -17,25 +14,24 @@ const PickupMap = ({ userPickups }: any) => {
 
   const newMarkers: Poi[] = userPickups?.map((address: any) => {
     return {
-      key: 'stuff',
+      key: "stuff",
       location: {
         lat: address.location?.latitude,
         lng: address.location?.longitude,
       },
+      type: address.type,
     };
   });
 
   // filter out locations without lat and lng
-  const data = newMarkers.filter(
-    (poi) => poi.location.lat && poi.location.lng
-  );
+  const data = newMarkers.filter((poi) => poi.location.lat && poi.location.lng);
 
   useEffect(() => {
     if (!userPickups) return;
 
     const newMarkers: Poi[] = userPickups?.map((address: any) => {
       return {
-        key: 'stuff',
+        key: "stuff",
         location: {
           lat: address.location?.latitude,
           lng: address.location?.longitude,
@@ -52,7 +48,6 @@ const PickupMap = ({ userPickups }: any) => {
 
     setMarkers(data as any);
   }, [userPickups]);
-
 
   return (
     <div>
@@ -79,16 +74,20 @@ const PickupMap = ({ userPickups }: any) => {
               apiKey={GOOGLE_API_KEY}
               onLoad={() => console.log("loaded")}
             >
+              {" "}
               <Map
                 defaultZoom={5}
                 // defaultCenter={{ lat: -33.860664, lng: 151.208138 }}
                 // make united state
-                defaultCenter={{ lat: 40.7128, lng: -74.0060 }}
+                defaultCenter={{ lat: 40.7128, lng: -74.006 }}
                 mapId="bbc0380a31cc144a"
               >
-                {
-                  markers && <PoiMarkers pois={data} />
-                }
+                {markers && (
+                  <PoiMarkers
+                    pois={data}
+                    onCLick={(poi) => console.log("Clicked on marker:", poi)}
+                  />
+                )}
               </Map>
             </APIProvider>
           </div>

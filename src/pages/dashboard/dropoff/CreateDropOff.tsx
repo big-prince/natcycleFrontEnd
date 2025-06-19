@@ -30,6 +30,7 @@ interface Location {
 export interface DropoffPoint {
   googleMapId: string;
   location: Location;
+  locationType: string; // e.g., "dropoff", "pickup"
   _id: string;
   name: string;
   itemType: string;
@@ -44,7 +45,7 @@ export interface DropoffPoint {
 }
 
 // Helper function to get an icon for a subtype
-const getIconForSubtype = (
+export const getIconForSubtype = (
   subtype: string,
   primaryType?: string
 ): JSX.Element => {
