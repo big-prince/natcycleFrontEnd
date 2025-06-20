@@ -556,6 +556,41 @@ const Where = () => {
     );
   };
 
+  // Add this function to handle opening maps with directions
+  const openDirections = (lat: number, lng: number, name: string) => {
+    const encodedName = encodeURIComponent(name);
+
+    // Get user's platform
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      const appleMapsUrl = `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d&q=${encodedName}`;
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodedName}&travelmode=driving`;
+
+      // Try to open in platform-specific app first
+      if (isIOS) {
+        window.open(appleMapsUrl, "_blank");
+
+        setTimeout(() => {
+          window.open(googleMapsUrl, "_blank");
+        }, 1500);
+      } else {
+        // On Android, try Google Maps directly
+        window.open(googleMapsUrl, "_blank");
+      }
+    } else {
+      // For desktop, open Google Maps in browser
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodedName}&travelmode=driving`,
+        "_blank"
+      );
+    }
+
+    // Show toast to indicate action
+    toast.info(`Opening directions to ${name}`);
+  };
+
   return (
     <div className="relative h-screen overflow-hidden">
       {/* Map Container */}
@@ -721,7 +756,9 @@ const Where = () => {
                     className="mt-4 w-full bg-green-600 text-white text-sm py-3 rounded-lg font-medium hover:bg-green-700 transition-colors px-1"
                     onClick={() => {
                       if (selectedLocation.location?.coordinates) {
-                        toast.info("Opening directions in Google Maps...");
+                        const [lng, lat] =
+                          selectedLocation.location.coordinates;
+                        openDirections(lat, lng, selectedLocation.name);
                       }
                     }}
                   >
