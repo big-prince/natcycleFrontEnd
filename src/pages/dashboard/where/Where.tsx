@@ -10,6 +10,7 @@ import {
   FaRecycle,
   FaWineBottle,
   FaTrashAlt,
+  FaLocationArrow,
 } from "react-icons/fa";
 import { MdClose, MdCheckroom, MdRecycling } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
@@ -715,19 +716,34 @@ const Where = () => {
                   )}
 
                 {/* Add a CTA button if needed */}
-                <button
-                  className="mt-4 w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                  onClick={() =>
-                    navigate(
-                      `/dropoff/create?type=${
-                        selectedLocation.primaryMaterialType ||
-                        selectedLocation.itemType
-                      }`
-                    )
-                  }
-                >
-                  Drop Off Here
-                </button>
+                <div className="w-full flex justify-between items-center gap-4 mt-4">
+                  <button
+                    className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                    onClick={() => {
+                      if (selectedLocation.location?.coordinates) {
+                        toast.info("Opening directions in Google Maps...");
+                      }
+                    }}
+                  >
+                    Get Directions{" "}
+                    <span className="ml-2 inline-flex items-center justify-center">
+                      <FaLocationArrow className="text-white text-xs" />
+                    </span>
+                  </button>
+                  <button
+                    className="mt-4 w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                    onClick={() =>
+                      navigate(
+                        `/dropoff/create?type=${
+                          selectedLocation.primaryMaterialType ||
+                          selectedLocation.itemType
+                        }`
+                      )
+                    }
+                  >
+                    Drop Off Here
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

@@ -123,9 +123,9 @@ const Impact = () => {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0]
       : null;
-
+  console.log("Most Recent Dropoff:", mostRecentDropoff);
   const pendingDropoff =
-    mostRecentDropoff && mostRecentDropoff.status !== "Accepted"
+    mostRecentDropoff && mostRecentDropoff.status === "Pending"
       ? mostRecentDropoff
       : null;
 

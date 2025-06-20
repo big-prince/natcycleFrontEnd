@@ -443,30 +443,77 @@ const CreateDropOff = () => {
     };
   }, [previewUrl, videoStream]);
 
+  // Update the startCamera function to ensure it properly initializes with the environment camera
   const startCamera = async (mode: "user" | "environment") => {
     if (videoStream) {
       videoStream.getTracks().forEach((track) => track.stop());
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
-      });
+      // Be more specific with constraints to ensure the rear camera is selected
+      const constraints = {
+        video: {
+          facingMode: { exact: mode }, // Use 'exact' to be more specific
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setVideoStream(stream);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Ensure video plays when ready
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current
+            ?.play()
+            .catch((e) => console.error("Error playing video:", e));
+        };
       }
+
       setIsCameraOpen(true);
       setPreviewUrl(null);
       setFile(null);
     } catch (err) {
       console.error("Error accessing camera:", err);
+
+      // If exact constraint fails, fall back to a simpler request
+      if (mode === "environment") {
+        try {
+          console.log("Falling back to simpler camera request");
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: true, // Just
+          });
+
+          setVideoStream(fallbackStream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current
+                ?.play()
+                .catch((e) =>
+                  console.error("Error playing fallback video:", e)
+                );
+            };
+          }
+
+          setIsCameraOpen(true);
+          return;
+        } catch (fallbackErr) {
+          console.error("Fallback camera access also failed:", fallbackErr);
+        }
+      }
+
       toast.error("Could not access camera. Please check permissions.");
       setIsCameraOpen(false);
     }
   };
 
+  // Update the handleOpenCamera function to explicitly use "environment" mode first
   const handleOpenCamera = () => {
-    startCamera(facingMode);
+    // Always start with environment (rear) camera regardless of facingMode state
+    setFacingMode("environment");
+    startCamera("environment");
   };
 
   const handleSwitchCamera = () => {
@@ -616,7 +663,7 @@ const CreateDropOff = () => {
             className={`px-6 py-3 text-sm font-semibold rounded-full transition-colors whitespace-nowrap
               ${
                 typeFromQuery === item.value
-                  ? "bg-slate-800 text-white"
+                  ? "bg-black text-white"
                   : "bg-gray-100 text-slate-700 border border-gray-300 hover:bg-gray-200"
               }`}
           >
