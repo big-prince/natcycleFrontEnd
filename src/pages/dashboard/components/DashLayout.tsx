@@ -40,7 +40,7 @@ const DashLayout = () => {
         </div>
       </div>
       <Outlet />
-      <div className="fixed bottom-0 left-0 right-0 p-0">
+      <div className="fixed z-50 bottom-0 left-0 right-0 p-0">
         <MobileNav />
       </div>
     </div>
