@@ -718,7 +718,7 @@ const Where = () => {
                 {/* Add a CTA button if needed */}
                 <div className="w-full flex justify-between items-center gap-4 mt-4">
                   <button
-                    className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                    className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors px-1"
                     onClick={() => {
                       if (selectedLocation.location?.coordinates) {
                         toast.info("Opening directions in Google Maps...");
