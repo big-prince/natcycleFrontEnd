@@ -95,7 +95,6 @@ const Where = () => {
     null
   );
 
-  // Instead of using MapRef type, use any for now to avoid the TypeScript error
   const mapRef = useRef<any>(null);
   const googleMapsApiRef = useRef<any>(null);
 
@@ -594,12 +593,12 @@ const Where = () => {
   return (
     <div className="relative h-screen overflow-hidden">
       {/* Map Container */}
-      <div className="absolute inset-0 z-0">
+      <div className=" absolute inset-0 z-0">
         {!loading ? (
           <APIProvider apiKey={GOOGLE_API_KEY}>
             <Map
               onIdle={onMapIdle}
-              mapId="bbc0380a31cc144a" // Use your unique map style ID
+              mapId="bbc0380a31cc144a"
               defaultZoom={mapConfig.zoom}
               defaultCenter={mapConfig.center}
               gestureHandling="greedy"

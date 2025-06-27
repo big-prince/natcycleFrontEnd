@@ -5,11 +5,9 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 // These are the keys expected in the impactMeasurement object
-const ImpactMetricTypes = ["carbon", "trees", "water", "birds"];
+const ImpactMetricTypes = ["carbon", "trees"];
 
 const ImpactCounter = ({ carbonUnits, impactMeasurement }) => {
-  // console.log("ImpactCounter Props:", { carbonUnits, impactMeasurement }); // For debugging
-
   return (
     <div className="h-14 relative">
       {" "}

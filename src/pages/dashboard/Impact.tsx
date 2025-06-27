@@ -252,7 +252,7 @@ const Impact = () => {
         </div>
       </div>
       {/* Badges Section - Unhidden and Styled */}
-      <div className="mt-8">
+      <div className="hidden mt-8">
         {" "}
         {/* Increased top margin */}
         <h3 className="text-lg font-bold text-slate-800">Badges</h3>
