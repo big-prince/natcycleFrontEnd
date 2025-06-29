@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMediaQuery } from "react-responsive";
 import Logo from "../../../assets/logo/Group 202@2x.png";
 import MobileNav from "./MobileNav";
@@ -8,7 +8,9 @@ import { BsUpcScan } from "react-icons/bs";
 import { useEffect } from "react";
 
 const DashLayout = () => {
+  const location = useLocation();
   const [neglect, setNeglect] = React.useState(false);
+
   //check if screen is Desktop Size
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   const navigate = useNavigate();
@@ -49,10 +51,13 @@ const DashLayout = () => {
   }
 
   return (
-    <div className="max-w-[550px] m-auto relative px-4 pb-24">
+    <div
+      className={`max-w-[550px] m-auto relative pb-24 ${
+        location.pathname === "/where" ? "px-0" : "px-4"
+      }`}
+    >
       {" "}
-      {/* Added pb-24 for MobileNav */}
-      <div className="flex justify-between items-center mt-6 mb-3">
+      <div className={`flex justify-between items-center mt-6 mb-3 ${location.pathname === "/where" ? "px-4" : ""}`}>
         <Link to="/home">
           <img className="object-cover h-10" src={Logo} alt="NatCycle Logo" />
         </Link>

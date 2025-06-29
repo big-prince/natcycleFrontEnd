@@ -591,7 +591,7 @@ const Where = () => {
   };
 
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="relative h-screen overflow-hidden ">
       {/* Map Container */}
       <div className=" absolute inset-0 z-0">
         {!loading ? (
