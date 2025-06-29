@@ -1,11 +1,16 @@
+import React from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useMediaQuery } from "react-responsive";
 import Logo from "../../../assets/logo/Group 202@2x.png";
 import MobileNav from "./MobileNav";
 import { useAppSelector } from "../../../hooks/reduxHooks";
-import { BsUpcScan } from "react-icons/bs"; // Added for SCAN button
+import { BsUpcScan } from "react-icons/bs";
 import { useEffect } from "react";
 
 const DashLayout = () => {
+  const [neglect, setNeglect] = React.useState(false);
+  //check if screen is Desktop Size
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
 
@@ -17,6 +22,30 @@ const DashLayout = () => {
 
   if (!user) {
     return null;
+  }
+
+  //Inform user on Desktop that this is a mobile optimized app
+  if (isDesktop && neglect === false) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg text-center">
+          <img className="h-16 mx-auto mb-2" src={Logo} alt="NatCycle Logo" />
+          <h1 className="text-2xl font-semibold text-gray-800">
+            Mobile Experience Optimized
+          </h1>
+          <p className="text-gray-600">
+            This application is designed for optimal viewing on mobile devices.
+            Please access from your mobile phone for the best experience.
+          </p>
+          <button
+            onClick={() => setNeglect(true)}
+            className="px-4 py-2 mt-4 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:none"
+          >
+            Continue that way?
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
