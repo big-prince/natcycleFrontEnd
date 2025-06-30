@@ -2,7 +2,6 @@ import { BiHome } from "react-icons/bi";
 import { FaStar, FaUser } from "react-icons/fa"; // Using FaStar for Impact, FaUser for You
 import { FiMapPin } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
-// Removed useAppSelector and tempImage as profile picture is replaced by an icon
 
 const linkList = [
   {

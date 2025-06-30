@@ -57,12 +57,16 @@ const DashLayout = () => {
       }`}
     >
       {" "}
-      <div className={`flex justify-between items-center mt-6 mb-3 ${location.pathname === "/where" ? "px-4" : ""}`}>
+      <div
+        className={`flex justify-between items-center mt-6 mb-3 ${
+          location.pathname === "/where" ? "px-4" : ""
+        }`}
+      >
         <Link to="/home">
           <img className="object-cover h-10" src={Logo} alt="NatCycle Logo" />
         </Link>
 
-        <div className="flex items-center ">
+        <div className="hidden flex items-center ">
           {/* SCAN Button */}
           <button
             onClick={() => alert("SCAN functionality to be implemented")}

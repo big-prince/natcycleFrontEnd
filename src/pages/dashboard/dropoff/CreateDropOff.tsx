@@ -30,6 +30,7 @@ interface Location {
 export interface DropoffPoint {
   googleMapId: string;
   location: Location;
+  website?: string;
   locationType: string; // e.g., "dropoff", "pickup"
   _id: string;
   name: string;

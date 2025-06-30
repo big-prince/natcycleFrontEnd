@@ -12,6 +12,7 @@ import materialApi from "../../../api/materialApi";
 interface LocationFormData {
   name: string;
   locationType: string;
+  website?: string;
   itemType: string;
   description: string;
   address: string;
@@ -29,6 +30,7 @@ const AddDropOffLocation = () => {
   const [formData, setFormData] = useState<LocationFormData>({
     name: "",
     locationType: "",
+    website: "",
     itemType: "",
     description: "",
     address: "",
@@ -490,6 +492,24 @@ const AddDropOffLocation = () => {
               value={formData.description}
               onChange={handleInputChange}
               placeholder="e.g., Open Mon-Fri 9am-5pm. Ring bell for assistance. Accepts clean & dry materials."
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="website"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Location Website (Optional)
+            </label>
+            <input
+              type="text"
+              className="input w-full "
+              name="website"
+              id="website"
+              value={formData.website}
+              onChange={handleInputChange}
+              placeholder="e.g., www.example.com"
             />
           </div>
 

@@ -47,7 +47,7 @@ const ImpactCounter = ({ carbonUnits, impactMeasurement }) => {
                 </p>
                 <p className="text-xs text-gray-600 capitalize -mt-1">
                   {" "}
-                  {metricKey}
+                  {metricKey === "carbon" ? "Carbon Units" : metricKey}
                 </p>
               </div>
             </SwiperSlide>

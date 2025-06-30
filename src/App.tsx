@@ -56,6 +56,7 @@ import TMMatches from "./pages/admin/thingsmatch/TMMatches";
 import TMMatchDetails from "./pages/admin/thingsmatch/TMMatchDetails";
 import TMBreakdown from "./pages/admin/thingsmatch/TMBreakdown";
 import EPantry from "./pages/admin/thingsmatch/EPantry"; // Import the new EPantry component
+import NotFound from "./pages/components/NotFound";
 
 const App = () => {
   return (
@@ -78,6 +79,7 @@ const App = () => {
           <Route path="/" element={<Signin />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="*" element={<NotFound />} />
 
           {/* Public route for Create DropOff */}
           <Route path="/public" element={<PublicLayout />}>

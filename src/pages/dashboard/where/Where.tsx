@@ -728,6 +728,19 @@ const Where = () => {
                   </p>
                 )}
 
+                {selectedLocation.website && (
+                  <div>
+                    <a
+                      href={selectedLocation.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {selectedLocation.website}
+                    </a>
+                  </div>
+                )}
+
                 {selectedLocation.acceptedSubtypes &&
                   selectedLocation.acceptedSubtypes.length > 0 && (
                     <div>

@@ -29,18 +29,18 @@ const getLevelName = (carbonUnits: number): string => {
 };
 
 const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
   "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 interface PopupInfo {
@@ -277,7 +277,7 @@ const GreenProfile: React.FC = () => {
     }
   };
 
-  // Generate year grid with exactly 15 cells per row, starting with Jan 1
+  // Generate year grid with exactly 16 cells per row, starting with Jan 1
   const generateYearGrid = (year: number) => {
     // Create a date for January 1st of the selected year
     const startDate = new Date(year, 0, 1);
@@ -294,10 +294,10 @@ const GreenProfile: React.FC = () => {
       days.push(day);
     }
 
-    // Group into rows of exactly 15 cells each
+    // Group into rows of exactly 16 cells each
     const rows: Date[][] = [];
-    for (let i = 0; i < days.length; i += 15) {
-      rows.push(days.slice(i, i + 15));
+    for (let i = 0; i < days.length; i += 16) {
+      rows.push(days.slice(i, i + 16));
     }
 
     return rows;
@@ -352,7 +352,7 @@ const GreenProfile: React.FC = () => {
           </Link>
           <button
             onClick={() => navigate("/scan")}
-            className="flex items-center text-sm font-semibold text-slate-700 hover:text-green-600 transition-colors"
+            className="hidden flex items-center text-sm font-semibold text-slate-700 hover:text-green-600 transition-colors"
           >
             <span className="mr-1.5 underline">SCAN</span>
             <BsUpcScan className="text-2xl" />
@@ -398,12 +398,12 @@ const GreenProfile: React.FC = () => {
             </p>
           </div>
 
-          <div className="mb-5 mt-3">
+          <div className="mb-8 mt-3">
             <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
               <span>Active Days ({selectedYear})</span>
               <span className="font-medium text-slate-600">Days Goal</span>
             </div>
-            <div className="w-full h-4 bg-green-100 rounded-full relative overflow-hidden">
+            <div className="w-full h-5 bg-[#D4FF4F] rounded-full relative overflow-hidden">
               <div
                 className={`h-full bg-black rounded-full flex items-center justify-end pr-1.5 transition-all duration-700 ease-out ${
                   uniqueDiversionDaysInYear > 0 ? "min-w-[30px]" : ""
@@ -428,19 +428,19 @@ const GreenProfile: React.FC = () => {
             </div>
           </div>
 
-          <div className="mb-4 space-y-3">
-            <div className="flex">
+          <div className="flex items-center gap-8 mb-8">
+            <div className=" w-1/2 ">
               <button
                 onClick={() =>
                   setViewMode((prev) => (prev === "month" ? "year" : "month"))
                 }
-                className="w-1/3 text-xs font-semibold text-white bg-black opacity-95 focus:outline-none py-2 px-4 rounded-md shadow-sm transition-colors ease-in-out duration-150"
+                className="w-full text-xs font-normal text-black border border-slate-300 opacity-95 focus:outline-none py-1  rounded-md shadow-md transition-colors ease-in-out duration-150"
               >
                 {viewMode === "month" ? "Year View" : "Month View"}
               </button>
             </div>
 
-            <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg shadow-sm">
+            <div className="w-full flex justify-between items-center  rounded-lg">
               <button
                 onClick={goToPrevious}
                 className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-full transition-colors focus:outline-none"
@@ -450,7 +450,7 @@ const GreenProfile: React.FC = () => {
               >
                 <FaChevronLeft size={20} />
               </button>
-              <span className="font-semibold text-slate-700 text-md select-none">
+              <span className="font-normal  text-black text-md select-none">
                 {viewMode === "month"
                   ? `${monthNames[selectedMonth]} ${selectedYear}`
                   : selectedYear}
@@ -535,7 +535,7 @@ const GreenProfile: React.FC = () => {
                             <div
                               key={`cell-${dateString}`}
                               title={`${day.toLocaleDateString()}: ${count} drop-off(s)`}
-                              className={`w-[18px] h-[18px] ${bg} rounded-sm hover:ring-1 hover:ring-slate-400 cursor-pointer`}
+                              className={`w-[18px] h-[18px] ${bg} rounded-md border border-slate-500 shadow-xs hover:ring-1 hover:ring-slate-400 cursor-pointer`}
                               onClick={(e) => handleDayCellClick(day, count, e)}
                             />
                           );
@@ -573,12 +573,14 @@ const GreenProfile: React.FC = () => {
             Your Green Profile is measured using the NatCycle Carbon Unit (CU)
             standard. Each action you take to divert waste contributes to your
             CUs and helps build your positive impact.{" "}
-            <Link
-              to="/about-cu"
+            <a
+              href="https://www.natcycle.com/carbon-unit"
               className="text-green-600 hover:text-green-700 underline font-semibold transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Learn more about CUs
-            </Link>
+            </a>
             .
           </p>
         </div>
