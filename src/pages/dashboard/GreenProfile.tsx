@@ -398,7 +398,7 @@ const GreenProfile: React.FC = () => {
             </p>
           </div>
 
-          <div className="mb-8 mt-3">
+          <div className="mb-5 mt-3">
             <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
               <span>Active Days ({selectedYear})</span>
               <span className="font-medium text-slate-600">Days Goal</span>
@@ -428,7 +428,7 @@ const GreenProfile: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-8 mb-8">
+          <div className="flex items-center gap-8 mb-5">
             <div className=" w-1/2 ">
               <button
                 onClick={() =>
