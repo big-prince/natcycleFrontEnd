@@ -535,7 +535,7 @@ const GreenProfile: React.FC = () => {
                             <div
                               key={`cell-${dateString}`}
                               title={`${day.toLocaleDateString()}: ${count} drop-off(s)`}
-                              className={`w-[18px] h-[18px] ${bg} rounded-md border border-slate-500 shadow-xs hover:ring-1 hover:ring-slate-400 cursor-pointer`}
+                              className={`w-[18px] h-[18px] ${bg} rounded-md border border-slate-200 shadow-xs hover:ring-1 hover:ring-slate-400 cursor-pointer`}
                               onClick={(e) => handleDayCellClick(day, count, e)}
                             />
                           );
