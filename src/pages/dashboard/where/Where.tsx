@@ -17,7 +17,7 @@ import { FaBottleWater } from "react-icons/fa6";
 import { GiPaperBagFolded } from "react-icons/gi";
 import materialApi from "../../../api/materialApi";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // Improved icon function with extra debugging for plastic
 const getIconForMaterialType = (materialType: string): JSX.Element => {
@@ -70,6 +70,7 @@ type LocationMarker = {
 
 const Where = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const GOOGLE_API_KEY = import.meta.env.VITE_APP_GOOGLE_API_KEY;
   const [locations, setLocations] = useState<DropoffPoint[]>([]);
   const [markers, setMarkers] = useState<LocationMarker[]>([]);
@@ -106,6 +107,19 @@ const Where = () => {
         const response = await materialApi.getMaterialsCategory();
         if (response.data?.data?.primaryTypes) {
           setMaterialTypes(response.data.data.primaryTypes);
+
+          // Check for query parameter and set selected material type
+          const typeFromQuery = searchParams.get("type");
+          if (typeFromQuery) {
+            const normalizedQuery = typeFromQuery.toLowerCase();
+            const matchingType = response.data.data.primaryTypes.find(
+              (type: string) => type.toLowerCase() === normalizedQuery
+            );
+            if (matchingType) {
+              setSelectedMaterialType(matchingType);
+              // Will trigger fetchLocationsByMaterialType in the next useEffect
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to fetch material types:", error);
@@ -117,7 +131,7 @@ const Where = () => {
 
     fetchMaterialCategories();
     getUserLocation();
-  }, []);
+  }, [searchParams]);
 
   // Get user's current location
   const getUserLocation = async () => {
@@ -361,10 +375,17 @@ const Where = () => {
     return R * c;
   }
 
-  // Initial data load - show all locations
+  // Initial data load - show all locations or filtered if query param exists
   useEffect(() => {
-    fetchLocationsByMaterialType();
-  }, []);
+    if (!loadingMaterials && materialTypes.length > 0) {
+      if (selectedMaterialType) {
+        fetchLocationsByMaterialType(selectedMaterialType);
+      } else {
+        fetchLocationsByMaterialType();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMaterialType, loadingMaterials, materialTypes.length]);
 
   // Handle material type selection
   const handleMaterialTypeSelect = (materialType: string) => {

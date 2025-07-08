@@ -180,13 +180,13 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Green "Divert Today" Card */}
+      {/* Green "Action Today" Card */}
       <div className="p-6 mt-4 rounded-3xl bg-[#D4FF4F] text-slate-800 shadow-lg relative pb-14 z-10">
         <p className="text-lg font-semibold">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
         <p className="mt-1 mb-3 text-2xl font-bold">
-          What did you divert today?
+          What material are you working with?
         </p>
         <div className="flex items-center text-xs font-medium mb-3 text-gray-600">
           <FaChevronRight className="mr-1 text-xs" />
@@ -225,23 +225,57 @@ const Dashboard = () => {
           to="/public/dropoff/create"
           className="block text-xs underline text-green-700 hover:text-green-800 font-medium"
         >
-          Want to divert others?
+          other item types?
         </Link>
-        {/* Button container positioned to the far right */}
+        {/* Action buttons container positioned to the far right */}
         <div className="absolute bottom-[-26px] right-6 w-auto">
-          <button
-            type="button"
-            onClick={handleLogImpact}
-            className="flex items-center justify-between bg-black hover:bg-slate-900 text-white rounded-full py-3.5 px-6 shadow-lg w-72"
-          >
-            <div className="text-left">
-              <p className="text-base font-semibold">Log impact</p>
-              <p className="text-xs font-light -mt-0.5 opacity-80">
-                Dropoff only
-              </p>
+          {selectedItemType ? (
+            // When material is selected, show both buttons
+            <div className="flex items-center gap-3">
+              {/* Find Locations Button - Secondary */}
+              <button
+                type="button"
+                onClick={() => navigate(`/where?type=${selectedItemType}`)}
+                className="flex items-center justify-center bg-white hover:bg-gray-50 text-slate-800 border-2 border-slate-300 rounded-full py-3 px-5 shadow-lg transition-all duration-200"
+              >
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Find Locations</p>
+                  <p className="text-xs font-light -mt-0.5 opacity-70">
+                    Near you
+                  </p>
+                </div>
+              </button>
+              {/* Log Impact Button - Primary (smaller) */}
+              <button
+                type="button"
+                onClick={handleLogImpact}
+                className="flex items-center justify-center bg-black hover:bg-slate-900 text-white rounded-full py-3 px-5 shadow-lg transition-all duration-200"
+              >
+                <div className="text-center">
+                  <p className="text-sm font-semibold">Drop Off</p>
+                  <p className="text-xs font-light -mt-0.5 opacity-80">
+                    Log impact
+                  </p>
+                </div>
+                <FaArrowRight className="text-sm ml-3" />
+              </button>
             </div>
-            <FaArrowRight className="text-lg ml-4" />
-          </button>
+          ) : (
+            // When no material is selected, show original single button
+            <button
+              type="button"
+              onClick={() => toast.info("Please select a material type first!")}
+              className="flex items-center justify-between bg-black/80 text-white rounded-full py-3.5 px-6 shadow-lg w-72 opacity-100 cursor-not-allowed"
+            >
+              <div className="text-left">
+                <p className="text-base font-semibold">Select material first</p>
+                <p className="text-xs font-light -mt-0.5 opacity-80">
+                  Choose from above
+                </p>
+              </div>
+              <FaChevronRight className="text-lg ml-4" />
+            </button>
+          )}
         </div>
       </div>
 
