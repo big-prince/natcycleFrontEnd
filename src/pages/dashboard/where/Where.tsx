@@ -12,7 +12,12 @@ import {
   FaTrashAlt,
   FaLocationArrow,
 } from "react-icons/fa";
-import { MdClose, MdCheckroom, MdRecycling } from "react-icons/md";
+import {
+  MdClose,
+  MdCheckroom,
+  MdRecycling,
+  MdMyLocation,
+} from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
 import { GiPaperBagFolded } from "react-icons/gi";
 import materialApi from "../../../api/materialApi";
@@ -576,6 +581,53 @@ const Where = () => {
     );
   };
 
+  // User Location Marker Component
+  const UserLocationMarker = ({
+    position,
+    onClick,
+  }: {
+    position: google.maps.LatLngLiteral;
+    onClick: () => void;
+  }) => {
+    return (
+      <AdvancedMarker
+        position={position}
+        onClick={onClick}
+        title="Your Location"
+      >
+        <div className="cursor-pointer transform transition-all duration-300 hover:scale-110">
+          <div className="relative flex items-center justify-center">
+            {/* Pulsing background circle */}
+            <div className="absolute w-8 h-8 bg-red-500 rounded-full opacity-30 animate-ping"></div>
+            {/* Main marker */}
+            <div className="w-6 h-6 bg-red-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center z-10">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </AdvancedMarker>
+    );
+  };
+
+  // Function to center map on user's location
+  const centerOnUserLocation = () => {
+    if (userLocation && mapRef.current) {
+      const center = {
+        lat: userLocation.latitude,
+        lng: userLocation.longitude,
+      };
+      if (mapRef.current.panTo) {
+        mapRef.current.panTo(center);
+      }
+      if (mapRef.current.setZoom) {
+        mapRef.current.setZoom(15); // Closer zoom when centering on user
+      }
+      toast.info("Centered on your location");
+    } else {
+      toast.error("Unable to find your location");
+    }
+  };
+
   // Add this function to handle opening maps with directions
   const openDirections = (lat: number, lng: number, name: string) => {
     const encodedName = encodeURIComponent(name);
@@ -638,6 +690,17 @@ const Where = () => {
                   isHighlighted={highlightedMarkerId === marker.key}
                 />
               ))}
+
+              {/* User Location Marker */}
+              {userLocation && (
+                <UserLocationMarker
+                  position={{
+                    lat: userLocation.latitude,
+                    lng: userLocation.longitude,
+                  }}
+                  onClick={centerOnUserLocation}
+                />
+              )}
             </Map>
           </APIProvider>
         ) : (
@@ -819,6 +882,19 @@ const Where = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Floating action button to find user location */}
+      <div className="absolute bottom-32 right-4 z-20">
+        <button
+          onClick={centerOnUserLocation}
+          className="bg-white hover:bg-gray-50 text-gray-700 p-3 rounded-full shadow-lg border-2 border-gray-200 transition-all duration-200 hover:scale-105"
+          title="Find my location"
+        >
+          <MdMyLocation className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Material filter overlay */}
     </div>
   );
 };
