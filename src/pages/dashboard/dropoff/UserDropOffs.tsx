@@ -4,6 +4,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import DropOffApi from "../../../api/dropOffApi";
+import SimpleDropoffApi, { SimpleDropoff } from "../../../api/simpleDropoffApi";
 import { Link } from "react-router-dom";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 
@@ -26,6 +27,18 @@ interface IDropOff {
   pointsEarned?: number;
   status?: string;
   itemType?: string; // Primary item type
+}
+
+// Unified interface for display
+interface IUnifiedDropOff {
+  _id: string;
+  createdAt: string;
+  locationName: string;
+  locationAddress?: string;
+  items: string[];
+  pointsEarned: number;
+  status: string;
+  type: "regular" | "simple";
 }
 
 const formatDateAndTime = (dateString: string): string => {
@@ -63,6 +76,9 @@ const monthNames = [
 const UserDropOffs: React.FC = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const [allDropOffs, setAllDropOffs] = useState<IDropOff[]>([]);
+  const [allSimpleDropOffs, setAllSimpleDropOffs] = useState<SimpleDropoff[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,16 +87,71 @@ const UserDropOffs: React.FC = () => {
   const selectedMonth = currentDisplayDate.getMonth();
   const selectedYear = currentDisplayDate.getFullYear();
 
+  // Helper function to convert regular dropoff to unified format
+  const convertRegularDropoff = (dropoff: IDropOff): IUnifiedDropOff => ({
+    _id: dropoff._id,
+    createdAt: dropoff.createdAt,
+    locationName: dropoff.dropOffLocation?.name || "Unknown Location",
+    locationAddress: dropoff.dropOffLocation?.address,
+    items:
+      dropoff.dropOffQuantity && dropoff.dropOffQuantity.length > 0
+        ? dropoff.dropOffQuantity.map(
+            (item) => `${item.units} ${item.materialType}`
+          )
+        : ["No specific items listed"],
+    pointsEarned: dropoff.pointsEarned || 0,
+    status: dropoff.status || "Unknown",
+    type: "regular",
+  });
+
+  // Helper function to convert simple dropoff to unified format
+  const convertSimpleDropoff = (dropoff: SimpleDropoff): IUnifiedDropOff => ({
+    _id: dropoff._id,
+    createdAt: dropoff.createdAt.toString(),
+    locationName: dropoff.simpleDropOffLocation?.name || "Unknown Location",
+    locationAddress: dropoff.simpleDropOffLocation?.address,
+    items: [`${dropoff.quantity} ${dropoff.materialType}`],
+    pointsEarned: dropoff.cuEarned || 0,
+    status: dropoff.isVerified ? "Verified" : "Pending",
+    type: "simple",
+  });
+
   useEffect(() => {
     if (localUser?._id) {
       setLoading(true);
-      DropOffApi.getUserDropOffs(localUser._id)
-        .then((res) => {
-          setAllDropOffs(res.data.data || []);
+
+      // Fetch regular dropoffs first
+      const fetchRegularDropoffs = DropOffApi.getUserDropOffs(localUser._id);
+
+      // Fetch simple dropoffs with fallback
+      const fetchSimpleDropoffs = SimpleDropoffApi.getMyDropoffs(1, 1000).catch(
+        (err) => {
+          console.warn("Failed to fetch simple dropoffs:", err);
+          // Return empty response structure so Promise.all doesn't fail
+          return { data: { data: [] } };
+        }
+      );
+
+      Promise.all([fetchRegularDropoffs, fetchSimpleDropoffs])
+        .then(([regularRes, simpleRes]) => {
+          // Handle regular dropoffs
+          setAllDropOffs(regularRes.data.data || []);
+
+          // Handle simple dropoffs - account for different response structures
+          let simpleDropoffs = [];
+          if (simpleRes.data.data) {
+            // Check if it's paginated response with docs
+            if (simpleRes.data.data.docs) {
+              simpleDropoffs = simpleRes.data.data.docs;
+            } else if (Array.isArray(simpleRes.data.data)) {
+              simpleDropoffs = simpleRes.data.data;
+            }
+          }
+          setAllSimpleDropOffs(simpleDropoffs);
           setError(null);
         })
         .catch((err) => {
-          console.error("Failed to fetch user drop-offs:", err);
+          console.error("Failed to fetch regular drop-offs:", err);
           setError("Failed to load drop-offs. Please try again later.");
         })
         .finally(() => {
@@ -92,7 +163,14 @@ const UserDropOffs: React.FC = () => {
   }, [localUser?._id]);
 
   const filteredAndSortedDropOffs = useMemo(() => {
-    return allDropOffs
+    // Convert both types to unified format
+    const regularUnified = allDropOffs.map(convertRegularDropoff);
+    const simpleUnified = allSimpleDropOffs.map(convertSimpleDropoff);
+
+    // Combine and filter by selected month/year
+    const allUnified = [...regularUnified, ...simpleUnified];
+
+    return allUnified
       .filter((dropOff) => {
         const dropOffDate = new Date(dropOff.createdAt);
         return (
@@ -104,7 +182,14 @@ const UserDropOffs: React.FC = () => {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-  }, [allDropOffs, selectedMonth, selectedYear]);
+  }, [
+    allDropOffs,
+    allSimpleDropOffs,
+    selectedMonth,
+    selectedYear,
+    convertRegularDropoff,
+    convertSimpleDropoff,
+  ]);
 
   const goToPreviousMonth = () => {
     setCurrentDisplayDate((prevDate) => {
@@ -187,7 +272,7 @@ const UserDropOffs: React.FC = () => {
       {filteredAndSortedDropOffs.length === 0 ? (
         <div className="p-4 text-center text-slate-600 bg-white rounded-lg shadow">
           No drop-offs recorded for {monthNames[selectedMonth]} {selectedYear}.
-          {allDropOffs.length === 0 && (
+          {allDropOffs.length === 0 && allSimpleDropOffs.length === 0 && (
             <p className="mt-2">
               You haven't made any drop-offs yet.
               <Link
@@ -207,45 +292,42 @@ const UserDropOffs: React.FC = () => {
               className="bg-white p-4 rounded-lg shadow-md flex justify-between items-start"
             >
               <div className="flex-grow">
-                <h2 className="text-lg font-semibold text-slate-700">
-                  {dropOff.dropOffLocation?.name || "Unknown Location"}
-                </h2>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-lg font-semibold text-slate-700">
+                    {dropOff.locationName}
+                  </h2>
+                  {dropOff.type === "simple" && (
+                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
+                      Quick Drop
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-slate-500">
                   {formatDateAndTime(dropOff.createdAt)}
                 </p>
                 <div className="text-xs text-slate-500 mt-1 space-y-0.5">
-                  {dropOff.dropOffQuantity &&
-                  dropOff.dropOffQuantity.length > 0 ? (
-                    dropOff.dropOffQuantity.map((item, index) => (
-                      <span key={item._id || index} className="block">
-                        {item.units} {item.materialType}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="block italic text-slate-400">
-                      No specific items listed.
+                  {dropOff.items.map((item, index) => (
+                    <span key={index} className="block">
+                      {item}
                     </span>
-                  )}
+                  ))}
                 </div>
-                {dropOff.status && (
-                  <p
-                    className={`text-xs mt-2 font-medium ${
-                      dropOff.status === "Approved"
-                        ? "text-green-600"
-                        : dropOff.status === "Pending"
-                        ? "text-orange-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    Status: {dropOff.status}
-                  </p>
-                )}
+                <p
+                  className={`text-xs mt-2 font-medium ${
+                    dropOff.status === "Approved" ||
+                    dropOff.status === "Verified"
+                      ? "text-green-600"
+                      : dropOff.status === "Pending"
+                      ? "text-orange-500"
+                      : "text-red-500"
+                  }`}
+                >
+                  Status: {dropOff.status}
+                </p>
               </div>
               <div className="ml-4 text-right flex-shrink-0">
                 <span className="bg-teal-100 text-teal-700 text-sm font-medium px-3 py-1.5 rounded-full">
-                  {dropOff.pointsEarned !== undefined
-                    ? `${Math.round(dropOff.pointsEarned)} CU`
-                    : "N/A CU"}
+                  {Math.round(dropOff.pointsEarned)} CU
                 </span>
               </div>
             </div>

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
+import SimpleDropoffApi from "../../../api/simpleDropoffApi";
 import { DropoffPoint } from "../dropoff/CreateDropOff";
+import { LocationType, ISimpleDropoffLocation } from "../../../types";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import {
   FaPlus,
@@ -12,14 +14,10 @@ import {
   FaTrashAlt,
   FaLocationArrow,
 } from "react-icons/fa";
-import {
-  MdClose,
-  MdCheckroom,
-  MdRecycling,
-  MdMyLocation,
-} from "react-icons/md";
+import { MdClose, MdCheckroom, MdRecycling } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
 import { GiPaperBagFolded } from "react-icons/gi";
+import { HiOutlineTrash } from "react-icons/hi2";
 import materialApi from "../../../api/materialApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -101,6 +99,14 @@ const Where = () => {
     null
   );
 
+  // Simple dropoff location states
+  const [locationType, setLocationType] = useState<LocationType>("all");
+  const [simpleLocations, setSimpleLocations] = useState<
+    ISimpleDropoffLocation[]
+  >([]);
+  const [selectedSimpleLocation, setSelectedSimpleLocation] =
+    useState<ISimpleDropoffLocation | null>(null);
+
   const mapRef = useRef<any>(null);
   const googleMapsApiRef = useRef<any>(null);
 
@@ -161,6 +167,30 @@ const Where = () => {
       }
     );
   };
+
+  // Fetch simple dropoff locations
+  const fetchSimpleLocations = useCallback(
+    async (materialType?: string) => {
+      if (!userLocation) return;
+
+      try {
+        const response = await SimpleDropoffApi.getNearbyLocations({
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          radius: 50000, // 50km radius
+          materialType: materialType,
+          limit: 50,
+        });
+
+        const simpleLocationsData = response.data.data || [];
+        setSimpleLocations(simpleLocationsData);
+      } catch (error) {
+        console.error("Failed to fetch simple locations:", error);
+        toast.error("Could not load simple drop-off locations");
+      }
+    },
+    [userLocation]
+  );
 
   // Filter locations by material type and fetch from API
   const fetchLocationsByMaterialType = async (materialType?: string) => {
@@ -382,15 +412,31 @@ const Where = () => {
 
   // Initial data load - show all locations or filtered if query param exists
   useEffect(() => {
-    if (!loadingMaterials && materialTypes.length > 0) {
-      if (selectedMaterialType) {
-        fetchLocationsByMaterialType(selectedMaterialType);
-      } else {
-        fetchLocationsByMaterialType();
+    if (!loadingMaterials && materialTypes.length > 0 && userLocation) {
+      // Fetch regular locations if needed
+      if (locationType === "regular" || locationType === "all") {
+        if (selectedMaterialType) {
+          fetchLocationsByMaterialType(selectedMaterialType);
+        } else {
+          fetchLocationsByMaterialType();
+        }
+      }
+
+      // Fetch simple locations if needed
+      if (locationType === "simple" || locationType === "all") {
+        // Note: Simple locations are not filtered by material type as per requirements
+        fetchSimpleLocations();
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMaterialType, loadingMaterials, materialTypes.length]);
+  }, [
+    selectedMaterialType,
+    loadingMaterials,
+    materialTypes.length,
+    locationType,
+    userLocation,
+    fetchSimpleLocations,
+  ]);
 
   // Handle material type selection
   const handleMaterialTypeSelect = (materialType: string) => {
@@ -407,7 +453,7 @@ const Where = () => {
     }
   };
 
-  // Handle marker click
+  // Handle marker click for regular locations
   const handleMarkerClick = (key: string) => {
     const location = locations.find(
       (loc) => loc.googleMapId === key || loc._id === key
@@ -428,6 +474,46 @@ const Where = () => {
       }
 
       setSelectedLocation(location);
+      setSelectedSimpleLocation(null); // Clear simple location selection
+
+      // Center the map on the selected location
+      if (mapRef.current && location.location?.coordinates) {
+        const center = {
+          lat: location.location.coordinates[1],
+          lng: location.location.coordinates[0],
+        };
+
+        // Use map instance methods without MapRef type
+        if (mapRef.current.panTo) {
+          mapRef.current.panTo(center);
+        }
+        if (mapRef.current.setZoom) {
+          mapRef.current.setZoom(16); // Zoom in more to show the location clearly
+        }
+      }
+    }
+  };
+
+  // Handle marker click for simple locations
+  const handleSimpleMarkerClick = (key: string) => {
+    const location = simpleLocations.find((loc) => loc._id === key);
+    if (location) {
+      console.log("Selected simple location:", location);
+
+      // Save current map state before changing it
+      if (
+        mapRef.current &&
+        mapRef.current.getCenter &&
+        mapRef.current.getZoom
+      ) {
+        setPreviousMapState({
+          center: mapRef.current.getCenter().toJSON(),
+          zoom: mapRef.current.getZoom(),
+        });
+      }
+
+      setSelectedSimpleLocation(location);
+      setSelectedLocation(null); // Clear regular location selection
 
       // Center the map on the selected location
       if (mapRef.current && location.location?.coordinates) {
@@ -450,6 +536,7 @@ const Where = () => {
   // Close location details and restore previous map view
   const closeLocationDetails = () => {
     setSelectedLocation(null);
+    setSelectedSimpleLocation(null);
 
     // Return to previous map view if available
     if (previousMapState && mapRef.current) {
@@ -581,51 +668,51 @@ const Where = () => {
     );
   };
 
-  // User Location Marker Component
-  const UserLocationMarker = ({
+  // Simple location marker component with different styling
+  const SimpleLocationMarker = ({
     position,
     onClick,
+    title,
+    isHighlighted,
   }: {
     position: google.maps.LatLngLiteral;
     onClick: () => void;
+    title: string;
+    markerId: string;
+    isHighlighted?: boolean;
   }) => {
     return (
-      <AdvancedMarker
-        position={position}
-        onClick={onClick}
-        title="Your Location"
-      >
-        <div className="cursor-pointer transform transition-all duration-300 hover:scale-110">
+      <AdvancedMarker position={position} onClick={onClick} title={title}>
+        <div
+          className={`cursor-pointer transform transition-all duration-300 ${
+            isHighlighted ? "scale-125 animate-bounce z-10" : "hover:scale-110"
+          }`}
+        >
           <div className="relative flex items-center justify-center">
-            {/* Pulsing background circle */}
-            <div className="absolute w-8 h-8 bg-red-500 rounded-full opacity-30 animate-ping"></div>
-            {/* Main marker */}
-            <div className="w-6 h-6 bg-red-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center z-10">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
+            {/* Simple location marker with different styling */}
+            <div
+              className={`w-10 h-10 rounded-lg shadow-lg flex items-center justify-center ${
+                isHighlighted
+                  ? "bg-orange-50 border-2 border-orange-400 ring-4 ring-orange-200 ring-opacity-50"
+                  : "bg-orange-100 border-2 border-orange-400"
+              }`}
+            >
+              {/* Smaller trash icon for simple locations */}
+              <HiOutlineTrash className="w-5 h-5 text-orange-600" />
             </div>
+
+            {/* Bottom pointer with orange styling */}
+            <div
+              className={`absolute top-7 w-3 h-3 transform rotate-45 translate-y-1 shadow-md ${
+                isHighlighted
+                  ? "bg-orange-50 border-r border-b border-orange-400"
+                  : "bg-orange-100 border-r border-b border-orange-400"
+              }`}
+            ></div>
           </div>
         </div>
       </AdvancedMarker>
     );
-  };
-
-  // Function to center map on user's location
-  const centerOnUserLocation = () => {
-    if (userLocation && mapRef.current) {
-      const center = {
-        lat: userLocation.latitude,
-        lng: userLocation.longitude,
-      };
-      if (mapRef.current.panTo) {
-        mapRef.current.panTo(center);
-      }
-      if (mapRef.current.setZoom) {
-        mapRef.current.setZoom(15); // Closer zoom when centering on user
-      }
-      toast.info("Centered on your location");
-    } else {
-      toast.error("Unable to find your location");
-    }
   };
 
   // Add this function to handle opening maps with directions
@@ -678,29 +765,35 @@ const Where = () => {
               disableDefaultUI={true}
               mapTypeControl={false}
             >
-              {/* Map markers */}
-              {markers.map((marker) => (
-                <CustomMarker
-                  key={marker.key}
-                  position={marker.location}
-                  materialType={marker.materialType}
-                  onClick={() => handleMarkerClick(marker.key)}
-                  title={marker.title}
-                  markerId={marker.key}
-                  isHighlighted={highlightedMarkerId === marker.key}
-                />
-              ))}
+              {/* Regular location markers */}
+              {(locationType === "regular" || locationType === "all") &&
+                markers.map((marker) => (
+                  <CustomMarker
+                    key={`regular-${marker.key}`}
+                    position={marker.location}
+                    materialType={marker.materialType}
+                    onClick={() => handleMarkerClick(marker.key)}
+                    title={marker.title}
+                    markerId={marker.key}
+                    isHighlighted={highlightedMarkerId === marker.key}
+                  />
+                ))}
 
-              {/* User Location Marker */}
-              {userLocation && (
-                <UserLocationMarker
-                  position={{
-                    lat: userLocation.latitude,
-                    lng: userLocation.longitude,
-                  }}
-                  onClick={centerOnUserLocation}
-                />
-              )}
+              {/* Simple location markers */}
+              {(locationType === "simple" || locationType === "all") &&
+                simpleLocations.map((location) => (
+                  <SimpleLocationMarker
+                    key={`simple-${location._id}`}
+                    position={{
+                      lat: location.location.coordinates[1],
+                      lng: location.location.coordinates[0],
+                    }}
+                    onClick={() => handleSimpleMarkerClick(location._id)}
+                    title={location.name}
+                    markerId={location._id}
+                    isHighlighted={false}
+                  />
+                ))}
             </Map>
           </APIProvider>
         ) : (
@@ -718,9 +811,43 @@ const Where = () => {
       {/* Top Filter Card */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
         <div className="bg-white rounded-2xl shadow-lg p-4">
-          <h2 className="text-xl font-bold mb-3">
-            Where to recycle, drop-off?
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-bold">Where to recycle, drop-off?</h2>
+
+            {/* Location Type Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-full p-1">
+              <button
+                onClick={() => setLocationType("regular")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  locationType === "regular"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                Centers
+              </button>
+              <button
+                onClick={() => setLocationType("simple")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  locationType === "simple"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                Quick Drop
+              </button>
+              <button
+                onClick={() => setLocationType("all")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  locationType === "all"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                All
+              </button>
+            </div>
+          </div>
 
           {loadingMaterials ? (
             <div className="flex space-x-2 overflow-x-auto py-2">
@@ -881,20 +1008,119 @@ const Where = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Simple Location Details Card */}
+        {selectedSimpleLocation && (
+          <motion.div
+            className="absolute bottom-20 left-0 right-0 z-20 px-4"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 500 }}
+          >
+            <div className="bg-white rounded-xl shadow-xl overflow-hidden border-l-4 border-orange-400">
+              {/* Header with close button */}
+              <div className="bg-orange-50 px-4 py-3 flex justify-between items-center border-b">
+                <div className="flex items-center">
+                  <HiOutlineTrash className="w-5 h-5 text-orange-600 mr-2" />
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {selectedSimpleLocation.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={closeLocationDetails}
+                  className="p-1 rounded-full hover:bg-orange-100 text-gray-500"
+                >
+                  <MdClose size={20} />
+                </button>
+              </div>
+
+              {/* Location details */}
+              <div className="p-4">
+                <p className="text-sm text-gray-600 mb-3 flex items-start">
+                  <FaMapMarkerAlt className="text-orange-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>
+                    {selectedSimpleLocation.address ||
+                      "Location coordinates available"}
+                  </span>
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
+                    Quick Drop Point
+                  </span>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                    {selectedSimpleLocation.materialType}
+                  </span>
+                </div>
+
+                {selectedSimpleLocation.organizationName && (
+                  <p className="text-sm mb-3 text-gray-700">
+                    <span className="font-medium">Managed by:</span>{" "}
+                    {selectedSimpleLocation.organizationName}
+                  </p>
+                )}
+
+                {selectedSimpleLocation.operatingHours && (
+                  <p className="text-sm mb-3 text-gray-700">
+                    <span className="font-medium">Hours:</span>{" "}
+                    {selectedSimpleLocation.operatingHours}
+                  </p>
+                )}
+
+                {selectedSimpleLocation.contactNumber && (
+                  <p className="text-sm mb-3 text-gray-700">
+                    <span className="font-medium">Contact:</span>{" "}
+                    {selectedSimpleLocation.contactNumber}
+                  </p>
+                )}
+
+                {/* Max items info */}
+                <div className="bg-orange-50 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-orange-700">
+                    <span className="font-medium">Max items per drop:</span>{" "}
+                    {selectedSimpleLocation.maxItemsPerDropOff}
+                  </p>
+                  {selectedSimpleLocation.verificationRequired && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      ⚠️ Photo verification required
+                    </p>
+                  )}
+                </div>
+
+                {/* Add a CTA button if needed */}
+                <div className="w-full flex justify-between items-center gap-4 mt-4">
+                  <button
+                    className="mt-4 w-full bg-orange-500 text-white text-sm py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors px-1"
+                    onClick={() => {
+                      if (selectedSimpleLocation.location?.coordinates) {
+                        const [lng, lat] =
+                          selectedSimpleLocation.location.coordinates;
+                        openDirections(lat, lng, selectedSimpleLocation.name);
+                      }
+                    }}
+                  >
+                    Get Directions{" "}
+                    <span className="ml-2 inline-flex items-center justify-center">
+                      <FaLocationArrow className="text-white text-xs" />
+                    </span>
+                  </button>
+                  <button
+                    className="mt-4 w-full bg-black text-white text-sm py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors px-1"
+                    onClick={() =>
+                      navigate(
+                        `/dropoff/create?type=${selectedSimpleLocation.materialType}&mode=simple&locationId=${selectedSimpleLocation._id}`
+                      )
+                    }
+                  >
+                    Quick Drop
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
-
-      {/* Floating action button to find user location */}
-      <div className="absolute bottom-32 right-4 z-20">
-        <button
-          onClick={centerOnUserLocation}
-          className="bg-white hover:bg-gray-50 text-gray-700 p-3 rounded-full shadow-lg border-2 border-gray-200 transition-all duration-200 hover:scale-105"
-          title="Find my location"
-        >
-          <MdMyLocation className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Material filter overlay */}
     </div>
   );
 };

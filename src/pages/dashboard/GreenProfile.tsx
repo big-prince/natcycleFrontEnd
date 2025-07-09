@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../hooks/reduxHooks";
 import DropOffApi from "../../api/dropOffApi";
+import SimpleDropoffApi, { SimpleDropoff } from "../../api/simpleDropoffApi";
 import { FaChevronLeft, FaChevronRight, FaArrowLeft } from "react-icons/fa";
 import { IDropOff } from "../../types";
 import Logo from "../../assets/logo/Group 202@2x.png";
@@ -68,6 +69,9 @@ const GreenProfile: React.FC = () => {
     {}
   );
   const [allDropOffsForYear, setAllDropOffsForYear] = useState<IDropOff[]>([]);
+  const [allSimpleDropOffsForYear, setAllSimpleDropOffsForYear] = useState<
+    SimpleDropoff[]
+  >([]);
   const [yearlyActivityData, setYearlyActivityData] = useState<
     Record<string, number>
   >({});
@@ -82,19 +86,71 @@ const GreenProfile: React.FC = () => {
   const popupTimerRef = useRef<number | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
+  const processDropOffDataForMonth = useCallback(
+    (dropOffs: IDropOff[], simpleDropOffs: SimpleDropoff[], month: number) => {
+      const monthlyDropOffs = dropOffs.filter(
+        (d) =>
+          new Date(d.createdAt).getMonth() === month &&
+          new Date(d.createdAt).getFullYear() === selectedYear
+      );
+      const monthlySimpleDropOffs = simpleDropOffs.filter(
+        (d) =>
+          new Date(d.createdAt).getMonth() === month &&
+          new Date(d.createdAt).getFullYear() === selectedYear
+      );
+      setTotalDiversionsInMonth(
+        monthlyDropOffs.length + monthlySimpleDropOffs.length
+      );
+    },
+    [selectedYear]
+  );
+
   useEffect(() => {
     if (localUser?._id) {
       setLoading(true);
-      DropOffApi.getUserDropOffs(localUser._id)
-        .then((res) => {
-          const allUserDropOffs: IDropOff[] = res.data.data || [];
+
+      // Fetch regular dropoffs first
+      const fetchRegularDropoffs = DropOffApi.getUserDropOffs(localUser._id);
+
+      // Fetch simple dropoffs with fallback
+      const fetchSimpleDropoffs = SimpleDropoffApi.getMyDropoffs(1, 1000).catch(
+        (err) => {
+          console.warn("Failed to fetch simple dropoffs:", err);
+          return { data: { data: [] } };
+        }
+      );
+
+      Promise.all([fetchRegularDropoffs, fetchSimpleDropoffs])
+        .then(([regularRes, simpleRes]) => {
+          const allUserDropOffs: IDropOff[] = regularRes.data.data || [];
           const yearlyDropOffs = allUserDropOffs.filter(
             (d) => new Date(d.createdAt).getFullYear() === selectedYear
           );
-          setAllDropOffsForYear(yearlyDropOffs);
-          setTotalDiversionsInYear(yearlyDropOffs.length);
 
+          // Handle simple dropoffs - account for different response structures
+          let allUserSimpleDropOffs: SimpleDropoff[] = [];
+          if (simpleRes.data.data) {
+            // Check if it's paginated response with docs
+            if (simpleRes.data.data.docs) {
+              allUserSimpleDropOffs = simpleRes.data.data.docs;
+            } else if (Array.isArray(simpleRes.data.data)) {
+              allUserSimpleDropOffs = simpleRes.data.data;
+            }
+          }
+          const yearlySimpleDropOffs = allUserSimpleDropOffs.filter(
+            (d) => new Date(d.createdAt).getFullYear() === selectedYear
+          );
+
+          setAllDropOffsForYear(yearlyDropOffs);
+          setAllSimpleDropOffsForYear(yearlySimpleDropOffs);
+          setTotalDiversionsInYear(
+            yearlyDropOffs.length + yearlySimpleDropOffs.length
+          );
+
+          // Combine daily counts from both dropoff types
           const dailyCounts: Record<string, number> = {};
+
+          // Count regular dropoffs
           yearlyDropOffs.forEach((dropOff) => {
             const localEventDate = new Date(dropOff.createdAt);
             const year = localEventDate.getFullYear();
@@ -106,14 +162,32 @@ const GreenProfile: React.FC = () => {
             dailyCounts[localDateString] =
               (dailyCounts[localDateString] || 0) + 1;
           });
+
+          // Count simple dropoffs
+          yearlySimpleDropOffs.forEach((dropOff) => {
+            const localEventDate = new Date(dropOff.createdAt);
+            const year = localEventDate.getFullYear();
+            const month = (localEventDate.getMonth() + 1)
+              .toString()
+              .padStart(2, "0");
+            const day = localEventDate.getDate().toString().padStart(2, "0");
+            const localDateString = `${year}-${month}-${day}`;
+            dailyCounts[localDateString] =
+              (dailyCounts[localDateString] || 0) + 1;
+          });
+
           setDropOffsByDay(dailyCounts);
           setYearlyActivityData(dailyCounts);
           setUniqueDiversionDaysInYear(Object.keys(dailyCounts).length);
 
-          processDropOffDataForMonth(yearlyDropOffs, selectedMonth);
+          processDropOffDataForMonth(
+            yearlyDropOffs,
+            yearlySimpleDropOffs,
+            selectedMonth
+          );
         })
         .catch((err) => {
-          console.error("Failed to fetch user drop-offs:", err);
+          console.error("Failed to fetch regular drop-offs:", err);
         })
         .finally(() => {
           setLoading(false);
@@ -121,11 +195,21 @@ const GreenProfile: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, [localUser?._id, selectedYear]);
+  }, [localUser?._id, selectedYear, selectedMonth, processDropOffDataForMonth]);
 
   useEffect(() => {
-    processDropOffDataForMonth(allDropOffsForYear, selectedMonth);
-  }, [selectedMonth, allDropOffsForYear, selectedYear]);
+    processDropOffDataForMonth(
+      allDropOffsForYear,
+      allSimpleDropOffsForYear,
+      selectedMonth
+    );
+  }, [
+    selectedMonth,
+    allDropOffsForYear,
+    allSimpleDropOffsForYear,
+    selectedYear,
+    processDropOffDataForMonth,
+  ]);
 
   useEffect(() => {
     // Cleanup timer if component unmounts
@@ -162,15 +246,6 @@ const GreenProfile: React.FC = () => {
     popupTimerRef.current = window.setTimeout(() => {
       setPopupInfo(null);
     }, 5000);
-  };
-
-  const processDropOffDataForMonth = (dropOffs: IDropOff[], month: number) => {
-    const monthlyDropOffs = dropOffs.filter(
-      (d) =>
-        new Date(d.createdAt).getMonth() === month &&
-        new Date(d.createdAt).getFullYear() === selectedYear
-    );
-    setTotalDiversionsInMonth(monthlyDropOffs.length);
   };
 
   const getDaysInMonthGrid = (

@@ -1,12 +1,16 @@
+/* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useMemo } from "react";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
+import SimpleDropoffApi from "../../../api/simpleDropoffApi";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { toast } from "react-toastify";
 import DropOffApi from "../../../api/dropOffApi";
 import MaterialApi from "../../../api/materialApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { DropoffMode, ISimpleDropoffLocation } from "../../../types";
+import { motion } from "framer-motion";
 import {
   MdLocationOn,
   MdCheckCircle,
@@ -90,6 +94,19 @@ const CreateDropOff = () => {
   const campaignIdFromQuery = searchParams.get("campaignId") || "";
   const campaignNameFromQuery = searchParams.get("campaignName") || "";
   const typeFromQuery = searchParams.get("type") || "";
+  const modeFromQuery = searchParams.get("mode") || "regular";
+  const locationIdFromQuery = searchParams.get("locationId") || "";
+
+  // Simple dropoff mode state
+  const [dropoffMode, setDropoffMode] = useState<DropoffMode>(
+    (modeFromQuery === "simple" ? "simple" : "regular") as DropoffMode
+  );
+  const [simpleLocations, setSimpleLocations] = useState<
+    ISimpleDropoffLocation[]
+  >([]);
+  const [selectedSimpleLocationId, setSelectedSimpleLocationId] = useState<
+    string | null
+  >(locationIdFromQuery || null);
 
   const [loading, setLoading] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
@@ -98,6 +115,12 @@ const CreateDropOff = () => {
   const [detailedQuantities, setDetailedQuantities] = useState<{
     [key: string]: string;
   }>({});
+
+  // Simple dropoff specific state
+  const [simpleDropoffForm, setSimpleDropoffForm] = useState({
+    description: "",
+    itemCount: 1,
+  });
 
   const [dropOffForm, setDropOffForm] = useState({
     description: "",
@@ -109,6 +132,19 @@ const CreateDropOff = () => {
     }[]
   >([]);
   const itemTypeButtonsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Effect to handle initial mode setup and location fetching
+  useEffect(() => {
+    // Set initial mode from URL params and pre-select location if provided
+    if (modeFromQuery === "simple" && locationIdFromQuery) {
+      setDropoffMode("simple");
+      setSelectedSimpleLocationId(locationIdFromQuery);
+      getNearestSimpleDropOffLocations();
+    } else if (modeFromQuery === "simple") {
+      setDropoffMode("simple");
+      getNearestSimpleDropOffLocations();
+    }
+  }, [modeFromQuery, locationIdFromQuery]);
 
   // Effect to fetch primary material types for the filter buttons and set initial type
   useEffect(() => {
@@ -125,19 +161,26 @@ const CreateDropOff = () => {
           }));
           setItemsForDisplay(newTypes);
 
-          const currentTypeIsValid =
-            typeFromQuery && newTypes.some((nt) => nt.value === typeFromQuery);
-          if (!currentTypeIsValid && newTypes.length > 0) {
-            const paramsToSet: {
-              type: string;
-              campaignId?: string;
-              campaignName?: string;
-            } = { type: newTypes[0].value };
-            if (campaignIdFromQuery)
-              paramsToSet.campaignId = campaignIdFromQuery;
-            if (campaignNameFromQuery)
-              paramsToSet.campaignName = campaignNameFromQuery;
-            setSearchParams(paramsToSet, { replace: true });
+          // For simple mode, we don't need to set a type since it's proximity-based
+          if ((dropoffMode as string) === "regular") {
+            const currentTypeIsValid =
+              typeFromQuery &&
+              newTypes.some((nt) => nt.value === typeFromQuery);
+            if (!currentTypeIsValid && newTypes.length > 0) {
+              const paramsToSet: {
+                type: string;
+                campaignId?: string;
+                campaignName?: string;
+                mode?: string;
+              } = { type: newTypes[0].value };
+              if (campaignIdFromQuery)
+                paramsToSet.campaignId = campaignIdFromQuery;
+              if (campaignNameFromQuery)
+                paramsToSet.campaignName = campaignNameFromQuery;
+              if ((dropoffMode as string) === "simple")
+                paramsToSet.mode = "simple";
+              setSearchParams(paramsToSet, { replace: true });
+            }
           }
         } else {
           setItemsForDisplay([]);
@@ -150,11 +193,20 @@ const CreateDropOff = () => {
       }
     };
     fetchPrimaryMaterialTypes();
-  }, [setSearchParams, campaignIdFromQuery, campaignNameFromQuery]);
+  }, [
+    setSearchParams,
+    campaignIdFromQuery,
+    campaignNameFromQuery,
+    dropoffMode,
+  ]);
 
-  // This useEffect reacts to changes in typeFromQuery
+  // This useEffect reacts to changes in typeFromQuery - only for regular mode
   useEffect(() => {
-    if (typeFromQuery && itemTypesForDisplay.length > 0) {
+    if (
+      (dropoffMode as string) === "regular" &&
+      typeFromQuery &&
+      itemTypesForDisplay.length > 0
+    ) {
       const isValidType = itemTypesForDisplay.some(
         (item) => item.value === typeFromQuery
       );
@@ -182,22 +234,30 @@ const CreateDropOff = () => {
             type: string;
             campaignId?: string;
             campaignName?: string;
+            mode?: string;
           } = { type: itemTypesForDisplay[0].value };
           if (campaignIdFromQuery) paramsToSet.campaignId = campaignIdFromQuery;
           if (campaignNameFromQuery)
             paramsToSet.campaignName = campaignNameFromQuery;
+          if ((dropoffMode as string) === "simple") paramsToSet.mode = "simple";
           setSearchParams(paramsToSet, { replace: true });
         }
       }
-    } else if (!typeFromQuery && itemTypesForDisplay.length > 0) {
+    } else if (
+      (dropoffMode as string) === "regular" &&
+      !typeFromQuery &&
+      itemTypesForDisplay.length > 0
+    ) {
       const paramsToSet: {
         type: string;
         campaignId?: string;
         campaignName?: string;
+        mode?: string;
       } = { type: itemTypesForDisplay[0].value };
       if (campaignIdFromQuery) paramsToSet.campaignId = campaignIdFromQuery;
       if (campaignNameFromQuery)
         paramsToSet.campaignName = campaignNameFromQuery;
+      if ((dropoffMode as string) === "simple") paramsToSet.mode = "simple";
       setSearchParams(paramsToSet, { replace: true });
     }
   }, [
@@ -206,6 +266,7 @@ const CreateDropOff = () => {
     setSearchParams,
     campaignIdFromQuery,
     campaignNameFromQuery,
+    dropoffMode,
   ]);
 
   const handleItemTypeSelect = (itemValue: string) => {
@@ -241,63 +302,116 @@ const CreateDropOff = () => {
   const handleDropOffFormSubmit = async (e: any) => {
     e.preventDefault();
 
-    if (!selectedLocationId)
-      return toast.error("Please select a drop-off location.");
     if (!file) return toast.error("Please capture a receipt image.");
-    if (!typeFromQuery) return toast.error("Primary item type is missing.");
 
-    const dropOffQuantityArray = Object.entries(detailedQuantities)
-      .map(([materialType, quantityString]) => {
-        const units = parseInt(quantityString, 10);
-        if (!isNaN(units) && units > 0) {
-          return { materialType, units };
-        }
-        return null;
-      })
-      .filter((item) => item !== null) as {
-      materialType: string;
-      units: number;
-    }[];
-
-    if (dropOffQuantityArray.length === 0) {
-      return toast.error(
-        "Please enter a valid quantity for at least one item type."
-      );
-    }
-
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("location", selectedLocationId);
-    formData.append("itemType", typeFromQuery);
-    formData.append("dropOffQuantity", JSON.stringify(dropOffQuantityArray));
-    formData.append("description", dropOffForm.description);
-    formData.append("file", file as Blob);
-    if (campaignIdFromQuery) formData.append("campaignId", campaignIdFromQuery);
-
-    console.log("Submitting Drop Off Data:");
-    formData.forEach((value, key) => {
-      if (key === "file") {
-        console.log(`${key}: [File object]`);
-      } else {
-        console.log(`${key}: ${value}`);
+    if ((dropoffMode as string) === "simple") {
+      // Simple dropoff logic
+      if (!selectedSimpleLocationId) {
+        return toast.error("Please select a simple drop-off location.");
       }
-    });
 
-    DropOffApi.addDropOff(formData)
-      .then(() => {
-        toast.success("Drop off created successfully");
-        sessionStorage.removeItem("pendingDropoff"); // Clear any pending data
+      if (simpleDropoffForm.itemCount <= 0) {
+        return toast.error("Please enter a valid item count.");
+      }
+
+      setLoading(true);
+
+      console.log("Submitting Simple Drop Off Data:", {
+        locationId: selectedSimpleLocationId,
+        itemCount: simpleDropoffForm.itemCount,
+        materialType: simpleLocations.find(
+          (loc) => loc._id === selectedSimpleLocationId
+        )?.materialType,
+        description: simpleDropoffForm.description,
+        campaignId: campaignIdFromQuery,
+      });
+
+      try {
+        const userCoords = await getUserLocation();
+
+        await SimpleDropoffApi.createSimpleDropoff({
+          simpleDropOffLocationId: selectedSimpleLocationId,
+          materialType:
+            simpleLocations.find((loc) => loc._id === selectedSimpleLocationId)
+              ?.materialType || "plastic",
+          quantity: simpleDropoffForm.itemCount,
+          latitude: userCoords.latitude,
+          longitude: userCoords.longitude,
+          proofPicture: file as File,
+        });
+        toast.success("Simple drop off logged successfully");
+        sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");
         navigate("/home");
-      })
-      .catch((error) => {
+      } catch (error: any) {
+        console.log(error);
+        toast.error(
+          "Error logging simple drop off: " +
+            (error.response?.data?.message || error.message)
+        );
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Regular dropoff logic
+      if (!selectedLocationId)
+        return toast.error("Please select a drop-off location.");
+      if (!typeFromQuery) return toast.error("Primary item type is missing.");
+
+      const dropOffQuantityArray = Object.entries(detailedQuantities)
+        .map(([materialType, quantityString]) => {
+          const units = parseInt(quantityString, 10);
+          if (!isNaN(units) && units > 0) {
+            return { materialType, units };
+          }
+          return null;
+        })
+        .filter((item) => item !== null) as {
+        materialType: string;
+        units: number;
+      }[];
+
+      if (dropOffQuantityArray.length === 0) {
+        return toast.error(
+          "Please enter a valid quantity for at least one item type."
+        );
+      }
+
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("location", selectedLocationId);
+      formData.append("itemType", typeFromQuery);
+      formData.append("dropOffQuantity", JSON.stringify(dropOffQuantityArray));
+      formData.append("description", dropOffForm.description);
+      formData.append("file", file as Blob);
+      if (campaignIdFromQuery)
+        formData.append("campaignId", campaignIdFromQuery);
+
+      console.log("Submitting Drop Off Data:");
+      formData.forEach((value, key) => {
+        if (key === "file") {
+          console.log(`${key}: [File object]`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      });
+
+      try {
+        await DropOffApi.addDropOff(formData);
+        toast.success("Drop off created successfully");
+        sessionStorage.removeItem("pendingDropoff");
+        sessionStorage.removeItem("pendingDropoffFile");
+        navigate("/home");
+      } catch (error: any) {
         console.log(error);
         toast.error(
           "Error creating drop off: " +
             (error.response?.data?.message || error.message)
         );
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const [locations, setLocations] = useState<DropoffPoint[]>([]);
@@ -421,13 +535,68 @@ const CreateDropOff = () => {
     }
   };
 
+  // Fetch simple dropoff locations - always sorted by proximity, not material type
+  const getNearestSimpleDropOffLocations = async () => {
+    setLoadingLocations(true);
+    setSelectedSimpleLocationId(null);
+    setSimpleLocations([]);
+
+    try {
+      const userCoords = await getUserLocation();
+
+      const response = await SimpleDropoffApi.getNearbyLocations({
+        latitude: userCoords.latitude,
+        longitude: userCoords.longitude,
+        radius: 50000, // 50km radius
+        limit: 50,
+      });
+
+      const fetchedSimpleLocations = response.data.data || [];
+
+      // Calculate distances and sort by proximity
+      const locationsWithDistance = fetchedSimpleLocations
+        .map((loc: ISimpleDropoffLocation) => {
+          const distanceKm = calculateHaversineDistance(
+            userCoords.latitude,
+            userCoords.longitude,
+            loc.location.coordinates[1],
+            loc.location.coordinates[0]
+          );
+          return {
+            ...loc,
+            distance: distanceKm,
+          };
+        })
+        .sort((a, b) => a.distance - b.distance);
+
+      setSimpleLocations(locationsWithDistance);
+
+      // Auto-select the closest location if available
+      if (locationsWithDistance.length > 0) {
+        const closestLocation = locationsWithDistance[0];
+        setSelectedSimpleLocationId(closestLocation._id);
+      } else {
+        toast.info("No simple drop-off locations found nearby.");
+      }
+    } catch (error: any) {
+      console.error("Error fetching simple locations:", error);
+      toast.error(
+        "Error fetching simple locations: " + (error.message || "Unknown error")
+      );
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [showCameraOverlay, setShowCameraOverlay] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">(
     "environment"
   );
+  const [shouldShakeCamera, setShouldShakeCamera] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -514,7 +683,16 @@ const CreateDropOff = () => {
   const handleOpenCamera = () => {
     // Always start with environment (rear) camera regardless of facingMode state
     setFacingMode("environment");
+    setShowCameraOverlay(true);
     startCamera("environment");
+
+    // Hide overlay after 8 seconds and trigger shake animation
+    setTimeout(() => {
+      setShowCameraOverlay(false);
+      // Trigger shake animation to draw attention to camera switch button
+      setShouldShakeCamera(true);
+      setTimeout(() => setShouldShakeCamera(false), 1500);
+    }, 8000);
   };
 
   const handleSwitchCamera = () => {
@@ -563,6 +741,7 @@ const CreateDropOff = () => {
     }
     setIsCameraOpen(false);
     setVideoStream(null);
+    setShowCameraOverlay(false);
   };
 
   const retakePhoto = () => {
@@ -634,8 +813,16 @@ const CreateDropOff = () => {
 
   // Calculate if any valid quantity has been entered for enabling submit button
   const hasValidQuantities = useMemo(() => {
+    if ((dropoffMode as string) === "simple") {
+      return selectedSimpleLocationId && simpleDropoffForm.itemCount > 0;
+    }
     return Object.values(detailedQuantities).some((q) => parseInt(q, 10) > 0);
-  }, [detailedQuantities]);
+  }, [
+    detailedQuantities,
+    dropoffMode,
+    selectedSimpleLocationId,
+    simpleDropoffForm.itemCount,
+  ]);
 
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
@@ -648,30 +835,98 @@ const CreateDropOff = () => {
           Back
         </button>
       )}
-      <div
-        ref={itemTypeButtonsContainerRef}
-        className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide"
-      >
-        {itemTypesForDisplay.length === 0 &&
-          !loadingLocations && ( // Check loadingLocations too
-            <p className="text-sm text-slate-500">No item types available.</p>
-          )}
-        {itemTypesForDisplay.map((item) => (
+
+      {/* Dropoff Mode Toggle */}
+      <div className="mb-6">
+        <div className="flex items-center justify-center bg-gray-50 rounded-lg p-0.5 max-w-xs mx-auto border border-gray-200">
           <button
-            key={item.value}
-            data-item-type-value={item.value}
-            onClick={() => handleItemTypeSelect(item.value)}
-            className={`px-6 py-3 text-sm font-semibold rounded-full transition-colors whitespace-nowrap
-              ${
-                typeFromQuery === item.value
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-slate-700 border border-gray-300 hover:bg-gray-200"
-              }`}
+            onClick={() => {
+              setDropoffMode("regular");
+              // Update URL params
+              const paramsToSet: {
+                mode?: string;
+                type?: string;
+                campaignId?: string;
+                campaignName?: string;
+              } = {};
+              if (typeFromQuery) paramsToSet.type = typeFromQuery;
+              if (campaignIdFromQuery)
+                paramsToSet.campaignId = campaignIdFromQuery;
+              if (campaignNameFromQuery)
+                paramsToSet.campaignName = campaignNameFromQuery;
+              setSearchParams(paramsToSet);
+              // Fetch regular locations if we have a type
+              if (typeFromQuery) {
+                getNearestDropOffLocations(typeFromQuery);
+              }
+            }}
+            className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+              dropoffMode === "regular"
+                ? "bg-white text-gray-800 shadow-sm border border-gray-200"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
           >
-            {item.label}
+            Regular
           </button>
-        ))}
+          <button
+            onClick={() => {
+              setDropoffMode("simple");
+              // Update URL params
+              const paramsToSet: {
+                mode: string;
+                campaignId?: string;
+                campaignName?: string;
+              } = { mode: "simple" };
+              if (campaignIdFromQuery)
+                paramsToSet.campaignId = campaignIdFromQuery;
+              if (campaignNameFromQuery)
+                paramsToSet.campaignName = campaignNameFromQuery;
+              setSearchParams(paramsToSet);
+              getNearestSimpleDropOffLocations();
+            }}
+            className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+              dropoffMode === "simple"
+                ? "bg-gray-800 text-white shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            Quick Drop
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 text-center mt-1.5">
+          {dropoffMode === "simple"
+            ? "Single items with photo verification"
+            : "Bulk items at recycling centers"}
+        </p>
       </div>
+
+      {/* Item Type Selection - Only for Regular Mode */}
+      {(dropoffMode as string) === "regular" && (
+        <div
+          ref={itemTypeButtonsContainerRef}
+          className="flex space-x-2 my-6 overflow-x-auto pb-2 scrollbar-hide"
+        >
+          {itemTypesForDisplay.length === 0 &&
+            !loadingLocations && ( // Check loadingLocations too
+              <p className="text-sm text-slate-500">No item types available.</p>
+            )}
+          {itemTypesForDisplay.map((item) => (
+            <button
+              key={item.value}
+              data-item-type-value={item.value}
+              onClick={() => handleItemTypeSelect(item.value)}
+              className={`px-6 py-3 text-sm font-semibold rounded-full transition-colors whitespace-nowrap
+                ${
+                  typeFromQuery === item.value
+                    ? "bg-black text-white"
+                    : "bg-gray-100 text-slate-700 border border-gray-300 hover:bg-gray-200"
+                }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
       {/* Campaign Info */}
       {campaignNameFromQuery && campaignIdFromQuery && (
         <div className="mb-4 p-3 bg-indigo-600 text-white rounded-lg text-center">
@@ -683,12 +938,21 @@ const CreateDropOff = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-md font-semibold underline text-slate-700">
-              Select dropoff location
+              {(dropoffMode as string) === "simple"
+                ? "Select nearby location"
+                : "Select dropoff location"}
             </h2>
             <button
               type="button"
-              onClick={() => getNearestDropOffLocations()}
-              disabled={loadingLocations || !typeFromQuery}
+              onClick={() =>
+                (dropoffMode as string) === "simple"
+                  ? getNearestSimpleDropOffLocations()
+                  : getNearestDropOffLocations()
+              }
+              disabled={
+                loadingLocations ||
+                ((dropoffMode as string) === "regular" && !typeFromQuery)
+              }
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center transition-opacity disabled:opacity-50"
             >
               <MdLocationOn className="mr-1.5" />
@@ -701,118 +965,249 @@ const CreateDropOff = () => {
               Finding locations...
             </p>
           )}
-          {!loadingLocations && locations.length === 0 && typeFromQuery && (
-            <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
-              No locations found for "{typeFromQuery}" that accept specific
-              items. Try another primary type or check back later.
-            </p>
-          )}
-          {!typeFromQuery && !loadingLocations && (
-            <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
-              Please select an item type above to see available locations.
-            </p>
+
+          {/* Regular Mode Locations */}
+          {(dropoffMode as string) === "regular" && (
+            <>
+              {!loadingLocations && locations.length === 0 && typeFromQuery && (
+                <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
+                  No locations found for "{typeFromQuery}" that accept specific
+                  items. Try another primary type or check back later.
+                </p>
+              )}
+              {!typeFromQuery && !loadingLocations && (
+                <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
+                  Please select an item type above to see available locations.
+                </p>
+              )}
+
+              <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
+                {locations.map((loc) => (
+                  <div
+                    key={loc._id}
+                    onClick={() => {
+                      if (!loc.isTooFar) {
+                        setSelectedLocationId(loc._id);
+                      }
+                    }}
+                    className={`p-3 rounded-lg border transition-all
+                      ${
+                        selectedLocationId === loc._id && !loc.isTooFar
+                          ? "bg-teal-50 border-teal-500 ring-2 ring-teal-500 cursor-pointer"
+                          : loc.isTooFar
+                          ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                          : "bg-white border-gray-200 hover:border-gray-400 cursor-pointer"
+                      }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          {loc.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{loc.address}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Accepts: {loc.primaryMaterialType || loc.itemType}
+                        </p>
+                        {loc.acceptedSubtypes &&
+                          loc.acceptedSubtypes.length > 0 && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Specific items:{" "}
+                              {loc.acceptedSubtypes.slice(0, 3).join(", ")}
+                              {loc.acceptedSubtypes.length > 3 ? "..." : ""}
+                            </p>
+                          )}
+                        {loc.distance && (
+                          <p
+                            className={`text-xs mt-0.5 ${
+                              loc.isTooFar ? "text-red-500" : "text-green-600"
+                            }`}
+                          >
+                            {loc.distance} away
+                            {loc.isTooFar && " (Too far)"}
+                          </p>
+                        )}
+                      </div>
+                      {selectedLocationId === loc._id && !loc.isTooFar && (
+                        <MdCheckCircle className="text-green-600 text-2xl flex-shrink-0 ml-2" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
-          <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
-            {locations.map((loc) => (
-              <div
-                key={loc._id}
-                onClick={() => {
-                  if (!loc.isTooFar) {
-                    setSelectedLocationId(loc._id);
-                    // setDetailedQuantities({}); // This is now handled by useEffect on selectedLocationId change
-                  }
-                }}
-                className={`p-3 rounded-lg border transition-all
-                  ${
-                    selectedLocationId === loc._id && !loc.isTooFar
-                      ? "bg-teal-50 border-teal-500 ring-2 ring-teal-500 cursor-pointer"
-                      : loc.isTooFar
-                      ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed" // Faded and not allowed
-                      : "bg-white border-gray-200 hover:border-gray-400 cursor-pointer"
-                  }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold text-slate-800">{loc.name}</p>
-                    <p className="text-xs text-gray-500">{loc.address}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Accepts: {loc.primaryMaterialType || loc.itemType}
-                    </p>
-                    {loc.acceptedSubtypes &&
-                      loc.acceptedSubtypes.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Specific items:{" "}
-                          {loc.acceptedSubtypes.slice(0, 3).join(", ")}
-                          {loc.acceptedSubtypes.length > 3 ? "..." : ""}
+          {/* Simple Mode Locations */}
+          {(dropoffMode as string) === "simple" && (
+            <>
+              {!loadingLocations && simpleLocations.length === 0 && (
+                <p className="text-center text-gray-500 py-4 bg-orange-50 rounded-md">
+                  No simple drop-off locations found nearby. Try refreshing or
+                  check back later.
+                </p>
+              )}
+
+              <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
+                {simpleLocations.map((loc) => (
+                  <div
+                    key={loc._id}
+                    onClick={() => setSelectedSimpleLocationId(loc._id)}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer
+                      ${
+                        selectedSimpleLocationId === loc._id
+                          ? "bg-orange-50 border-orange-500 ring-2 ring-orange-500"
+                          : "bg-white border-gray-200 hover:border-orange-300"
+                      }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          {loc.name}
                         </p>
-                      )}
-                    {loc.distance && ( // loc.distance should always be present now
-                      <p
-                        className={`text-xs mt-0.5 ${
-                          loc.isTooFar ? "text-red-500" : "text-green-600"
-                        }`}
-                      >
-                        {loc.distance} away
-                        {loc.isTooFar && " (Too far)"}
-                      </p>
-                    )}
+                        <p className="text-xs text-gray-500">{loc.address}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Material: {loc.materialType}
+                        </p>
+                        {loc.distance !== undefined && (
+                          <p className="text-xs text-orange-600 mt-0.5">
+                            {loc.distance.toFixed(1)} km away
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end">
+                        {selectedSimpleLocationId === loc._id && (
+                          <MdCheckCircle className="text-orange-500 text-2xl flex-shrink-0 ml-2" />
+                        )}
+                        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-100 mt-1">
+                          {getIconForSubtype(loc.materialType)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {selectedLocationId === loc._id && !loc.isTooFar && (
-                    <MdCheckCircle className="text-green-600 text-2xl flex-shrink-0 ml-2" />
-                  )}
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
 
-        {/* Quantity Input Section - Dynamic based on selected location */}
-        {selectedLocationId && currentSubItems.length > 0 && (
+        {/* Quantity Input Section - Different for each mode */}
+        {(dropoffMode as string) === "regular" &&
+          selectedLocationId &&
+          currentSubItems.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-md font-semibold text-slate-700 mb-3">
+                How many items were recycled at the selected location?
+                <p className="text-xs text-gray-500 font-normal">
+                  Enter quantities for items you dropped off.
+                </p>
+              </h2>
+              <div className="space-y-4">
+                {currentSubItems.map((item) => {
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300`}
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
+                        {item.icon}
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-sm text-slate-600">{item.name}</p>
+                        <input
+                          type="number"
+                          placeholder={`Quantity of ${item.unit}`}
+                          min="0"
+                          value={detailedQuantities[item.id] || ""}
+                          onChange={(e) =>
+                            handleQuantityChange(item.id, e.target.value)
+                          }
+                          className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        {(dropoffMode as string) === "regular" &&
+          selectedLocationId &&
+          currentSubItems.length === 0 && (
+            <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
+              The selected location does not have specific item types listed for
+              individual quantity entry. You can still log a general drop-off if
+              applicable, or contact support if this seems incorrect.
+            </div>
+          )}
+
+        {/* Simple dropoff form */}
+        {(dropoffMode as string) === "simple" && selectedSimpleLocationId && (
           <div className="mb-6">
             <h2 className="text-md font-semibold text-slate-700 mb-3">
-              How many items were recycled at the selected location?
+              Quick Drop Details
               <p className="text-xs text-gray-500 font-normal">
-                Enter quantities for items you dropped off.
+                Log your single item drop-off.
               </p>
             </h2>
             <div className="space-y-4">
-              {currentSubItems.map((item) => {
-                // const isInactive = selectedSubtypeForLogging !== null && selectedSubtypeForLogging !== item.id; // Remove this logic
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300`} // Removed inactive class logic
-                  >
-                    <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
-                      {item.icon}
-                    </div>
-                    <div className="flex-grow">
-                      <p className="text-sm text-slate-600">{item.name}</p>
-                      <input
-                        type="number"
-                        placeholder={`Quantity of ${item.unit}`}
-                        min="0" // Allow 0 for clearing, validation handles submission
-                        value={detailedQuantities[item.id] || ""}
-                        onChange={(e) =>
-                          handleQuantityChange(item.id, e.target.value)
-                        }
-                        // disabled={isInactive} // Remove disabled logic
-                        className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="p-3 bg-orange-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Items
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={simpleDropoffForm.itemCount}
+                  onChange={(e) =>
+                    setSimpleDropoffForm((prev) => ({
+                      ...prev,
+                      itemCount: parseInt(e.target.value) || 1,
+                    }))
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 text-sm"
+                />
+              </div>
+
+              <div className="hidden p-3 bg-orange-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={simpleDropoffForm.description}
+                  onChange={(e) =>
+                    setSimpleDropoffForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Any additional details about your drop-off..."
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 text-sm"
+                />
+              </div>
             </div>
           </div>
         )}
-        {selectedLocationId && currentSubItems.length === 0 && (
-          <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
-            The selected location does not have specific item types listed for
-            individual quantity entry. You can still log a general drop-off if
-            applicable, or contact support if this seems incorrect.
-            {/* Consider if a generic quantity input should appear here if no subtypes */}
+
+        {/* Description field for regular mode */}
+        {(dropoffMode as string) === "regular" && (
+          <div className="hidden mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Additional Description (Optional)
+            </label>
+            <textarea
+              rows={3}
+              value={dropOffForm.description}
+              onChange={(e) =>
+                setDropOffForm((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              placeholder="Any additional details about your drop-off..."
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
           </div>
         )}
 
@@ -840,10 +1235,14 @@ const CreateDropOff = () => {
                 <>
                   <MdCameraAlt className="text-4xl text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600 font-medium">
-                    Take Receipt Photo
+                    {dropoffMode === "simple"
+                      ? "Take Item Photo"
+                      : "Take Receipt Photo"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Tap here to open camera
+                    {dropoffMode === "simple"
+                      ? "Photo of the item you're dropping off"
+                      : "Tap here to open camera"}
                   </p>
                 </>
               )}
@@ -862,20 +1261,71 @@ const CreateDropOff = () => {
                 }}
               />
               <canvas ref={canvasRef} className="hidden"></canvas>
+
+              {/* Camera Overlay Instructions */}
+              {showCameraOverlay && (
+                <div
+                  className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 backdrop-blur-sm cursor-pointer"
+                  onClick={() => {
+                    setShowCameraOverlay(false);
+                    // Trigger shake animation to draw attention to camera switch button
+                    setShouldShakeCamera(true);
+                    setTimeout(() => setShouldShakeCamera(false), 1500);
+                  }}
+                >
+                  <div className="bg-white rounded-lg p-4 max-w-xs mx-4 text-center shadow-lg">
+                    <div className="flex items-center justify-center mb-2">
+                      <MdFlipCameraAndroid className="text-2xl text-gray-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-800 mb-1">
+                      Camera Loading
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Tap the switch icon to start the camera visual.
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Tap anywhere to continue.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4 z-10">
-                <button
+                <motion.button
                   type="button"
                   onClick={handleSwitchCamera}
                   className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm"
                   aria-label="Switch camera"
+                  animate={
+                    shouldShakeCamera
+                      ? {
+                          x: [0, -3, 3, -3, 3, -1, 1, 0],
+                          rotate: [0, -2, 2, -2, 2, -1, 1, 0],
+                        }
+                      : {}
+                  }
+                  transition={{
+                    duration: 0.5,
+                    ease: "easeInOut",
+                    repeat: shouldShakeCamera ? 2 : 0,
+                  }}
                 >
                   <MdFlipCameraAndroid size={24} />
-                </button>
+                </motion.button>
                 <button
                   type="button"
                   onClick={capturePhoto}
                   className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600 shadow-lg"
-                  aria-label="Capture photo"
+                  aria-label={
+                    dropoffMode === "simple"
+                      ? "Capture item photo"
+                      : "Capture receipt photo"
+                  }
+                  title={
+                    dropoffMode === "simple"
+                      ? "Capture Item"
+                      : "Capture Receipt"
+                  }
                 >
                   <MdCameraAlt size={28} />
                 </button>
