@@ -119,7 +119,7 @@ const CreateDropOff = () => {
   // Simple dropoff specific state
   const [simpleDropoffForm, setSimpleDropoffForm] = useState({
     description: "",
-    itemCount: 1,
+    itemCount: "1", // Changed to string for better UX when editing
   });
 
   const [dropOffForm, setDropOffForm] = useState({
@@ -310,7 +310,9 @@ const CreateDropOff = () => {
         return toast.error("Please select a simple drop-off location.");
       }
 
-      if (simpleDropoffForm.itemCount <= 0) {
+      // Check if itemCount is empty or not a valid number greater than 0
+      const itemCount = parseInt(simpleDropoffForm.itemCount);
+      if (isNaN(itemCount) || itemCount <= 0) {
         return toast.error("Please enter a valid item count.");
       }
 
@@ -334,7 +336,7 @@ const CreateDropOff = () => {
           materialType:
             simpleLocations.find((loc) => loc._id === selectedSimpleLocationId)
               ?.materialType || "plastic",
-          quantity: simpleDropoffForm.itemCount,
+          quantity: parseInt(simpleDropoffForm.itemCount) || 0,
           latitude: userCoords.latitude,
           longitude: userCoords.longitude,
           proofPicture: file as File,
@@ -814,7 +816,8 @@ const CreateDropOff = () => {
   // Calculate if any valid quantity has been entered for enabling submit button
   const hasValidQuantities = useMemo(() => {
     if ((dropoffMode as string) === "simple") {
-      return selectedSimpleLocationId && simpleDropoffForm.itemCount > 0;
+      const itemCount = parseInt(simpleDropoffForm.itemCount);
+      return selectedSimpleLocationId && !isNaN(itemCount) && itemCount > 0;
     }
     return Object.values(detailedQuantities).some((q) => parseInt(q, 10) > 0);
   }, [
@@ -1156,16 +1159,22 @@ const CreateDropOff = () => {
                   Number of Items
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={simpleDropoffForm.itemCount}
-                  onChange={(e) =>
-                    setSimpleDropoffForm((prev) => ({
-                      ...prev,
-                      itemCount: parseInt(e.target.value) || 1,
-                    }))
-                  }
+                  onChange={(e) => {
+                    // Allow empty string or valid numbers
+                    const value = e.target.value;
+                    if (value === "" || /^\d+$/.test(value)) {
+                      setSimpleDropoffForm((prev) => ({
+                        ...prev,
+                        itemCount: value,
+                      }));
+                    }
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 text-sm"
+                  placeholder="Enter number of items"
                 />
               </div>
 
