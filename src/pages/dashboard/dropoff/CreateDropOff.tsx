@@ -540,7 +540,7 @@ const CreateDropOff = () => {
   // Fetch simple dropoff locations - always sorted by proximity, not material type
   const getNearestSimpleDropOffLocations = async () => {
     setLoadingLocations(true);
-    setSelectedSimpleLocationId(null);
+    // Don't clear the selected location ID here, we'll handle it after fetching
     setSimpleLocations([]);
 
     try {
@@ -573,10 +573,33 @@ const CreateDropOff = () => {
 
       setSimpleLocations(locationsWithDistance);
 
-      // Auto-select the closest location if available
+      // Check if we should restore a pre-selected location or use the closest one
       if (locationsWithDistance.length > 0) {
-        const closestLocation = locationsWithDistance[0];
-        setSelectedSimpleLocationId(closestLocation.id);
+        const currentSelection =
+          selectedSimpleLocationId || locationIdFromQuery;
+
+        if (currentSelection) {
+          // Check if the pre-selected location is in the fetched locations
+          const preSelectedExists = locationsWithDistance.some(
+            (loc) => loc.id === currentSelection
+          );
+          if (preSelectedExists) {
+            // Keep the pre-selected location
+            setSelectedSimpleLocationId(currentSelection);
+          } else {
+            // Pre-selected location not found, use closest one as fallback
+            const closestLocation = locationsWithDistance[0];
+            setSelectedSimpleLocationId(closestLocation.id);
+            // Optional: Inform the user their selected location was not found
+            toast.info(
+              "Selected location not found, showing closest location instead."
+            );
+          }
+        } else {
+          // No pre-selection, use closest location
+          const closestLocation = locationsWithDistance[0];
+          setSelectedSimpleLocationId(closestLocation.id);
+        }
       } else {
         toast.info("No simple drop-off locations found nearby.");
       }
@@ -1054,7 +1077,14 @@ const CreateDropOff = () => {
                 {simpleLocations.map((loc) => (
                   <div
                     key={loc.id}
-                    onClick={() => setSelectedSimpleLocationId(loc.id)}
+                    onClick={() => {
+                      // Toggle selection: deselect if already selected, select if different location
+                      if (selectedSimpleLocationId === loc.id) {
+                        setSelectedSimpleLocationId(null); // Deselect current location
+                      } else {
+                        setSelectedSimpleLocationId(loc.id); // Select new location
+                      }
+                    }}
                     className={`p-3 rounded-lg border transition-all cursor-pointer
                       ${
                         selectedSimpleLocationId === loc.id
