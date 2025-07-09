@@ -886,7 +886,7 @@ const CreateDropOff = () => {
             }}
             className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
               dropoffMode === "simple"
-                ? "bg-gray-800 text-white shadow-sm"
+                ? "bg-black text-white shadow-sm"
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
