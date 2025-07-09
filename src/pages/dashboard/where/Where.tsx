@@ -812,7 +812,7 @@ const Where = () => {
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
         <div className="bg-white rounded-2xl shadow-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold">Where to recycle, drop-off?</h2>
+            <h2 className="text-xl font-bold">Find Locations</h2>
 
             {/* Location Type Toggle */}
             <div className="flex items-center bg-gray-100 rounded-full p-1">

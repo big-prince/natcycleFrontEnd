@@ -108,6 +108,9 @@ const CreateDropOff = () => {
     string | null
   >(locationIdFromQuery || null);
 
+  // Ref to access the selected location element for auto-scrolling
+  const selectedLocationRef = useRef<HTMLDivElement>(null);
+
   const [loading, setLoading] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null
@@ -536,6 +539,26 @@ const CreateDropOff = () => {
       setLoadingLocations(false);
     }
   };
+
+  // Effect to auto-scroll to selected location after it's rendered
+  useEffect(() => {
+    // Timeout gives DOM time to render and position elements correctly
+    const scrollTimeout = setTimeout(() => {
+      if (selectedLocationRef.current) {
+        selectedLocationRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 300); // Short delay to ensure DOM is ready
+
+    return () => clearTimeout(scrollTimeout);
+  }, [
+    selectedSimpleLocationId,
+    selectedLocationId,
+    simpleLocations.length,
+    locations.length,
+  ]);
 
   // Fetch simple dropoff locations - always sorted by proximity, not material type
   const getNearestSimpleDropOffLocations = async () => {
@@ -1011,6 +1034,11 @@ const CreateDropOff = () => {
                 {locations.map((loc) => (
                   <div
                     key={loc._id}
+                    ref={
+                      selectedLocationId === loc._id
+                        ? selectedLocationRef
+                        : null
+                    }
                     onClick={() => {
                       if (!loc.isTooFar) {
                         setSelectedLocationId(loc._id);
@@ -1077,6 +1105,11 @@ const CreateDropOff = () => {
                 {simpleLocations.map((loc) => (
                   <div
                     key={loc.id}
+                    ref={
+                      selectedSimpleLocationId === loc.id
+                        ? selectedLocationRef
+                        : null
+                    }
                     onClick={() => {
                       // Toggle selection: deselect if already selected, select if different location
                       if (selectedSimpleLocationId === loc.id) {

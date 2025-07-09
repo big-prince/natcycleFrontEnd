@@ -265,7 +265,7 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={() => toast.info("Please select a material type first!")}
-              className="flex items-center justify-between bg-black/80 text-white rounded-full py-3.5 px-6 shadow-lg w-72 opacity-100 cursor-not-allowed"
+              className="flex items-center justify-between bg-black text-white rounded-full py-3.5 px-6 shadow-lg w-72 opacity-100 cursor-not-allowed"
             >
               <div className="text-left">
                 <p className="text-base font-semibold">Select material first</p>
