@@ -496,7 +496,7 @@ const Where = () => {
 
   // Handle marker click for simple locations
   const handleSimpleMarkerClick = (key: string) => {
-    const location = simpleLocations.find((loc) => loc._id === key);
+    const location = simpleLocations.find((loc) => loc.id === key);
     if (location) {
       console.log("Selected simple location:", location);
 
@@ -783,14 +783,14 @@ const Where = () => {
               {(locationType === "simple" || locationType === "all") &&
                 simpleLocations.map((location) => (
                   <SimpleLocationMarker
-                    key={`simple-${location._id}`}
+                    key={`simple-${location.id}`}
                     position={{
                       lat: location.location.coordinates[1],
                       lng: location.location.coordinates[0],
                     }}
-                    onClick={() => handleSimpleMarkerClick(location._id)}
+                    onClick={() => handleSimpleMarkerClick(location.id)}
                     title={location.name}
-                    markerId={location._id}
+                    markerId={location.id}
                     isHighlighted={false}
                   />
                 ))}
@@ -1109,7 +1109,7 @@ const Where = () => {
                     className="mt-4 w-full bg-black text-white text-sm py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors px-1"
                     onClick={() =>
                       navigate(
-                        `/dropoff/create?type=${selectedSimpleLocation.materialType}&mode=simple&locationId=${selectedSimpleLocation._id}`
+                        `/dropoff/create?type=${selectedSimpleLocation.materialType}&mode=simple&locationId=${selectedSimpleLocation.id}`
                       )
                     }
                   >

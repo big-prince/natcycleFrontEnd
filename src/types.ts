@@ -141,7 +141,7 @@ export type LocationType = "regular" | "simple" | "all";
 export type DropoffMode = "regular" | "simple";
 
 export interface ISimpleDropoffLocation {
-  _id: string;
+  id: string;
   name: string;
   location: {
     type: "Point";

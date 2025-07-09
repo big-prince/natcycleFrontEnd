@@ -322,7 +322,7 @@ const CreateDropOff = () => {
         locationId: selectedSimpleLocationId,
         itemCount: simpleDropoffForm.itemCount,
         materialType: simpleLocations.find(
-          (loc) => loc._id === selectedSimpleLocationId
+          (loc) => loc.id === selectedSimpleLocationId
         )?.materialType,
         description: simpleDropoffForm.description,
         campaignId: campaignIdFromQuery,
@@ -334,7 +334,7 @@ const CreateDropOff = () => {
         await SimpleDropoffApi.createSimpleDropoff({
           simpleDropOffLocationId: selectedSimpleLocationId,
           materialType:
-            simpleLocations.find((loc) => loc._id === selectedSimpleLocationId)
+            simpleLocations.find((loc) => loc.id === selectedSimpleLocationId)
               ?.materialType || "plastic",
           quantity: parseInt(simpleDropoffForm.itemCount) || 0,
           latitude: userCoords.latitude,
@@ -576,7 +576,7 @@ const CreateDropOff = () => {
       // Auto-select the closest location if available
       if (locationsWithDistance.length > 0) {
         const closestLocation = locationsWithDistance[0];
-        setSelectedSimpleLocationId(closestLocation._id);
+        setSelectedSimpleLocationId(closestLocation.id);
       } else {
         toast.info("No simple drop-off locations found nearby.");
       }
@@ -1053,11 +1053,11 @@ const CreateDropOff = () => {
               <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
                 {simpleLocations.map((loc) => (
                   <div
-                    key={loc._id}
-                    onClick={() => setSelectedSimpleLocationId(loc._id)}
+                    key={loc.id}
+                    onClick={() => setSelectedSimpleLocationId(loc.id)}
                     className={`p-3 rounded-lg border transition-all cursor-pointer
                       ${
-                        selectedSimpleLocationId === loc._id
+                        selectedSimpleLocationId === loc.id
                           ? "bg-orange-50 border-orange-500 ring-2 ring-orange-500"
                           : "bg-white border-gray-200 hover:border-orange-300"
                       }`}
@@ -1078,7 +1078,7 @@ const CreateDropOff = () => {
                         )}
                       </div>
                       <div className="flex flex-col items-end">
-                        {selectedSimpleLocationId === loc._id && (
+                        {selectedSimpleLocationId === loc.id && (
                           <MdCheckCircle className="text-orange-500 text-2xl flex-shrink-0 ml-2" />
                         )}
                         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-100 mt-1">
