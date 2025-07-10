@@ -329,21 +329,34 @@ const CreateDropOff = () => {
         )?.materialType,
         description: simpleDropoffForm.description,
         campaignId: campaignIdFromQuery,
+        userCoords: "will be fetched",
       });
 
       try {
         const userCoords = await getUserLocation();
 
-        await SimpleDropoffApi.createSimpleDropoff({
+        console.log("User coordinates:", userCoords);
+
+        const selectedLocation = simpleLocations.find(
+          (loc) => loc.id === selectedSimpleLocationId
+        );
+        console.log("Selected location:", selectedLocation);
+
+        const submitData = {
           simpleDropOffLocationId: selectedSimpleLocationId,
-          materialType:
-            simpleLocations.find((loc) => loc.id === selectedSimpleLocationId)
-              ?.materialType || "plastic",
+          materialType: selectedLocation?.materialType || "plastic",
           quantity: parseInt(simpleDropoffForm.itemCount) || 0,
           latitude: userCoords.latitude,
           longitude: userCoords.longitude,
           proofPicture: file as File,
+        };
+
+        console.log("Final submit data:", {
+          ...submitData,
+          proofPicture: "[File object]",
         });
+
+        await SimpleDropoffApi.createSimpleDropoff(submitData);
         toast.success("Simple drop off logged successfully");
         sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");

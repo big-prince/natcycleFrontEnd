@@ -56,6 +56,8 @@ import TMMatches from "./pages/admin/thingsmatch/TMMatches";
 import TMMatchDetails from "./pages/admin/thingsmatch/TMMatchDetails";
 import TMBreakdown from "./pages/admin/thingsmatch/TMBreakdown";
 import EPantry from "./pages/admin/thingsmatch/EPantry"; // Import the new EPantry component
+import AdminSimpleDropOffs from "./pages/admin/AdminSimpleDropOffs";
+import AdminSimpleDropOffLocations from "./pages/admin/AdminSimpleDropOffLocations";
 import NotFound from "./pages/components/NotFound";
 
 const App = () => {
@@ -120,8 +122,16 @@ const App = () => {
             <Route path="/admin/pickups" element={<AdminPickups />} />
             <Route path="/admin/dropoffs" element={<AdminDropOffs />} />
             <Route
+              path="/admin/simple-dropoffs"
+              element={<AdminSimpleDropOffs />}
+            />
+            <Route
               path="/admin/dropoff-locations"
               element={<DropOffLocations />}
+            />
+            <Route
+              path="/admin/simple-dropoff-locations"
+              element={<AdminSimpleDropOffLocations />}
             />
             <Route
               path="/admin/dropoffs/:id"

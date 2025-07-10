@@ -1,7 +1,7 @@
 import api from "./api";
 
 export interface SimpleDropoffLocation {
-  _id: string;
+  id: string;
   name: string;
   location: {
     type: "Point";
@@ -98,7 +98,7 @@ class SimpleDropoffApi {
     formData.append("quantity", params.quantity.toString());
     formData.append("latitude", params.latitude.toString());
     formData.append("longitude", params.longitude.toString());
-    formData.append("proofPicture", params.proofPicture);
+    formData.append("file", params.proofPicture); // Changed from "proofPicture" to "file"
 
     return api.post("/simple-dropoffs", formData, {
       headers: {
@@ -137,6 +137,144 @@ class SimpleDropoffApi {
 
   async getDropoffById(id: string) {
     return api.get(`/simple-dropoffs/${id}`);
+  }
+
+  // Admin endpoints
+  async adminGetLocations(
+    page = 1,
+    limit = 10,
+    filters?: {
+      materialType?: string;
+      isActive?: boolean;
+    }
+  ) {
+    const searchParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters?.materialType && { materialType: filters.materialType }),
+      ...(filters?.isActive !== undefined && {
+        isActive: filters.isActive.toString(),
+      }),
+    });
+
+    return api.get(`/simple-dropoff-locations?${searchParams}`);
+  }
+
+  async adminCreateLocation(locationData: {
+    name: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    materialType: string;
+    acceptedSubtypes?: string[];
+    organizationName?: string;
+    isActive: boolean;
+    verificationRequired: boolean;
+    maxItemsPerDropOff: number;
+    operatingHours?: string;
+    contactNumber?: string;
+  }) {
+    return api.post("/simple-dropoff-locations", locationData);
+  }
+
+  async adminUpdateLocation(
+    id: string,
+    locationData: Partial<{
+      name: string;
+      latitude: number;
+      longitude: number;
+      address: string;
+      materialType: string;
+      acceptedSubtypes: string[];
+      organizationName: string;
+      isActive: boolean;
+      verificationRequired: boolean;
+      maxItemsPerDropOff: number;
+      operatingHours: string;
+      contactNumber: string;
+    }>
+  ) {
+    return api.put(`/simple-dropoff-locations/${id}`, locationData);
+  }
+
+  async adminDeleteLocation(id: string) {
+    return api.delete(`/simple-dropoff-locations/${id}`);
+  }
+
+  async adminVerifyLocation(id: string) {
+    console.log(id);
+    return api.patch(`/simple-dropoff-locations/${id}/verify`);
+  }
+
+  async adminGetDropoffs(
+    page = 1,
+    limit = 10,
+    filters?: {
+      userId?: string;
+      materialType?: string;
+      isVerified?: boolean;
+      startDate?: string;
+      endDate?: string;
+    }
+  ) {
+    const searchParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(filters?.userId && { userId: filters.userId }),
+      ...(filters?.materialType && { materialType: filters.materialType }),
+      ...(filters?.isVerified !== undefined && {
+        isVerified: filters.isVerified.toString(),
+      }),
+      ...(filters?.startDate && { startDate: filters.startDate }),
+      ...(filters?.endDate && { endDate: filters.endDate }),
+    });
+
+    return api.get(`/simple-dropoffs?${searchParams}`);
+  }
+
+  async adminGetPendingDropoffs(page = 1, limit = 10) {
+    const searchParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      isVerified: "false",
+    });
+
+    return api.get(`/simple-dropoffs/admin/pending?${searchParams}`);
+  }
+
+  async adminGetStats() {
+    return api.get("/simple-dropoffs/admin/stats");
+  }
+
+  async adminVerifyDropoff(
+    id: string,
+    isApproved: boolean,
+    rejectionReason?: string
+  ) {
+    return api.patch(`/simple-dropoffs/${id}/verify`, {
+      isApproved,
+      ...(rejectionReason && { rejectionReason }),
+    });
+  }
+
+  async adminBulkVerifyDropoffs(
+    ids: string[],
+    isApproved: boolean,
+    rejectionReason?: string
+  ) {
+    return api.patch("/simple-dropoffs/admin/bulk-verify", {
+      ids,
+      isApproved,
+      ...(rejectionReason && { rejectionReason }),
+    });
+  }
+
+  async adminDeleteDropoff(id: string) {
+    return api.delete(`/simple-dropoffs/${id}`);
+  }
+
+  async adminGetLocationStats() {
+    return api.get("/simple-dropoff-locations/admin/statistics");
   }
 }
 

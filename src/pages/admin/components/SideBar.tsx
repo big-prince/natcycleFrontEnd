@@ -39,9 +39,19 @@ const Links = [
     path: "/admin/dropoffs",
   },
   {
+    title: "Simple Drop Offs",
+    icon: <FaBox size={18} />,
+    path: "/admin/simple-dropoffs",
+  },
+  {
     title: "Dropoff Locations",
     icon: <FaBox size={18} />,
     path: "/admin/dropoff-locations",
+  },
+  {
+    title: "Simple Dropoff Locations",
+    icon: <FaBox size={18} />,
+    path: "/admin/simple-dropoff-locations",
   },
   {
     title: "Badges",
