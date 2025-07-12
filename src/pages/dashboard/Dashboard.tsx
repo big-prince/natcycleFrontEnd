@@ -192,7 +192,7 @@ const Dashboard = () => {
           <FaChevronRight className="mr-1 text-xs" />
           SELECT
         </div>
-        <div className="flex overflow-x-auto space-x-3 pb-3 mb-3 pt-5 scrollbar-hide min-h-[50px]">
+        <div className="flex overflow-x-auto space-x-3 pb-3 px-2 mb-3 pt-5 scrollbar-hide min-h-[50px]">
           {materialsLoading ? (
             <p className="text-slate-600 text-sm italic px-3">
               Loading items...
@@ -236,14 +236,15 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate(`/where?type=${selectedItemType}`)}
-                className="flex items-center justify-center bg-white hover:bg-gray-50 text-slate-800 border-2 border-slate-300 rounded-full py-3 px-5 shadow-lg transition-all duration-200"
+                className="flex items-center justify-center bg-white hover:bg-gray-50 text-slate-800  rounded-full py-3 px-5 shadow-lg transition-all duration-200"
               >
                 <div className="text-center">
                   <p className="text-sm font-semibold">Find Locations</p>
-                  <p className="text-xs font-light -mt-0.5 opacity-70">
+                  <p className="text-xs font-light -mt-0.5 opacity-80">
                     Near you
                   </p>
                 </div>
+                <FaArrowRight className="text-sm ml-3" />
               </button>
               {/* Log Impact Button - Primary (smaller) */}
               <button

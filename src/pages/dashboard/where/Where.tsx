@@ -601,14 +601,14 @@ const Where = () => {
     if (userLocation) {
       return {
         center: { lat: userLocation.latitude, lng: userLocation.longitude },
-        zoom: 12,
+        zoom: 17,
       };
     }
 
     // Default to center of Nigeria if no user location
     return {
       center: { lat: 9.0765, lng: 7.3986 },
-      zoom: 6,
+      zoom: 8,
     };
   }, [userLocation]);
 
@@ -715,6 +715,31 @@ const Where = () => {
     );
   };
 
+  // User location marker component
+  const UserLocationMarker = ({
+    position,
+    onClick,
+    title,
+  }: {
+    position: google.maps.LatLngLiteral;
+    onClick: () => void;
+    title: string;
+  }) => {
+    return (
+      <AdvancedMarker position={position} onClick={onClick} title={title}>
+        <div className="cursor-pointer transform transition-all duration-300 hover:scale-110">
+          <div className="relative flex items-center justify-center">
+            {/* Red map pin icon */}
+            <FaMapMarkerAlt className="w-8 h-8 text-red-600 drop-shadow-lg" />
+            {/* Pulsing ring animation */}
+            <div className="absolute w-12 h-12 bg-red-600 bg-opacity-20 rounded-full animate-ping"></div>
+            <div className="absolute w-10 h-10 bg-red-600 bg-opacity-30 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </AdvancedMarker>
+    );
+  };
+
   // Add this function to handle opening maps with directions
   const openDirections = (lat: number, lng: number, name: string) => {
     const encodedName = encodeURIComponent(name);
@@ -750,6 +775,27 @@ const Where = () => {
     toast.info(`Opening directions to ${name}`);
   };
 
+  // Function to center map on user location
+  const centerOnUserLocation = () => {
+    if (userLocation && mapRef.current) {
+      const center = {
+        lat: userLocation.latitude,
+        lng: userLocation.longitude,
+      };
+
+      if (mapRef.current.panTo) {
+        mapRef.current.panTo(center);
+      }
+      if (mapRef.current.setZoom) {
+        mapRef.current.setZoom(15); // Zoom in closer when user clicks their location
+      }
+
+      toast.success("Centered on your location");
+    } else {
+      toast.error("Unable to get your location");
+    }
+  };
+
   return (
     <div className="relative h-screen overflow-hidden ">
       {/* Map Container */}
@@ -764,6 +810,878 @@ const Where = () => {
               gestureHandling="greedy"
               disableDefaultUI={true}
               mapTypeControl={false}
+              styles={[
+                // AGGRESSIVE POI REMOVAL - Hide ALL POI icons and labels
+                {
+                  featureType: "poi",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.establishment",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.attraction",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.government",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.medical",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.park",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.place_of_worship",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.school",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.sports_complex",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.lodging",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.shopping",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.restaurant",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.food_and_drink",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.gas_station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.bank",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.atm",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.pharmacy",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.hospital",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.auto_services",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.beauty_and_spa",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.entertainment",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.finance",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.health",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.legal",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.library",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.personal_care",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.professional_services",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.real_estate",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.storage",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.travel_agency",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.veterinary_care",
+                  stylers: [{ visibility: "off" }],
+                },
+                // Additional comprehensive POI types
+                {
+                  featureType: "poi.automotive",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.car_dealer",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.car_rental",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.car_repair",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.car_wash",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.church",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.embassy",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.fire_station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.funeral_home",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.grocery_or_supermarket",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.gym",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.hair_care",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.hardware_store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.home_goods_store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.insurance_agency",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.jewelry_store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.laundry",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.lawyer",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.liquor_store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.local_government_office",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.locksmith",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.meal_delivery",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.meal_takeaway",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.movie_rental",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.movie_theater",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.moving_company",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.museum",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.night_club",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.painter",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.pet_store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.physiotherapist",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.plumber",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.police",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.post_office",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.roofing_contractor",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.rv_park",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.shoe_store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.shopping_mall",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.spa",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.stadium",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.subway_station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.supermarket",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.synagogue",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.taxi_stand",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.tourist_attraction",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.train_station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.university",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.zoo",
+                  stylers: [{ visibility: "off" }],
+                },
+                // Transit related
+                {
+                  featureType: "transit",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "transit.station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "transit.line",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "transit.station.airport",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "transit.station.bus",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "transit.station.rail",
+                  stylers: [{ visibility: "off" }],
+                },
+                // Alternative approach - hide all establishment types
+                {
+                  featureType: "establishment",
+                  stylers: [{ visibility: "off" }],
+                },
+                // Nigeria/Africa specific POI types
+                {
+                  featureType: "poi.mosque",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.market",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.filling_station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.bus_station",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.motor_park",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.church_christian",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.religious_place",
+                  stylers: [{ visibility: "off" }],
+                },
+                // Additional comprehensive coverage
+                {
+                  featureType: "point_of_interest",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.food",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.drink",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.accommodation",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.commercial",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.service",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.retail",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.dining",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.recreation",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.civic",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.industrial",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.transport",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.landmark",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.natural",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.religious",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.educational",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.cultural",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.historic",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.outdoor",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.indoor",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.venue",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.facility",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.activity",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.organization",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.institution",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.building",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.structure",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.location",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.place",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.site",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.area",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.zone",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.district",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.region",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.neighborhood",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.block",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.complex",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.center",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.hub",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.node",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.terminal",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.depot",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.garage",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.workshop",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.factory",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.office",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.clinic",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.laboratory",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.studio",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.gallery",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.theater",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.cinema",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.auditorium",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.hall",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.plaza",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.square",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.court",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.field",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.ground",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.track",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.course",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.range",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.camp",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.resort",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.lodge",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.inn",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.motel",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.hostel",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.apartment",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.house",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.residence",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.dwelling",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.compound",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.estate",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.villa",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.mansion",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.palace",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.castle",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.fort",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.tower",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.monument",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.memorial",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.statue",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.fountain",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.bridge",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.tunnel",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.dam",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.reservoir",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.lake",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.river",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.stream",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.creek",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.pond",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.pool",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.well",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.spring",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.waterfall",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.beach",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.coast",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.bay",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.harbor",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.port",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.dock",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.pier",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.marina",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.wharf",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.jetty",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.breakwater",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.lighthouse",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.beacon",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.buoy",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.anchor",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.mooring",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.berth",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.slip",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.ramp",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.launch",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.landing",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.ferry",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.terminal_ferry",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.wharf_ferry",
+                  stylers: [{ visibility: "off" }],
+                },
+              ]}
             >
               {/* Regular location markers */}
               {(locationType === "regular" || locationType === "all") &&
@@ -794,6 +1712,18 @@ const Where = () => {
                     isHighlighted={false}
                   />
                 ))}
+
+              {/* User location marker */}
+              {userLocation && (
+                <UserLocationMarker
+                  position={{
+                    lat: userLocation.latitude,
+                    lng: userLocation.longitude,
+                  }}
+                  onClick={centerOnUserLocation}
+                  title="Your Location"
+                />
+              )}
             </Map>
           </APIProvider>
         ) : (
@@ -812,9 +1742,21 @@ const Where = () => {
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
         <div className="bg-white rounded-2xl shadow-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold">Find Locations</h2>
+            <h2 className="text-xl font-bold">Filters</h2>
 
-            {/* Location Type Toggle */}
+            {/* My Location Button */}
+            <button
+              onClick={centerOnUserLocation}
+              className="flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
+              disabled={!userLocation}
+            >
+              <FaLocationArrow className="w-3 h-3 mr-1" />
+              My Location
+            </button>
+          </div>
+
+          {/* Location Type Toggle */}
+          <div className="flex items-center justify-center mb-3">
             <div className="flex items-center bg-gray-100 rounded-full p-1">
               <button
                 onClick={() => setLocationType("regular")}
