@@ -659,8 +659,17 @@ const CreateDropOff = () => {
   );
   const [shouldShakeCamera, setShouldShakeCamera] = useState(false);
 
+  // Video recording states for simple dropoffs
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null
+  );
+  const [maxRecordingTime] = useState(10); // 10 seconds max
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const recordingTimerRef = useRef<number | null>(null);
 
   // Cleanup object URL and video stream
   useEffect(() => {
@@ -670,6 +679,9 @@ const CreateDropOff = () => {
       }
       if (videoStream) {
         videoStream.getTracks().forEach((track) => track.stop());
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
       }
     };
   }, [previewUrl, videoStream]);
@@ -797,18 +809,135 @@ const CreateDropOff = () => {
   };
 
   const closeCamera = () => {
+    // Stop any ongoing recording
+    if (isRecording) {
+      stopVideoRecording();
+    }
+
     if (videoStream) {
       videoStream.getTracks().forEach((track) => track.stop());
     }
     setIsCameraOpen(false);
     setVideoStream(null);
     setShowCameraOverlay(false);
+    setRecordingDuration(0);
   };
 
   const retakePhoto = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setFile(null);
+    handleOpenCamera();
+  };
+
+  // Video recording functions for simple dropoffs
+  const startVideoRecording = () => {
+    if (!videoStream) {
+      toast.error("Camera not available for recording");
+      return;
+    }
+
+    try {
+      const options = {
+        mimeType: 'video/mp4; codecs="avc1.424028, mp4a.40.2"',
+        videoBitsPerSecond: 1000000, // 1 Mbps for good quality but reasonable file size
+      };
+
+      // Fallback for browsers that don't support the preferred codec
+      let recorder;
+      if (MediaRecorder.isTypeSupported(options.mimeType)) {
+        recorder = new MediaRecorder(videoStream, options);
+      } else {
+        // Try webm format as fallback
+        const webmOptions = {
+          mimeType: 'video/webm; codecs="vp8, vorbis"',
+          videoBitsPerSecond: 1000000,
+        };
+        if (MediaRecorder.isTypeSupported(webmOptions.mimeType)) {
+          recorder = new MediaRecorder(videoStream, webmOptions);
+        } else {
+          // Use default without specifying codec
+          recorder = new MediaRecorder(videoStream);
+        }
+      }
+
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const videoBlob = new Blob(chunks, {
+          type: recorder.mimeType || "video/mp4",
+        });
+
+        const videoFile = new File(
+          [videoBlob],
+          `dropoff-video-${Date.now()}.mp4`,
+          { type: videoBlob.type }
+        );
+
+        setFile(videoFile);
+        setPreviewUrl(URL.createObjectURL(videoBlob));
+        closeCamera();
+      };
+
+      recorder.onerror = (event) => {
+        console.error("Recording error:", event);
+        toast.error("Error occurred during recording");
+        stopVideoRecording();
+      };
+
+      setMediaRecorder(recorder);
+      recorder.start(1000); // Collect data every second
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      // Start timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => {
+          if (prev >= maxRecordingTime - 1) {
+            stopVideoRecording();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+
+      // Auto-stop after max time
+      setTimeout(() => {
+        if (recorder && recorder.state === "recording") {
+          stopVideoRecording();
+        }
+      }, maxRecordingTime * 1000);
+    } catch (error) {
+      console.error("Error starting video recording:", error);
+      toast.error("Failed to start video recording");
+    }
+  };
+
+  const stopVideoRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+    }
+
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
+    setIsRecording(false);
+    setMediaRecorder(null);
+  };
+
+  const retakeVideo = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setFile(null);
+    setRecordingDuration(0);
     handleOpenCamera();
   };
 
@@ -1298,20 +1427,50 @@ const CreateDropOff = () => {
 
         <div className="mb-8">
           <h2 className="text-md font-semibold text-slate-700 mb-3">
-            Confirm your drop-off
+            {dropoffMode === "simple"
+              ? "Record verification video"
+              : "Confirm your drop-off"}
           </h2>
+          {dropoffMode === "simple" && (
+            <p className="text-sm text-gray-600 mb-3">
+              Record a 10-second video showing you dropping the item into the
+              bin to prevent fraud and ensure proper verification.
+            </p>
+          )}
           {!isCameraOpen && (
             <div
               className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-center p-4 cursor-pointer hover:border-gray-400 bg-gray-50"
-              onClick={previewUrl ? retakePhoto : handleOpenCamera}
+              onClick={
+                previewUrl
+                  ? dropoffMode === "simple"
+                    ? retakeVideo
+                    : retakePhoto
+                  : handleOpenCamera
+              }
             >
               {previewUrl ? (
                 <>
-                  <img
-                    src={previewUrl}
-                    alt="Receipt preview"
-                    className="max-h-full max-w-full object-contain rounded-md"
-                  />
+                  {file?.type.startsWith("video/") ? (
+                    // Video preview for simple dropoffs
+                    <video
+                      src={previewUrl}
+                      controls
+                      muted
+                      className="max-h-full max-w-full object-contain rounded-md"
+                      style={{ maxHeight: "300px" }}
+                    />
+                  ) : (
+                    // Image preview for regular dropoffs
+                    <img
+                      src={previewUrl}
+                      alt={
+                        dropoffMode === "simple"
+                          ? "Dropoff video preview"
+                          : "Receipt preview"
+                      }
+                      className="max-h-full max-w-full object-contain rounded-md"
+                    />
+                  )}
                   <span className="mt-2 text-xs text-blue-600 font-medium">
                     Tap to retake
                   </span>
@@ -1321,12 +1480,12 @@ const CreateDropOff = () => {
                   <MdCameraAlt className="text-4xl text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600 font-medium">
                     {dropoffMode === "simple"
-                      ? "Take Item Photo"
+                      ? "Record Dropoff Video"
                       : "Take Receipt Photo"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     {dropoffMode === "simple"
-                      ? "Photo of the item you're dropping off"
+                      ? "Record a 10-second video of you dropping the item"
                       : "Tap here to open camera"}
                   </p>
                 </>
@@ -1366,10 +1525,48 @@ const CreateDropOff = () => {
                       Camera Loading
                     </p>
                     <p className="text-xs text-gray-600">
-                      Tap the switch icon to start the camera visual.
+                      {dropoffMode === "simple"
+                        ? "Position the bin in view for video recording."
+                        : "Tap the switch icon to start the camera visual."}
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
                       Tap anywhere to continue.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Video Recording Instructions for Simple Mode */}
+              {dropoffMode === "simple" &&
+                !showCameraOverlay &&
+                !isRecording && (
+                  <div className="absolute top-4 left-4 right-4 z-20">
+                    <div className="bg-black/70 text-white p-3 rounded-lg text-center backdrop-blur-sm">
+                      <p className="text-sm font-medium">Ready to Record</p>
+                      <p className="text-xs mt-1">
+                        Tap the red button to start 10-second recording
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {/* Recording Progress Indicator */}
+              {isRecording && (
+                <div className="absolute top-4 left-4 right-4 z-20">
+                  <div className="bg-red-500 text-white p-3 rounded-lg text-center">
+                    <p className="text-sm font-bold">RECORDING</p>
+                    <div className="w-full bg-red-300 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-white h-2 rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${
+                            (recordingDuration / maxRecordingTime) * 100
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-xs mt-1">
+                      {recordingDuration}s / {maxRecordingTime}s
                     </p>
                   </div>
                 </div>
@@ -1397,23 +1594,51 @@ const CreateDropOff = () => {
                 >
                   <MdFlipCameraAndroid size={24} />
                 </motion.button>
-                <button
-                  type="button"
-                  onClick={capturePhoto}
-                  className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600 shadow-lg"
-                  aria-label={
-                    dropoffMode === "simple"
-                      ? "Capture item photo"
-                      : "Capture receipt photo"
-                  }
-                  title={
-                    dropoffMode === "simple"
-                      ? "Capture Item"
-                      : "Capture Receipt"
-                  }
-                >
-                  <MdCameraAlt size={28} />
-                </button>
+
+                {/* Capture/Recording Button - Different for simple vs regular mode */}
+                {dropoffMode === "simple" ? (
+                  // Video recording button for simple dropoffs
+                  <div className="flex flex-col items-center">
+                    {isRecording && (
+                      <div className="mb-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {recordingDuration}s / {maxRecordingTime}s
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={
+                        isRecording ? stopVideoRecording : startVideoRecording
+                      }
+                      className={`p-4 text-white rounded-full ring-2 ring-white shadow-lg ${
+                        isRecording
+                          ? "bg-red-600 hover:bg-red-700 animate-pulse"
+                          : "bg-red-500 hover:bg-red-600"
+                      }`}
+                      aria-label={
+                        isRecording ? "Stop recording" : "Start recording"
+                      }
+                      title={isRecording ? "Stop Recording" : "Start Recording"}
+                    >
+                      {isRecording ? (
+                        <div className="w-7 h-7 bg-white rounded"></div>
+                      ) : (
+                        <div className="w-7 h-7 bg-red-500 rounded-full border-2 border-white"></div>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  // Photo capture button for regular dropoffs
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="p-4 bg-red-500 text-white rounded-full ring-2 ring-white hover:bg-red-600 shadow-lg"
+                    aria-label="Capture receipt photo"
+                    title="Capture Receipt"
+                  >
+                    <MdCameraAlt size={28} />
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={closeCamera}
