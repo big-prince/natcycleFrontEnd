@@ -69,11 +69,6 @@ const Links = [
     path: "/admin/redeemed",
   },
   {
-    title: "Campaigns",
-    icon: <RiMegaphoneFill size={20} />,
-    path: "/admin/campaign",
-  },
-  {
     title: "Materials", // New Link
     icon: <FaShapes size={19} />, // New Icon
     path: "/admin/materials", // New Path
@@ -119,6 +114,7 @@ const SideBar = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const [isThingsMatchOpen, setIsThingsMatchOpen] = useState(false); // State for ThingsMatch dropdown
+  const [isCampaignOpen, setIsCampaignOpen] = useState(false); // State for Campaign dropdown
 
   // Redirect to login if user is not authenticated
   // This should ideally be handled by a protected route component wrapping admin pages
@@ -167,6 +163,64 @@ const SideBar = () => {
           ) : null
         )}
 
+        {/* Campaigns Section */}
+        {user && (
+          <div className="pt-2">
+            <button
+              onClick={() => setIsCampaignOpen(!isCampaignOpen)}
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-purple-400 hover:bg-slate-800 transition-colors duration-150 group"
+            >
+              <div className="flex items-center">
+                <span className="mr-3 text-purple-400 group-hover:scale-110 transition-transform">
+                  <RiMegaphoneFill size={20} />
+                </span>
+                <span>Campaigns</span>
+              </div>
+              {isCampaignOpen ? (
+                <FiChevronDown size={18} className="text-slate-400" />
+              ) : (
+                <FiChevronRight size={18} className="text-slate-400" />
+              )}
+            </button>
+            {isCampaignOpen && (
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-purple-800 ml-3">
+                <NavLink
+                  to="/admin/campaign"
+                  className={({ isActive }) =>
+                    `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
+                    ${
+                      isActive
+                        ? "bg-purple-700 text-white"
+                        : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                    }`
+                  }
+                >
+                  <span className="mr-2.5 group-hover:scale-110 transition-transform">
+                    <RiMegaphoneFill size={18} />
+                  </span>
+                  <span>All Campaigns</span>
+                </NavLink>
+                <NavLink
+                  to="/admin/campaign/dropoffs"
+                  className={({ isActive }) =>
+                    `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
+                    ${
+                      isActive
+                        ? "bg-purple-700 text-white"
+                        : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                    }`
+                  }
+                >
+                  <span className="mr-2.5 group-hover:scale-110 transition-transform">
+                    <FaBox size={18} />
+                  </span>
+                  <span>Campaign Drop-offs</span>
+                </NavLink>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ThingsMatch Section */}
         {user && (
           <div className="pt-2">
@@ -187,7 +241,7 @@ const SideBar = () => {
               )}
             </button>
             {isThingsMatchOpen && (
-              <div className="mt-1 pl-4 space-y-1 border-l-2 border-slate-700 ml-3">
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-amber-700 ml-3">
                 {thingsMatchSubLinks.map((subLink) => (
                   <NavLink
                     key={subLink.title}
@@ -196,7 +250,7 @@ const SideBar = () => {
                       `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
                       ${
                         isActive
-                          ? "bg-sky-500 text-white"
+                          ? "bg-amber-600 text-white"
                           : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
                       }`
                     }

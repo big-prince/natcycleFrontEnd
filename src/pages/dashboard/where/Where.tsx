@@ -3,8 +3,13 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import SimpleDropoffApi from "../../../api/simpleDropoffApi";
+import CampaignApi from "../../../api/campaignApi";
 import { DropoffPoint } from "../dropoff/CreateDropOff";
-import { LocationType, ISimpleDropoffLocation } from "../../../types";
+import {
+  LocationType,
+  ISimpleDropoffLocation,
+  ICampaign,
+} from "../../../types";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import {
   FaPlus,
@@ -13,6 +18,7 @@ import {
   FaWineBottle,
   FaTrashAlt,
   FaLocationArrow,
+  FaBullhorn,
 } from "react-icons/fa";
 import { MdClose, MdCheckroom, MdRecycling } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
@@ -107,6 +113,13 @@ const Where = () => {
   const [selectedSimpleLocation, setSelectedSimpleLocation] =
     useState<ISimpleDropoffLocation | null>(null);
 
+  // Campaign states
+  const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(
+    null
+  );
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+
   const mapRef = useRef<any>(null);
   const googleMapsApiRef = useRef<any>(null);
 
@@ -193,202 +206,273 @@ const Where = () => {
   );
 
   // Filter locations by material type and fetch from API
-  const fetchLocationsByMaterialType = async (materialType?: string) => {
-    setLoading(true);
-    setSelectedLocation(null);
+  const fetchLocationsByMaterialType = useCallback(
+    async (materialType?: string) => {
+      setLoading(true);
+      setSelectedLocation(null);
 
-    try {
-      let userCoords = userLocation;
-      if (!userCoords) {
-        try {
-          userCoords = await getUserLocation();
-        } catch (error) {
-          userCoords = { latitude: 9.0765, longitude: 7.3986 }; // Nigeria default
+      try {
+        let userCoords = userLocation;
+        if (!userCoords) {
+          try {
+            userCoords = await getUserLocation();
+          } catch (error) {
+            userCoords = { latitude: 9.0765, longitude: 7.3986 }; // Nigeria default
+          }
         }
-      }
 
-      const data = {
-        latitude: userCoords.latitude,
-        longitude: userCoords.longitude,
-        distance: materialType ? 500000 : 100000, // 500km for filtered, 100km for all
-        itemType: materialType || "",
-      };
+        const data = {
+          latitude: userCoords.latitude,
+          longitude: userCoords.longitude,
+          distance: materialType ? 500000 : 100000, // 500km for filtered, 100km for all
+          itemType: materialType || "",
+        };
 
-      console.log(
-        `Fetching locations${materialType ? ` for ${materialType}` : " (all)"}`,
-        data
-      );
-      const response = await dropOffLocationApi.getNearestDropOffLocations(
-        data
-      );
-      const locationsData = response.data.data;
-
-      // Filter by actually having coordinates to display on map
-      const validLocations = locationsData.filter(
-        (loc: DropoffPoint) =>
-          loc.location &&
-          loc.location.coordinates &&
-          loc.location.coordinates.length === 2
-      );
-
-      console.log(
-        `Found ${validLocations.length} valid locations${
-          materialType ? ` for ${materialType}` : ""
-        }`
-      );
-
-      // For debugging - log what we found
-      if (materialType) {
         console.log(
-          "Locations for material type:",
-          materialType,
-          validLocations
+          `Fetching locations${
+            materialType ? ` for ${materialType}` : " (all)"
+          }`,
+          data
         );
-      }
+        const response = await dropOffLocationApi.getNearestDropOffLocations(
+          data
+        );
+        const locationsData = response.data.data;
 
-      setLocations(validLocations);
+        // Filter by actually having coordinates to display on map
+        const validLocations = locationsData.filter(
+          (loc: DropoffPoint) =>
+            loc.location &&
+            loc.location.coordinates &&
+            loc.location.coordinates.length === 2
+        );
 
-      // Calculate distance and set "too far" flag for locations
-      const MAX_DISTANCE_KM = 500;
-      const newMarkers: LocationMarker[] = validLocations.map(
-        (location: DropoffPoint) => {
-          // Calculate distance
-          const distanceKm = calculateHaversineDistance(
-            userCoords!.latitude,
-            userCoords!.longitude,
-            location.location.coordinates[1],
-            location.location.coordinates[0]
+        console.log(
+          `Found ${validLocations.length} valid locations${
+            materialType ? ` for ${materialType}` : ""
+          }`
+        );
+
+        // For debugging - log what we found
+        if (materialType) {
+          console.log(
+            "Locations for material type:",
+            materialType,
+            validLocations
           );
-
-          const isTooFar = distanceKm > MAX_DISTANCE_KM;
-
-          return {
-            key: location.googleMapId || location._id,
-            location: {
-              lat: location.location.coordinates[1],
-              lng: location.location.coordinates[0],
-            },
-            materialType: (
-              location.primaryMaterialType ||
-              location.itemType ||
-              "default"
-            ).toLowerCase(),
-            locationType: (location.locationType || "default").toLowerCase(),
-            title: location.name,
-            isTooFar: isTooFar,
-            distance: distanceKm,
-          };
         }
-      );
 
-      setMarkers(newMarkers);
+        setLocations(validLocations);
 
-      // Auto-fit map bounds to show all markers if material type is selected
-      if (materialType && newMarkers.length > 0) {
-        setTimeout(() => {
-          // Define what's considered "nearby" - roughly same state/vicinity (50km radius)
-          const NEARBY_THRESHOLD_KM = 50;
-          const nearbyMarkers = newMarkers.filter(
-            (marker) =>
-              marker.distance !== undefined &&
-              marker.distance <= NEARBY_THRESHOLD_KM &&
-              !marker.isTooFar
-          );
-
-          // Find closest location regardless of distance
-          const validMarkers = newMarkers.filter((marker) => !marker.isTooFar);
-
-          if (validMarkers.length > 0) {
-            // Sort all valid markers by distance
-            const sortedMarkers = [...validMarkers].sort(
-              (a, b) => (a.distance || Infinity) - (b.distance || Infinity)
+        // Calculate distance and set "too far" flag for locations
+        const MAX_DISTANCE_KM = 500;
+        const newMarkers: LocationMarker[] = validLocations.map(
+          (location: DropoffPoint) => {
+            // Calculate distance
+            const distanceKm = calculateHaversineDistance(
+              userCoords!.latitude,
+              userCoords!.longitude,
+              location.location.coordinates[1],
+              location.location.coordinates[0]
             );
 
-            // Get the closest marker
-            const closestMarker = sortedMarkers[0];
-            console.log("Closest location:", closestMarker);
+            const isTooFar = distanceKm > MAX_DISTANCE_KM;
 
-            if (nearbyMarkers.length > 0) {
-              // There are nearby locations - show them all and highlight closest
-              console.log(
-                `Found ${nearbyMarkers.length} nearby ${materialType} recycling points`
+            return {
+              key: location.googleMapId || location._id,
+              location: {
+                lat: location.location.coordinates[1],
+                lng: location.location.coordinates[0],
+              },
+              materialType: (
+                location.primaryMaterialType ||
+                location.itemType ||
+                "default"
+              ).toLowerCase(),
+              locationType: (location.locationType || "default").toLowerCase(),
+              title: location.name,
+              isTooFar: isTooFar,
+              distance: distanceKm,
+            };
+          }
+        );
+
+        setMarkers(newMarkers);
+
+        // Auto-fit map bounds to show all markers if material type is selected
+        if (materialType && newMarkers.length > 0) {
+          setTimeout(() => {
+            // Define what's considered "nearby" - roughly same state/vicinity (50km radius)
+            const NEARBY_THRESHOLD_KM = 50;
+            const nearbyMarkers = newMarkers.filter(
+              (marker) =>
+                marker.distance !== undefined &&
+                marker.distance <= NEARBY_THRESHOLD_KM &&
+                !marker.isTooFar
+            );
+
+            // Find closest location regardless of distance
+            const validMarkers = newMarkers.filter(
+              (marker) => !marker.isTooFar
+            );
+
+            if (validMarkers.length > 0) {
+              // Sort all valid markers by distance
+              const sortedMarkers = [...validMarkers].sort(
+                (a, b) => (a.distance || Infinity) - (b.distance || Infinity)
               );
 
-              // Fit map to show all nearby markers
-              fitMapToMarkers(nearbyMarkers);
+              // Get the closest marker
+              const closestMarker = sortedMarkers[0];
+              console.log("Closest location:", closestMarker);
 
-              // Show toast notification
-              if (nearbyMarkers.length === 1) {
-                toast.success(
-                  `Found 1 ${materialType} recycling point near you`
+              if (nearbyMarkers.length > 0) {
+                // There are nearby locations - show them all and highlight closest
+                console.log(
+                  `Found ${nearbyMarkers.length} nearby ${materialType} recycling points`
                 );
+
+                // Fit map to show all nearby markers
+                // Auto-fit map to markers
+                const bounds = new window.google.maps.LatLngBounds();
+                nearbyMarkers.forEach((marker) =>
+                  bounds.extend(marker.location)
+                );
+                if (userLocation) {
+                  bounds.extend({
+                    lat: userLocation.latitude,
+                    lng: userLocation.longitude,
+                  });
+                }
+                mapRef.current?.fitBounds(bounds);
+
+                // Show toast notification
+                if (nearbyMarkers.length === 1) {
+                  toast.success(
+                    `Found 1 ${materialType} recycling point near you`
+                  );
+                } else {
+                  toast.success(
+                    `Found ${nearbyMarkers.length} ${materialType} recycling points near you`
+                  );
+                }
+
+                // Highlight the closest one with a small animation/bounce
+                // We'll implement this by saving the closest marker ID to state
+                setHighlightedMarkerId(closestMarker.key);
+
+                // Clear the highlight after 3 seconds
+                setTimeout(() => setHighlightedMarkerId(null), 3000);
               } else {
-                toast.success(
-                  `Found ${nearbyMarkers.length} ${materialType} recycling points near you`
+                // No nearby locations - show all valid locations with toast
+                console.log("No nearby locations found, showing all in region");
+
+                // Save current state before changing it
+                if (
+                  mapRef.current &&
+                  mapRef.current.getCenter &&
+                  mapRef.current.getZoom
+                ) {
+                  setPreviousMapState({
+                    center: mapRef.current.getCenter().toJSON(),
+                    zoom: mapRef.current.getZoom(),
+                  });
+                }
+
+                // Fit map to show all valid markers
+                // Auto-fit map to markers
+                const bounds = new window.google.maps.LatLngBounds();
+                validMarkers.forEach((marker) =>
+                  bounds.extend(marker.location)
+                );
+                if (userLocation) {
+                  bounds.extend({
+                    lat: userLocation.latitude,
+                    lng: userLocation.longitude,
+                  });
+                }
+                mapRef.current?.fitBounds(bounds);
+
+                // Show toast notification
+                toast.info(
+                  `No ${materialType} recycling points found in your vicinity. Showing all locations in your region.`,
+                  { autoClose: 5000 }
                 );
               }
-
-              // Highlight the closest one with a small animation/bounce
-              // We'll implement this by saving the closest marker ID to state
-              setHighlightedMarkerId(closestMarker.key);
-
-              // Clear the highlight after 3 seconds
-              setTimeout(() => setHighlightedMarkerId(null), 3000);
             } else {
-              // No nearby locations - show all valid locations with toast
-              console.log("No nearby locations found, showing all in region");
-
-              // Save current state before changing it
-              if (
-                mapRef.current &&
-                mapRef.current.getCenter &&
-                mapRef.current.getZoom
-              ) {
-                setPreviousMapState({
-                  center: mapRef.current.getCenter().toJSON(),
-                  zoom: mapRef.current.getZoom(),
-                });
-              }
-
-              // Fit map to show all valid markers
-              fitMapToMarkers(validMarkers);
-
-              // Show toast notification
+              // If no valid markers (all too far), show a message
               toast.info(
-                `No ${materialType} recycling points found in your vicinity. Showing all locations in your region.`,
+                `No ${materialType} recycling points available in your region.`,
                 { autoClose: 5000 }
               );
             }
-          } else {
-            // If no valid markers (all too far), show a message
-            toast.info(
-              `No ${materialType} recycling points available in your region.`,
-              { autoClose: 5000 }
-            );
-          }
-        }, 500);
-      } else {
-        // Center map on user location if showing all
-        if (mapRef.current && userLocation) {
-          const center = {
-            lat: userLocation.latitude,
-            lng: userLocation.longitude,
-          };
-          if (mapRef.current.panTo) {
-            mapRef.current.panTo(center);
-          }
-          if (mapRef.current.setZoom) {
-            mapRef.current.setZoom(12); // Set appropriate zoom level for showing area around user
+          }, 500);
+        } else {
+          // Center map on user location if showing all
+          if (mapRef.current && userLocation) {
+            const center = {
+              lat: userLocation.latitude,
+              lng: userLocation.longitude,
+            };
+            if (mapRef.current.panTo) {
+              mapRef.current.panTo(center);
+            }
+            if (mapRef.current.setZoom) {
+              mapRef.current.setZoom(12); // Set appropriate zoom level for showing area around user
+            }
           }
         }
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+        toast.error("Error loading recycling locations");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching locations:", error);
-      toast.error("Error loading recycling locations");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      // Fetch campaigns and simple locations in separate useEffects
+    },
+    [userLocation]
+  );
+
+  // Fetch campaigns near user location
+  const fetchCampaigns = useCallback(
+    async (materialType?: string) => {
+      if (!userLocation) return;
+
+      setLoadingCampaigns(true);
+      try {
+        const response = await CampaignApi.getNearbyCampaigns(
+          userLocation.latitude,
+          userLocation.longitude,
+          50000 // 50km radius
+        );
+
+        let campaignsData = response.data.data || [];
+
+        // Filter by material type if specified
+        if (materialType) {
+          campaignsData = campaignsData.filter(
+            (campaign: ICampaign) =>
+              !campaign.itemType ||
+              campaign.itemType.toLowerCase() === materialType.toLowerCase()
+          );
+        }
+
+        // Only show active campaigns
+        campaignsData = campaignsData.filter(
+          (campaign: ICampaign) => campaign.status === "active"
+        );
+
+        setCampaigns(campaignsData);
+      } catch (error) {
+        console.error("Failed to fetch campaigns:", error);
+        toast.error("Could not load campaigns");
+      } finally {
+        setLoadingCampaigns(false);
+      }
+    },
+    [userLocation]
+  );
 
   // Helper function for distance calculation
   function calculateHaversineDistance(
@@ -427,15 +511,21 @@ const Where = () => {
         // Note: Simple locations are not filtered by material type as per requirements
         fetchSimpleLocations();
       }
+
+      // Fetch campaigns if needed
+      if (locationType === "all") {
+        fetchCampaigns(selectedMaterialType || undefined);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    selectedMaterialType,
     loadingMaterials,
     materialTypes.length,
-    locationType,
     userLocation,
+    selectedMaterialType,
+    locationType,
     fetchSimpleLocations,
+    fetchCampaigns,
+    fetchLocationsByMaterialType,
   ]);
 
   // Handle material type selection
@@ -495,8 +585,8 @@ const Where = () => {
   };
 
   // Handle marker click for simple locations
-  const handleSimpleMarkerClick = (key: string) => {
-    const location = simpleLocations.find((loc) => loc.id === key);
+  const handleSimpleMarkerClick = (id: string) => {
+    const location = simpleLocations.find((loc) => loc.id === id);
     if (location) {
       console.log("Selected simple location:", location);
 
@@ -533,10 +623,52 @@ const Where = () => {
     }
   };
 
+  // Handle marker click for campaigns
+  const handleCampaignMarkerClick = (campaignId: string) => {
+    const campaign = campaigns.find(
+      (c) => c._id === campaignId || c.id === campaignId
+    );
+    if (campaign) {
+      console.log("Selected campaign:", campaign);
+
+      // Save current map state before changing it
+      if (
+        mapRef.current &&
+        mapRef.current.getCenter &&
+        mapRef.current.getZoom
+      ) {
+        setPreviousMapState({
+          center: mapRef.current.getCenter().toJSON(),
+          zoom: mapRef.current.getZoom(),
+        });
+      }
+
+      setSelectedCampaign(campaign);
+      setSelectedLocation(null);
+      setSelectedSimpleLocation(null);
+
+      // Center the map on the selected campaign
+      if (mapRef.current && campaign.location?.coordinates) {
+        const center = {
+          lat: campaign.location.coordinates[1],
+          lng: campaign.location.coordinates[0],
+        };
+
+        if (mapRef.current.panTo) {
+          mapRef.current.panTo(center);
+        }
+        if (mapRef.current.setZoom) {
+          mapRef.current.setZoom(16);
+        }
+      }
+    }
+  };
+
   // Close location details and restore previous map view
   const closeLocationDetails = () => {
     setSelectedLocation(null);
     setSelectedSimpleLocation(null);
+    setSelectedCampaign(null);
 
     // Return to previous map view if available
     if (previousMapState && mapRef.current) {
@@ -556,43 +688,6 @@ const Where = () => {
     // Wait for Google Maps API to be completely loaded
     if (window.google && window.google.maps) {
       googleMapsApiRef.current = window.google.maps;
-    }
-  };
-
-  // Fit map to show all markers
-  const fitMapToMarkers = (markersToFit: LocationMarker[]) => {
-    if (
-      !mapRef.current ||
-      markersToFit.length === 0 ||
-      !googleMapsApiRef.current
-    )
-      return;
-
-    try {
-      const bounds = new googleMapsApiRef.current.LatLngBounds();
-
-      markersToFit.forEach((marker) => {
-        bounds.extend(marker.location);
-      });
-
-      // Also include user location in bounds if available
-      if (userLocation) {
-        bounds.extend({
-          lat: userLocation.latitude,
-          lng: userLocation.longitude,
-        });
-      }
-
-      mapRef.current.fitBounds(bounds, {
-        padding: {
-          top: 80, // Padding for the filter UI at the top
-          bottom: selectedLocation ? 200 : 80, // Extra padding if location details are shown
-          left: 40,
-          right: 40,
-        },
-      });
-    } catch (error) {
-      console.error("Error fitting map to markers:", error);
     }
   };
 
@@ -715,25 +810,53 @@ const Where = () => {
     );
   };
 
-  // User location marker component
-  const UserLocationMarker = ({
+  // Campaign marker component with special event styling
+  const CampaignMarker = ({
     position,
     onClick,
     title,
+    isHighlighted,
   }: {
     position: google.maps.LatLngLiteral;
     onClick: () => void;
     title: string;
+    campaign: ICampaign; // Required for typing but not used directly
+    markerId: string;
+    isHighlighted?: boolean;
   }) => {
     return (
       <AdvancedMarker position={position} onClick={onClick} title={title}>
-        <div className="cursor-pointer transform transition-all duration-300 hover:scale-110">
+        <div
+          className={`cursor-pointer transform transition-all duration-300 ${
+            isHighlighted ? "scale-125 animate-bounce z-10" : "hover:scale-110"
+          }`}
+        >
           <div className="relative flex items-center justify-center">
-            {/* Red map pin icon */}
-            <FaMapMarkerAlt className="w-8 h-8 text-red-600 drop-shadow-lg" />
-            {/* Pulsing ring animation */}
-            <div className="absolute w-12 h-12 bg-red-600 bg-opacity-20 rounded-full animate-ping"></div>
-            <div className="absolute w-10 h-10 bg-red-600 bg-opacity-30 rounded-full animate-pulse"></div>
+            {/* Campaign marker with event styling */}
+            <div
+              className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center ${
+                isHighlighted
+                  ? "bg-purple-50 border-2 border-purple-400 ring-4 ring-purple-200 ring-opacity-50"
+                  : "bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-purple-400"
+              }`}
+            >
+              {/* Campaign icon */}
+              <FaBullhorn className="w-6 h-6 text-purple-600" />
+            </div>
+
+            {/* Event badge indicator */}
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-bold">!</span>
+            </div>
+
+            {/* Bottom pointer with purple styling */}
+            <div
+              className={`absolute top-8 w-4 h-4 transform rotate-45 translate-y-1 shadow-md ${
+                isHighlighted
+                  ? "bg-purple-50 border-r border-b border-purple-400"
+                  : "bg-gradient-to-br from-purple-100 to-pink-100 border-r border-b border-purple-400"
+              }`}
+            ></div>
           </div>
         </div>
       </AdvancedMarker>
@@ -1713,6 +1836,22 @@ const Where = () => {
                   />
                 ))}
 
+              {/* Campaign markers */}
+              {campaigns.map((campaign) => (
+                <CampaignMarker
+                  key={`campaign-${campaign._id}`}
+                  position={{
+                    lat: campaign.location.coordinates[1],
+                    lng: campaign.location.coordinates[0],
+                  }}
+                  onClick={() => handleCampaignMarkerClick(campaign._id)}
+                  title={campaign.name}
+                  campaign={campaign}
+                  markerId={campaign._id}
+                  isHighlighted={selectedCampaign?._id === campaign._id}
+                />
+              ))}
+
               {/* User location marker */}
               {userLocation && (
                 <UserLocationMarker
@@ -1779,6 +1918,16 @@ const Where = () => {
                 Quick Drop
               </button>
               <button
+                onClick={() => setLocationType("campaign")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  locationType === "campaign"
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                Campaigns
+              </button>
+              <button
                 onClick={() => setLocationType("all")}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                   locationType === "all"
@@ -1791,13 +1940,14 @@ const Where = () => {
             </div>
           </div>
 
+          {/* Material Type Filters */}
           {loadingMaterials ? (
-            <div className="flex space-x-2 overflow-x-auto py-2">
+            <div className="flex space-x-2 overflow-x-auto py-1 scrollbar-hide">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
                   className="h-10 w-24 bg-gray-200 rounded-full animate-pulse"
-                ></div>
+                />
               ))}
             </div>
           ) : (
@@ -1826,7 +1976,9 @@ const Where = () => {
           )}
 
           <p className="mt-4 text-sm text-green-700 text-center font-medium">
-            Click on a marker to see more details
+            {loadingCampaigns
+              ? "Loading campaigns..."
+              : "Click on a marker to see more details"}
           </p>
         </div>
       </div>
@@ -2068,3 +2220,28 @@ const Where = () => {
 };
 
 export default Where;
+
+// User location marker component
+const UserLocationMarker = ({
+  position,
+  onClick,
+  title,
+}: {
+  position: google.maps.LatLngLiteral;
+  onClick: () => void;
+  title: string;
+}) => {
+  return (
+    <AdvancedMarker position={position} onClick={onClick} title={title}>
+      <div className="cursor-pointer transform transition-all duration-300 hover:scale-110">
+        <div className="relative flex items-center justify-center">
+          {/* Red map pin icon */}
+          <FaMapMarkerAlt className="w-8 h-8 text-red-600 drop-shadow-lg" />
+          {/* Pulsing ring animation */}
+          <div className="absolute w-12 h-12 bg-red-600 bg-opacity-20 rounded-full animate-ping"></div>
+          <div className="absolute w-10 h-10 bg-red-600 bg-opacity-30 rounded-full animate-pulse"></div>
+        </div>
+      </div>
+    </AdvancedMarker>
+  );
+};

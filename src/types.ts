@@ -136,9 +136,9 @@ export type IDropOff = {
   updatedAt: string;
 };
 
-export type LocationType = "regular" | "simple" | "all";
+export type LocationType = "regular" | "simple" | "campaign" | "all";
 
-export type DropoffMode = "regular" | "simple";
+export type DropoffMode = "regular" | "simple" | "campaign";
 
 export interface ISimpleDropoffLocation {
   id: string;
@@ -187,4 +187,75 @@ export interface CombinedLocationData {
   regular: any[]; // Your existing location type
   simple: ISimpleDropoffLocation[];
   all: (any | ISimpleDropoffLocation)[];
+}
+
+// Campaign interfaces
+export interface ICampaignLocation {
+  type: string;
+  coordinates: number[];
+}
+
+export interface ICampaignImage {
+  public_id: string;
+  url: string;
+}
+
+export interface ICampaignDropOffLocation {
+  id: string;
+  name: string;
+  address: string;
+}
+
+export interface ICampaign {
+  _id: string;
+  id: string;
+  name: string;
+  description: string;
+  location: ICampaignLocation;
+  address?: string;
+  organizationName?: string;
+  startDate: string;
+  endDate?: string;
+  status: "active" | "completed" | "cancelled";
+  itemType?: string;
+  goal?: number;
+  progress?: number;
+  image?: ICampaignImage;
+  dropOffLocation?: ICampaignDropOffLocation;
+  isHidden: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Legacy support
+  material?: string;
+}
+
+export interface ICampaignUser {
+  email: string;
+  firstName: string;
+  lastName: string;
+  profilePicture: {
+    public_id: string;
+    url: string;
+  };
+  _id: string;
+  contributions: number;
+}
+
+export interface ICampaignStats {
+  totalCampaigns: number;
+  activeCampaigns: number;
+  completedCampaigns: number;
+  totalParticipants: number;
+  totalDropOffs: number;
+}
+
+export interface ICampaignDropOffRequest {
+  itemType: string;
+  dropOffQuantity: Array<{
+    materialType: string;
+    units: number;
+  }>;
+  latitude: number;
+  longitude: number;
+  description?: string;
 }

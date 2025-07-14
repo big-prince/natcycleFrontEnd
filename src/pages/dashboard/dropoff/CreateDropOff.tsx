@@ -4,12 +4,13 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import SimpleDropoffApi from "../../../api/simpleDropoffApi";
+import CampaignApi from "../../../api/campaignApi";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { toast } from "react-toastify";
 import DropOffApi from "../../../api/dropOffApi";
 import MaterialApi from "../../../api/materialApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { DropoffMode, ISimpleDropoffLocation } from "../../../types";
+import { DropoffMode, ISimpleDropoffLocation, ICampaign } from "../../../types";
 import { motion } from "framer-motion";
 import {
   MdLocationOn,
@@ -370,6 +371,70 @@ const CreateDropOff = () => {
       } finally {
         setLoading(false);
       }
+    } else if ((dropoffMode as string) === "campaign") {
+      // Campaign dropoff logic
+      if (!selectedCampaign) {
+        return toast.error("Please select a campaign.");
+      }
+
+      // Check if we have at least one item with quantity
+      const dropOffQuantityArray = Object.entries(detailedQuantities)
+        .map(([materialType, quantityString]) => {
+          const units = parseInt(quantityString, 10);
+          if (!isNaN(units) && units > 0) {
+            return { materialType, units };
+          }
+          return null;
+        })
+        .filter((item) => item !== null) as {
+        materialType: string;
+        units: number;
+      }[];
+
+      if (dropOffQuantityArray.length === 0) {
+        return toast.error(
+          "Please enter a valid quantity for at least one item type."
+        );
+      }
+
+      setLoading(true);
+      const formData = new FormData();
+      formData.append(
+        "itemType",
+        selectedCampaign.itemType || selectedCampaign.material || "plastic"
+      );
+      formData.append("dropOffQuantity", JSON.stringify(dropOffQuantityArray));
+      formData.append("description", dropOffForm.description);
+      formData.append("file", file as Blob);
+
+      console.log("Submitting Campaign Drop Off Data:");
+      formData.forEach((value, key) => {
+        if (key === "file") {
+          console.log(`${key}: [File object]`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      });
+
+      try {
+        // Use the campaign-specific API endpoint
+        await CampaignApi.createCampaignDropOff(
+          selectedCampaign._id || selectedCampaign.id,
+          formData
+        );
+        toast.success("Campaign drop off submitted successfully");
+        sessionStorage.removeItem("pendingDropoff");
+        sessionStorage.removeItem("pendingDropoffFile");
+        navigate("/home");
+      } catch (error: any) {
+        console.log(error);
+        toast.error(
+          "Error submitting campaign drop off: " +
+            (error.response?.data?.message || error.message)
+        );
+      } finally {
+        setLoading(false);
+      }
     } else {
       // Regular dropoff logic
       if (!selectedLocationId)
@@ -434,6 +499,9 @@ const CreateDropOff = () => {
 
   const [locations, setLocations] = useState<DropoffPoint[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(
+    null
+  );
 
   const getUserLocation = (): Promise<{
     latitude: number;
@@ -979,6 +1047,31 @@ const CreateDropOff = () => {
   }, [localUser, setSearchParams]);
 
   const currentSubItems = useMemo(() => {
+    // For campaign mode
+    if ((dropoffMode as string) === "campaign" && selectedCampaign) {
+      // Use campaign itemType or material as the primary type
+      const campaignItemType =
+        selectedCampaign.itemType || selectedCampaign.material || "plastic";
+
+      // If we don't have specific subtypes for the campaign, create a default one
+      return [
+        {
+          id: campaignItemType.toLowerCase(),
+          name:
+            campaignItemType.charAt(0).toUpperCase() +
+            campaignItemType.slice(1),
+          icon: getIconForSubtype(
+            campaignItemType.toLowerCase(),
+            campaignItemType
+          ),
+          unit: campaignItemType.toLowerCase().includes("bottle")
+            ? "bottles"
+            : "items",
+        },
+      ];
+    }
+
+    // For regular mode
     if (!selectedLocationId) return [];
     const selectedLocation = locations.find(
       (loc) => loc._id === selectedLocationId
@@ -999,21 +1092,61 @@ const CreateDropOff = () => {
       }));
     }
     return [];
-  }, [selectedLocationId, locations, typeFromQuery]);
+  }, [
+    selectedLocationId,
+    locations,
+    typeFromQuery,
+    dropoffMode,
+    selectedCampaign,
+  ]);
 
   // Calculate if any valid quantity has been entered for enabling submit button
   const hasValidQuantities = useMemo(() => {
     if ((dropoffMode as string) === "simple") {
       const itemCount = parseInt(simpleDropoffForm.itemCount);
       return selectedSimpleLocationId && !isNaN(itemCount) && itemCount > 0;
+    } else if ((dropoffMode as string) === "campaign") {
+      // For campaign mode, check if we have valid quantities and a selected campaign
+      return (
+        selectedCampaign &&
+        Object.values(detailedQuantities).some((q) => parseInt(q, 10) > 0)
+      );
+    } else {
+      // For regular mode
+      return (
+        selectedLocationId &&
+        Object.values(detailedQuantities).some((q) => parseInt(q, 10) > 0)
+      );
     }
-    return Object.values(detailedQuantities).some((q) => parseInt(q, 10) > 0);
   }, [
     detailedQuantities,
     dropoffMode,
     selectedSimpleLocationId,
     simpleDropoffForm.itemCount,
+    selectedCampaign,
+    selectedLocationId,
   ]);
+
+  // Fetch campaign details when campaign ID is provided
+  useEffect(() => {
+    const fetchCampaignDetails = async () => {
+      if (!campaignIdFromQuery) return;
+
+      try {
+        const response = await CampaignApi.getCampaign(campaignIdFromQuery);
+        if (response.data && response.data.data) {
+          setSelectedCampaign(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching campaign details:", error);
+        toast.error("Could not load campaign information");
+      }
+    };
+
+    if (dropoffMode === "campaign" && campaignIdFromQuery) {
+      fetchCampaignDetails();
+    }
+  }, [campaignIdFromQuery, dropoffMode]);
 
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
@@ -1083,10 +1216,35 @@ const CreateDropOff = () => {
           >
             Quick Drop
           </button>
+          <button
+            onClick={() => {
+              setDropoffMode("campaign");
+              // Update URL params
+              const paramsToSet: {
+                mode: string;
+                campaignId?: string;
+                campaignName?: string;
+              } = { mode: "campaign" };
+              if (campaignIdFromQuery)
+                paramsToSet.campaignId = campaignIdFromQuery;
+              if (campaignNameFromQuery)
+                paramsToSet.campaignName = campaignNameFromQuery;
+              setSearchParams(paramsToSet);
+            }}
+            className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+              dropoffMode === "campaign"
+                ? "bg-purple-600 text-white shadow-sm"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            Campaign
+          </button>
         </div>
         <p className="text-xs text-gray-500 text-center mt-1.5">
           {dropoffMode === "simple"
             ? "Single items with photo verification"
+            : dropoffMode === "campaign"
+            ? "Participate in recycling campaigns for bonus rewards"
             : "Bulk items at recycling centers"}
         </p>
       </div>
@@ -1125,6 +1283,96 @@ const CreateDropOff = () => {
         </div>
       )}
       <form onSubmit={handleDropOffFormSubmit}>
+        {/* Campaign Details Section - Only visible in campaign mode */}
+        {(dropoffMode as string) === "campaign" && selectedCampaign && (
+          <div className="mb-6 p-4 bg-purple-100 border border-purple-300 rounded-lg">
+            <h2 className="text-lg font-semibold text-purple-800 mb-2">
+              {selectedCampaign.name}
+            </h2>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="text-xs font-medium px-2 py-1 bg-purple-200 text-purple-800 rounded">
+                {selectedCampaign.status}
+              </div>
+              {selectedCampaign.organizationName && (
+                <div className="text-xs text-gray-600">
+                  By {selectedCampaign.organizationName}
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-gray-700 mb-3">
+              {selectedCampaign.description}
+            </p>
+
+            {selectedCampaign.image && selectedCampaign.image.url && (
+              <div className="mb-3">
+                <img
+                  src={selectedCampaign.image.url}
+                  alt={selectedCampaign.name}
+                  className="w-full h-40 object-cover rounded"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+              <div className="bg-white p-2 rounded border border-purple-200">
+                <div className="text-gray-500 text-xs">Start Date</div>
+                <div className="font-medium">
+                  {new Date(selectedCampaign.startDate).toLocaleDateString()}
+                </div>
+              </div>
+              {selectedCampaign.endDate && (
+                <div className="bg-white p-2 rounded border border-purple-200">
+                  <div className="text-gray-500 text-xs">End Date</div>
+                  <div className="font-medium">
+                    {new Date(selectedCampaign.endDate).toLocaleDateString()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {selectedCampaign.goal &&
+              selectedCampaign.progress !== undefined && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Progress</span>
+                    <span>
+                      {selectedCampaign.progress} / {selectedCampaign.goal}{" "}
+                      items
+                    </span>
+                  </div>
+                  <div className="w-full bg-purple-200 rounded-full h-2.5">
+                    <div
+                      className="bg-purple-600 h-2.5 rounded-full"
+                      style={{
+                        width: `${Math.min(
+                          (selectedCampaign.progress / selectedCampaign.goal) *
+                            100,
+                          100
+                        )}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+            {selectedCampaign.itemType || selectedCampaign.material ? (
+              <div className="text-sm mb-1">
+                <span className="text-gray-500">Material: </span>
+                <span className="font-medium">
+                  {selectedCampaign.itemType || selectedCampaign.material}
+                </span>
+              </div>
+            ) : null}
+
+            {selectedCampaign.address && (
+              <div className="text-sm">
+                <span className="text-gray-500">Location: </span>
+                <span className="font-medium">{selectedCampaign.address}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Drop-Off Locations Section */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
@@ -1314,7 +1562,7 @@ const CreateDropOff = () => {
                   return (
                     <div
                       key={item.id}
-                      className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300`}
+                      className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-opacity duration-300"
                     >
                       <div className="w-12 h-12 flex items-center justify-center rounded bg-white p-1 shadow-sm">
                         {item.icon}
@@ -1339,6 +1587,48 @@ const CreateDropOff = () => {
             </div>
           )}
 
+        {/* Campaign Quantity Input Section */}
+        {(dropoffMode as string) === "campaign" &&
+          selectedCampaign &&
+          currentSubItems.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-md font-semibold text-slate-700 mb-3">
+                How many items are you contributing to this campaign?
+                <p className="text-xs text-gray-500 font-normal">
+                  Enter quantities for items you dropped off.
+                </p>
+              </h2>
+              <div className="space-y-4 bg-purple-50 p-3 rounded-lg">
+                {currentSubItems.map((item) => {
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center space-x-3 p-3 bg-white rounded-lg transition-opacity duration-300 border border-purple-200"
+                    >
+                      <div className="w-12 h-12 flex items-center justify-center rounded bg-purple-100 p-1 shadow-sm">
+                        {item.icon}
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-sm text-slate-600">{item.name}</p>
+                        <input
+                          type="number"
+                          placeholder={`Quantity of ${item.unit}`}
+                          min="0"
+                          value={detailedQuantities[item.id] || ""}
+                          onChange={(e) =>
+                            handleQuantityChange(item.id, e.target.value)
+                          }
+                          className="mt-1 w-full p-2 border border-purple-300 rounded-md focus:ring-purple-500 focus:border-purple-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        {/* No Sub-items Message - Regular Mode */}
         {(dropoffMode as string) === "regular" &&
           selectedLocationId &&
           currentSubItems.length === 0 && (
@@ -1346,6 +1636,16 @@ const CreateDropOff = () => {
               The selected location does not have specific item types listed for
               individual quantity entry. You can still log a general drop-off if
               applicable, or contact support if this seems incorrect.
+            </div>
+          )}
+
+        {/* No Sub-items Message - Campaign Mode */}
+        {(dropoffMode as string) === "campaign" &&
+          selectedCampaign &&
+          currentSubItems.length === 0 && (
+            <div className="mb-6 p-3 bg-purple-50 border border-purple-200 rounded-md text-sm text-purple-700">
+              This campaign does not have specific item types listed. Please
+              contact the campaign organizer for more information.
             </div>
           )}
 
@@ -1654,8 +1954,20 @@ const CreateDropOff = () => {
 
         <button
           type="submit"
-          disabled={loading || loadingLocations || !file || !hasValidQuantities} // Updated disabled condition
-          className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3.5 px-6 rounded-full flex items-center justify-center text-lg transition-opacity disabled:opacity-60"
+          disabled={
+            loading ||
+            loadingLocations ||
+            !file ||
+            !hasValidQuantities ||
+            ((dropoffMode as string) === "campaign" && !selectedCampaign)
+          }
+          className={`w-full font-semibold py-3.5 px-6 rounded-full flex items-center justify-center text-lg transition-opacity disabled:opacity-60 ${
+            (dropoffMode as string) === "simple"
+              ? "bg-orange-500 hover:bg-orange-600 text-white"
+              : (dropoffMode as string) === "campaign"
+              ? "bg-purple-600 hover:bg-purple-700 text-white"
+              : "bg-slate-800 hover:bg-slate-900 text-white"
+          }`}
         >
           {loading ? "Submitting..." : "Submit Drop-off"}
           {!loading && <MdArrowForward className="ml-2 text-xl" />}

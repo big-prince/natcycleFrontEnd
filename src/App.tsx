@@ -37,6 +37,7 @@ import CampaignContributors from "./pages/dashboard/campaign/CampaignContributor
 import CreateDropOff from "./pages/dashboard/dropoff/CreateDropOff";
 import AdminDropOffs from "./pages/admin/dropoff/AdminDropOffs";
 import AdminDropOffDetails from "./pages/admin/dropoff/AdminDropOffDetails";
+import AdminCampaignDropOffs from "./pages/admin/dropoff/AdminCampaignDropOffs";
 import AdminMaterials from "./pages/admin/AdminMaterials";
 import AddMaterialPage from "./pages/admin/AddMaterialPage";
 import MaterialDetails from "./pages/admin/MaterialDetails";
@@ -148,6 +149,10 @@ const App = () => {
             <Route
               path="/admin/campaign/:id"
               element={<AdminCampaignDetails />}
+            />
+            <Route
+              path="/admin/campaign/:campaignId/dropoffs"
+              element={<AdminCampaignDropOffs />}
             />
             <Route path="materials" element={<AdminMaterials />} />
             <Route path="materials/add" element={<AddMaterialPage />} />{" "}
