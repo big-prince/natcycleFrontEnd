@@ -38,11 +38,13 @@ import CreateDropOff from "./pages/dashboard/dropoff/CreateDropOff";
 import AdminDropOffs from "./pages/admin/dropoff/AdminDropOffs";
 import AdminDropOffDetails from "./pages/admin/dropoff/AdminDropOffDetails";
 import AdminCampaignDropOffs from "./pages/admin/dropoff/AdminCampaignDropOffs";
+import AllCampaignDropOffs from "./pages/admin/dropoff/AllCampaignDropOffs";
 import AdminMaterials from "./pages/admin/AdminMaterials";
 import AddMaterialPage from "./pages/admin/AddMaterialPage";
 import MaterialDetails from "./pages/admin/MaterialDetails";
 import AddDropOffLocation from "./pages/admin/dropoff/AddDropOffLocation";
 import DropOffLocations from "./pages/admin/dropoff/DropOffLocations";
+import AddCampaignModal from "./pages/admin/components/AddCampaignModal";
 import Where from "./pages/dashboard/where/Where";
 import UserDropOffs from "./pages/dashboard/dropoff/UserDropOffs";
 import PublicLayout from "./pages/components/PublicLayout";
@@ -145,14 +147,26 @@ const App = () => {
             <Route path="/admin/badges" element={<AdminBadges />} />
             <Route path="/admin/rewards" element={<AdminRewards />} />
             <Route path="/admin/redeemed" element={<AdminRedeemedRewards />} />
-            <Route path="/admin/campaign" element={<AdminCampaign />} />
+            <Route path="/admin/campaigns" element={<AdminCampaign />} />
             <Route
-              path="/admin/campaign/:id"
+              path="/admin/campaigns/create-campaign"
+              element={<AddCampaignModal />}
+            />
+            <Route
+              path="/admin/campaigns/edit/:id"
+              element={<AddCampaignModal />}
+            />
+            <Route
+              path="/admin/campaigns/:id"
               element={<AdminCampaignDetails />}
             />
             <Route
-              path="/admin/campaign/:campaignId/dropoffs"
+              path="/admin/campaigns/:campaignId/dropoffs"
               element={<AdminCampaignDropOffs />}
+            />
+            <Route
+              path="/admin/campaigns/dropoffs"
+              element={<AllCampaignDropOffs />}
             />
             <Route path="materials" element={<AdminMaterials />} />
             <Route path="materials/add" element={<AddMaterialPage />} />{" "}

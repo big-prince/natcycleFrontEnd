@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
-import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { useNavigate, useParams } from "react-router-dom";
 import CampaignApi from "../../../api/campaignApi";
 import materialApi from "../../../api/materialApi";
-import { FaTimes } from "react-icons/fa";
+import { FaSpinner, FaSave, FaArrowLeft } from "react-icons/fa";
 import { toast } from "react-toastify";
 
-interface ICampaign {
-  _id: string;
+// Types
+interface CampaignData {
+  id: string;
   name: string;
   description: string;
   endDate: string;
   status: "active" | "completed" | "cancelled";
-  material?: string;
+  materialTypes: string[];
+  material?: string; // Legacy support for single material type
   goal: number;
   progress: number;
   image?: {
@@ -34,20 +36,12 @@ interface ICampaign {
   updatedAt: string;
 }
 
-type Props = {
-  isModalOpen: boolean;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  fetchCampaigns: () => void;
-  campaignToEdit: ICampaign | null;
-};
+const AddCampaignModal = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
 
-const AddCampaignModal = ({
-  isModalOpen,
-  setIsModalOpen,
-  fetchCampaigns,
-  campaignToEdit,
-}: Props) => {
   const [loading, setLoading] = useState(false);
+  const [loadingPage, setLoadingPage] = useState(false);
   const [materialTypes, setMaterialTypes] = useState<string[]>([]);
 
   const [campaignForm, setCampaignForm] = useState({
@@ -55,7 +49,7 @@ const AddCampaignModal = ({
     description: "",
     startDate: "",
     endDate: "",
-    material: "",
+    materialTypes: [] as string[],
     goal: "",
     status: "active" as "active" | "completed" | "cancelled",
     image: null as File | null,
@@ -64,6 +58,11 @@ const AddCampaignModal = ({
     address: "",
     organizationName: "",
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentCampaignId, setCurrentCampaignId] = useState<string | null>(
+    null
+  );
 
   // Fetch material types
   useEffect(() => {
@@ -79,37 +78,71 @@ const AddCampaignModal = ({
     fetchMaterialTypes();
   }, []);
 
-  // Set form data when a campaign is selected for editing
+  // Load campaign data for editing
   useEffect(() => {
-    if (campaignToEdit) {
-      setCampaignForm({
-        name: campaignToEdit.name,
-        description: campaignToEdit.description,
-        startDate: campaignToEdit.createdAt
-          ? new Date(campaignToEdit.createdAt).toISOString().split("T")[0]
-          : "",
-        endDate: new Date(campaignToEdit.endDate).toISOString().split("T")[0],
-        material: campaignToEdit.material || "",
-        goal: campaignToEdit.goal.toString(),
-        status: campaignToEdit.status,
-        image: null,
-        latitude: campaignToEdit.location?.coordinates
-          ? campaignToEdit.location.coordinates[1].toString()
-          : "",
-        longitude: campaignToEdit.location?.coordinates
-          ? campaignToEdit.location.coordinates[0].toString()
-          : "",
-        address: campaignToEdit.address || "",
-        organizationName: campaignToEdit.organizationName || "",
-      });
+    if (id) {
+      setIsEditing(true);
+      setCurrentCampaignId(id);
+      setLoadingPage(true);
+
+      CampaignApi.getCampaign(id)
+        .then((res) => {
+          const campaignData: CampaignData = res.data.data;
+
+          // Convert legacy material field or materialType to materialTypes array
+          let materialTypesArray: string[] = [];
+
+          if (campaignData.materialTypes) {
+            // If materialType is already an array, use it
+            if (Array.isArray(campaignData.materialTypes)) {
+              materialTypesArray = campaignData.materialTypes;
+            } else {
+              // If it's a string, convert to array
+              materialTypesArray = [campaignData.materialTypes];
+            }
+          } else if (campaignData.material) {
+            // Support legacy material field
+            materialTypesArray = [campaignData.material];
+          }
+
+          setCampaignForm({
+            name: campaignData.name || "",
+            description: campaignData.description || "",
+            startDate: campaignData.createdAt
+              ? new Date(campaignData.createdAt).toISOString().split("T")[0]
+              : "",
+            endDate: new Date(campaignData.endDate).toISOString().split("T")[0],
+            materialTypes: materialTypesArray,
+            goal: campaignData.goal.toString(),
+            status: campaignData.status,
+            image: null,
+            latitude: campaignData.location?.coordinates
+              ? campaignData.location.coordinates[1].toString()
+              : "",
+            longitude: campaignData.location?.coordinates
+              ? campaignData.location.coordinates[0].toString()
+              : "",
+            address: campaignData.address || "",
+            organizationName: campaignData.organizationName || "",
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to load campaign data for editing:", err);
+          toast.error("Failed to load campaign data for editing.");
+          navigate("/admin/campaigns");
+        })
+        .finally(() => {
+          setLoadingPage(false);
+        });
     } else {
-      // Reset form if not editing
+      setIsEditing(false);
+      setCurrentCampaignId(null);
       setCampaignForm({
         name: "",
         description: "",
         startDate: "",
         endDate: "",
-        material: "",
+        materialTypes: [],
         goal: "",
         status: "active",
         image: null,
@@ -118,8 +151,9 @@ const AddCampaignModal = ({
         address: "",
         organizationName: "",
       });
+      setLoadingPage(false);
     }
-  }, [campaignToEdit, isModalOpen]);
+  }, [id, navigate]);
 
   const handleCampaignFormChange = (
     e: React.ChangeEvent<
@@ -131,6 +165,50 @@ const AddCampaignModal = ({
       ...campaignForm,
       [name]: value,
     });
+  };
+
+  // Handle material type selection with checkboxes
+  const handleMaterialTypeChange = (materialType: string) => {
+    // Special handling for "All" option
+    if (materialType === "All") {
+      // If "All" is already selected, deselect it
+      if (campaignForm.materialTypes.includes("All")) {
+        setCampaignForm({
+          ...campaignForm,
+          materialTypes: [],
+        });
+      } else {
+        // Select only "All"
+        setCampaignForm({
+          ...campaignForm,
+          materialTypes: ["All"],
+        });
+      }
+    } else {
+      // If a specific material type is selected
+      const newMaterialTypes = [...campaignForm.materialTypes];
+
+      // If "All" is currently selected, remove it
+      if (newMaterialTypes.includes("All")) {
+        const allIndex = newMaterialTypes.indexOf("All");
+        newMaterialTypes.splice(allIndex, 1);
+      }
+
+      // Toggle the selected material type
+      const materialIndex = newMaterialTypes.indexOf(materialType);
+      if (materialIndex === -1) {
+        // Add material if not already selected
+        newMaterialTypes.push(materialType);
+      } else {
+        // Remove material if already selected
+        newMaterialTypes.splice(materialIndex, 1);
+      }
+
+      setCampaignForm({
+        ...campaignForm,
+        materialTypes: newMaterialTypes,
+      });
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,10 +224,9 @@ const AddCampaignModal = ({
     }
   };
 
-  // We're now using direct coordinate input instead of place selection
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Form submitted. Current formData:", campaignForm);
 
     if (
       !campaignForm.name ||
@@ -160,10 +237,10 @@ const AddCampaignModal = ({
       !campaignForm.latitude ||
       !campaignForm.longitude ||
       !campaignForm.address ||
-      !campaignForm.material
+      campaignForm.materialTypes.length === 0
     ) {
       toast.error(
-        "Please fill in all required fields including location information"
+        "Please fill in all required fields including location information and material types"
       );
       return;
     }
@@ -180,7 +257,16 @@ const AddCampaignModal = ({
       formData.append("startDate", campaignForm.startDate);
       formData.append("endDate", campaignForm.endDate);
       formData.append("goal", campaignForm.goal);
-      formData.append("material", campaignForm.material);
+
+      // Add material types as an array
+      // For FormData, we need to append each array element separately with the same key
+      campaignForm.materialTypes.forEach((materialType) => {
+        formData.append("materialTypes", materialType);
+      });
+
+      // Log materialTypes for debugging
+      console.log("Material Types being sent:", campaignForm.materialTypes);
+
       formData.append("status", campaignForm.status);
       formData.append("latitude", campaignForm.latitude);
       formData.append("longitude", campaignForm.longitude);
@@ -192,14 +278,13 @@ const AddCampaignModal = ({
       }
 
       // Add image to FormData if it exists
-      // This will make it accessible via req.file on the backend
       if (campaignForm.image) {
         formData.append("file", campaignForm.image);
       }
 
-      if (campaignToEdit) {
+      if (isEditing && currentCampaignId) {
         // Update existing campaign
-        await CampaignApi.updateCampaign(campaignToEdit._id, formData);
+        await CampaignApi.updateCampaign(currentCampaignId, formData);
         toast.success("Campaign updated successfully");
       } else {
         // Create new campaign
@@ -212,24 +297,8 @@ const AddCampaignModal = ({
         toast.success("Campaign added successfully");
       }
 
-      // Reset form and close modal
-      setCampaignForm({
-        name: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        material: "",
-        goal: "",
-        status: "active",
-        image: null,
-        latitude: "",
-        longitude: "",
-        address: "",
-        organizationName: "",
-      });
-
-      setIsModalOpen(false);
-      fetchCampaigns();
+      // Navigate back to campaigns list
+      navigate("/admin/campaigns");
     } catch (error: unknown) {
       console.error(error);
       if (error instanceof Error) {
@@ -242,54 +311,80 @@ const AddCampaignModal = ({
     }
   };
 
-  return (
-    <div>
-      <AlertDialog.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <AlertDialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
-        <AlertDialog.Content className="absolute top-1/2 left-1/2 p-6 w-full max-w-xl bg-white rounded-md transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <AlertDialog.Title className="text-2xl font-medium">
-              {campaignToEdit ? "Edit Campaign" : "Add New Campaign"}
-            </AlertDialog.Title>
+  if (loadingPage) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-150px)]">
+        <FaSpinner className="animate-spin text-4xl text-sky-600" />
+        <p className="ml-3 mt-3 text-slate-700">Loading campaign data...</p>
+      </div>
+    );
+  }
 
-            <AlertDialog.Cancel>
-              <FaTimes className="text-gray-700 cursor-pointer" />
-            </AlertDialog.Cancel>
+  return (
+    <div className="p-4 md:p-6 bg-slate-50 min-h-screen">
+      <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-xl">
+        <button
+          onClick={() => navigate("/admin/campaigns")}
+          className="mb-6 inline-flex items-center text-sm text-sky-600 hover:text-sky-800 font-medium transition-colors"
+        >
+          <FaArrowLeft className="mr-2" />
+          Back to Campaigns
+        </button>
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-8">
+          {isEditing ? "Edit Campaign" : "Add New Campaign"}
+        </h1>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Campaign Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={campaignForm.name}
+              onChange={handleCampaignFormChange}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
+              required
+            />
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={campaignForm.name}
-                onChange={handleCampaignFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Organization Name
+            </label>
+            <input
+              type="text"
+              name="organizationName"
+              value={campaignForm.organizationName}
+              onChange={handleCampaignFormChange}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
+              placeholder="e.g., Green Initiative, EcoTech, etc."
+            />
+          </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Organization Name
-              </label>
-              <input
-                type="text"
-                name="organizationName"
-                value={campaignForm.organizationName}
-                onChange={handleCampaignFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="e.g., Green Initiative, EcoTech, etc."
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              value={campaignForm.description}
+              onChange={handleCampaignFormChange}
+              required
+              rows={4}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
+            />
+          </div>
 
-            {/* Location Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Location Information */}
+          <div className="border-t border-slate-200 pt-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">
+              Location Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Latitude <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -298,12 +393,12 @@ const AddCampaignModal = ({
                   name="latitude"
                   value={campaignForm.latitude}
                   onChange={handleCampaignFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Longitude <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -312,14 +407,14 @@ const AddCampaignModal = ({
                   name="longitude"
                   value={campaignForm.longitude}
                   onChange={handleCampaignFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                   required
                 />
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mt-4">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Address <span className="text-red-500">*</span>
               </label>
               <input
@@ -327,65 +422,24 @@ const AddCampaignModal = ({
                 name="address"
                 value={campaignForm.address}
                 onChange={handleCampaignFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1.5">
                 Please enter the full address for the campaign location.
               </p>
             </div>
+          </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="description"
-                value={campaignForm.description}
-                onChange={handleCampaignFormChange}
-                required
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
+          {/* Campaign Details */}
+          <div className="border-t border-slate-200 pt-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">
+              Campaign Details
+            </h2>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="endDate"
-                value={campaignForm.endDate}
-                onChange={handleCampaignFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Material Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="material"
-                value={campaignForm.material}
-                onChange={handleCampaignFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                required
-              >
-                <option value="">Select Material Type</option>
-                {materialTypes.map((material, index) => (
-                  <option key={index} value={material}>
-                    {material}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Start Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -393,12 +447,12 @@ const AddCampaignModal = ({
                   name="startDate"
                   value={campaignForm.startDate}
                   onChange={handleCampaignFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   End Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -406,14 +460,14 @@ const AddCampaignModal = ({
                   name="endDate"
                   value={campaignForm.endDate}
                   onChange={handleCampaignFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                   required
                 />
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-5">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Goal (items) <span className="text-red-500">*</span>
               </label>
               <input
@@ -421,21 +475,21 @@ const AddCampaignModal = ({
                 name="goal"
                 value={campaignForm.goal}
                 onChange={handleCampaignFormChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                 required
               />
             </div>
 
-            {campaignToEdit && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            {isEditing && (
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Status
                 </label>
                 <select
                   name="status"
                   value={campaignForm.status}
                   onChange={handleCampaignFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
                 >
                   <option value="active">Active</option>
                   <option value="completed">Completed</option>
@@ -444,80 +498,172 @@ const AddCampaignModal = ({
               </div>
             )}
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-5">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Material Types <span className="text-red-500">*</span>
+              </label>
+              <div className="border border-slate-300 rounded-lg p-4 bg-white max-h-60 overflow-y-auto shadow-sm">
+                {/* "All" option */}
+                <div
+                  className={`p-2.5 mb-3 rounded-lg flex items-center cursor-pointer ${
+                    campaignForm.materialTypes.includes("All")
+                      ? "bg-sky-100 border border-sky-300"
+                      : "hover:bg-slate-50"
+                  } ${
+                    campaignForm.materialTypes.length > 0 &&
+                    !campaignForm.materialTypes.includes("All")
+                      ? "opacity-50"
+                      : ""
+                  }`}
+                  onClick={() => handleMaterialTypeChange("All")}
+                >
+                  <div
+                    className={`w-5 h-5 mr-3 flex items-center justify-center border rounded-md ${
+                      campaignForm.materialTypes.includes("All")
+                        ? "bg-sky-600 border-sky-600"
+                        : "border-slate-400"
+                    }`}
+                  >
+                    {campaignForm.materialTypes.includes("All") && (
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="3"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="font-medium text-slate-800">
+                    All Materials
+                  </span>
+                </div>
+
+                {/* Individual material types */}
+                <div
+                  className={`grid grid-cols-1 md:grid-cols-2 gap-3 ${
+                    campaignForm.materialTypes.includes("All")
+                      ? "opacity-50"
+                      : ""
+                  }`}
+                >
+                  {materialTypes.map((material) => (
+                    <div
+                      key={material}
+                      className={`p-2.5 rounded-lg flex items-center cursor-pointer ${
+                        campaignForm.materialTypes.includes(material) &&
+                        !campaignForm.materialTypes.includes("All")
+                          ? "bg-sky-50 border border-sky-200"
+                          : "hover:bg-slate-50"
+                      } ${
+                        campaignForm.materialTypes.includes("All")
+                          ? "pointer-events-none"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        !campaignForm.materialTypes.includes("All") &&
+                        handleMaterialTypeChange(material)
+                      }
+                    >
+                      <div
+                        className={`w-5 h-5 mr-3 flex items-center justify-center border rounded-md ${
+                          campaignForm.materialTypes.includes(material) &&
+                          !campaignForm.materialTypes.includes("All")
+                            ? "bg-sky-600 border-sky-600"
+                            : "border-slate-400"
+                        }`}
+                      >
+                        {campaignForm.materialTypes.includes(material) &&
+                          !campaignForm.materialTypes.includes("All") && (
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="3"
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                      </div>
+                      <span className="text-slate-800">
+                        {material.charAt(0).toUpperCase() + material.slice(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {campaignForm.materialTypes.length === 0 && (
+                <p className="text-red-500 text-xs mt-2">
+                  Please select at least one material type
+                </p>
+              )}
+              {campaignForm.materialTypes.length > 0 &&
+                !campaignForm.materialTypes.includes("All") && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    Selected: {campaignForm.materialTypes.join(", ")}
+                  </p>
+                )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Campaign Image{" "}
-                {!campaignToEdit && <span className="text-red-500">*</span>}
+                {!isEditing && <span className="text-red-500">*</span>}
               </label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-sm"
               />
-              {campaignToEdit && campaignToEdit.image && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500 mb-1">Current image:</p>
-                  <img
-                    src={campaignToEdit.image.url}
-                    alt="Current campaign image"
-                    className="w-32 h-32 object-cover rounded-md border border-gray-300"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload a new image only if you want to change it
-                  </p>
-                </div>
+              {isEditing && currentCampaignId && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Upload a new image only if you want to change the current one
+                </p>
               )}
             </div>
+          </div>
 
-            <div className="flex justify-end mt-6">
-              <AlertDialog.Cancel asChild>
-                <button
-                  type="button"
-                  className="px-4 py-2 mr-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </AlertDialog.Cancel>
-              <button
-                type="submit"
-                className="px-4 py-2 text-white rounded-md bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : campaignToEdit ? (
-                  "Update Campaign"
-                ) : (
-                  "Add Campaign"
-                )}
-              </button>
-            </div>
-          </form>
-        </AlertDialog.Content>
-      </AlertDialog.Root>
+          {/* Form actions */}
+          <div className="flex justify-end pt-6 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={() => navigate("/admin/campaigns")}
+              className="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium shadow-sm mr-3"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 font-medium shadow-sm flex items-center"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <FaSpinner className="animate-spin mr-2" />
+                  {isEditing ? "Updating..." : "Saving..."}
+                </>
+              ) : (
+                <>
+                  <FaSave className="mr-2" />
+                  {isEditing ? "Update Campaign" : "Add Campaign"}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

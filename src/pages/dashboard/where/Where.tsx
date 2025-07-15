@@ -24,6 +24,7 @@ import { MdClose, MdCheckroom, MdRecycling } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
 import { GiPaperBagFolded } from "react-icons/gi";
 import { HiOutlineTrash } from "react-icons/hi2";
+import { HiCalendar } from "react-icons/hi";
 import materialApi from "../../../api/materialApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -225,7 +226,7 @@ const Where = () => {
           latitude: userCoords.latitude,
           longitude: userCoords.longitude,
           distance: materialType ? 500000 : 100000, // 500km for filtered, 100km for all
-          itemType: materialType || "",
+          itemType: materialType || "", // For regular locations, use itemType not materialType
         };
 
         console.log(
@@ -441,21 +442,64 @@ const Where = () => {
 
       setLoadingCampaigns(true);
       try {
+        // Create params object with user location and radius
+        const params: any = {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          radius: 50000, // 50km radius
+        };
+
+        // Add materialType to params if specified
+        if (materialType) {
+          params.materialType = materialType;
+        }
+
         const response = await CampaignApi.getNearbyCampaigns(
           userLocation.latitude,
           userLocation.longitude,
-          50000 // 50km radius
+          50000, // 50km radius
+          materialType // Pass materialType parameter to API
         );
 
         let campaignsData = response.data.data || [];
 
-        // Filter by material type if specified
+        // If materialType is specified, filter on client side too (backend should already filter)
         if (materialType) {
-          campaignsData = campaignsData.filter(
-            (campaign: ICampaign) =>
-              !campaign.itemType ||
-              campaign.itemType.toLowerCase() === materialType.toLowerCase()
-          );
+          campaignsData = campaignsData.filter((campaign: ICampaign) => {
+            // Check the materialTypes field which is a string array
+            const campaignMaterialTypes = campaign.materialTypes || [];
+
+            // Handle array of materialTypes
+            if (Array.isArray(campaignMaterialTypes)) {
+              // If campaign has "All" in its materialTypes, it accepts any material
+              if (campaignMaterialTypes.includes("All")) {
+                return true;
+              }
+              // Check if any of the campaign's materialTypes match the selected type
+              return campaignMaterialTypes.some(
+                (type) => type.toLowerCase() === materialType.toLowerCase()
+              );
+            }
+
+            // Handle string materialTypes (for backward compatibility)
+            if (typeof campaignMaterialTypes === "string") {
+              // If campaign materialTypes is "All", it accepts any material
+              if (campaignMaterialTypes.toLowerCase() === "all") {
+                return true;
+              }
+
+              // Check if string contains the materialType
+              return (
+                campaignMaterialTypes.toLowerCase() ===
+                  materialType.toLowerCase() ||
+                campaignMaterialTypes
+                  .toLowerCase()
+                  .includes(materialType.toLowerCase())
+              );
+            }
+
+            return false;
+          });
         }
 
         // Only show active campaigns
@@ -497,7 +541,7 @@ const Where = () => {
   // Initial data load - show all locations or filtered if query param exists
   useEffect(() => {
     if (!loadingMaterials && materialTypes.length > 0 && userLocation) {
-      // Fetch regular locations if needed
+      // Fetch regular locations if needed - uses itemType
       if (locationType === "regular" || locationType === "all") {
         if (selectedMaterialType) {
           fetchLocationsByMaterialType(selectedMaterialType);
@@ -506,15 +550,24 @@ const Where = () => {
         }
       }
 
-      // Fetch simple locations if needed
+      // Fetch simple locations if needed - uses materialType
       if (locationType === "simple" || locationType === "all") {
-        // Note: Simple locations are not filtered by material type as per requirements
-        fetchSimpleLocations();
+        // Now filter simple locations by material type if specified
+        if (selectedMaterialType) {
+          fetchSimpleLocations(selectedMaterialType);
+        } else {
+          fetchSimpleLocations();
+        }
       }
 
-      // Fetch campaigns if needed
-      if (locationType === "all") {
-        fetchCampaigns(selectedMaterialType || undefined);
+      // Fetch campaigns if needed - uses materialType
+      if (locationType === "campaign" || locationType === "all") {
+        // Filter campaigns by material type if specified
+        if (selectedMaterialType) {
+          fetchCampaigns(selectedMaterialType);
+        } else {
+          fetchCampaigns();
+        }
       }
     }
   }, [
@@ -533,13 +586,22 @@ const Where = () => {
     console.log("Material type clicked:", materialType);
 
     if (selectedMaterialType === materialType) {
+      // Deselecting the current material type - reset to show all
       console.log("Deselecting material type, showing all locations");
       setSelectedMaterialType(null);
-      fetchLocationsByMaterialType(); // Reset to all locations
+
+      // Reset all location types using appropriate field names
+      fetchLocationsByMaterialType(); // Reset regular locations - uses itemType
+      fetchSimpleLocations(); // Reset simple locations - uses materialType
+      fetchCampaigns(); // Reset campaigns - uses materialType
     } else {
       console.log("Selected material type:", materialType);
       setSelectedMaterialType(materialType);
-      fetchLocationsByMaterialType(materialType); // Filter by material type
+
+      // Filter all location types by the selected material using appropriate field names
+      fetchLocationsByMaterialType(materialType); // Filter regular locations - uses itemType
+      fetchSimpleLocations(materialType); // Filter simple locations - uses materialType
+      fetchCampaigns(materialType); // Filter campaigns - uses materialType
     }
   };
 
@@ -1952,6 +2014,26 @@ const Where = () => {
             </div>
           ) : (
             <div className="flex space-x-2 overflow-x-auto py-1 scrollbar-hide">
+              {/* All button */}
+              <button
+                onClick={() => {
+                  setSelectedMaterialType(null);
+                  // Reset to show all locations
+                  fetchLocationsByMaterialType();
+                  fetchSimpleLocations();
+                  fetchCampaigns();
+                }}
+                className={`px-6 py-3 rounded-full text-sm font-medium whitespace-nowrap transition-colors
+                  ${
+                    selectedMaterialType === null
+                      ? "bg-black text-white"
+                      : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                  }`}
+              >
+                All
+              </button>
+
+              {/* Material type filters */}
               {materialTypes.slice(0, 8).map((material) => (
                 <button
                   key={material}
@@ -2208,6 +2290,165 @@ const Where = () => {
                     }
                   >
                     Quick Drop
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Campaign Details Card */}
+        {selectedCampaign && (
+          <motion.div
+            className="absolute bottom-20 left-0 right-0 z-20 px-4"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 500 }}
+          >
+            <div className="bg-white rounded-xl shadow-xl overflow-hidden border-l-4 border-purple-400">
+              {/* Header with close button */}
+              <div className="bg-purple-50 px-4 py-3 flex justify-between items-center border-b">
+                <div className="flex items-center">
+                  <HiCalendar className="w-5 h-5 text-purple-600 mr-2" />
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {selectedCampaign.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={closeLocationDetails}
+                  className="p-1 rounded-full hover:bg-purple-100 text-gray-500"
+                >
+                  <MdClose size={20} />
+                </button>
+              </div>
+
+              {/* Campaign details */}
+              <div className="p-4">
+                {selectedCampaign.address && (
+                  <p className="text-sm text-gray-600 mb-3 flex items-start">
+                    <FaMapMarkerAlt className="text-purple-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>{selectedCampaign.address}</span>
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                    Campaign
+                  </span>
+                  {selectedCampaign.status && (
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                      {selectedCampaign.status === "active"
+                        ? "Active"
+                        : selectedCampaign.status}
+                    </span>
+                  )}
+                  {selectedCampaign.materialTypes && (
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                      {Array.isArray(selectedCampaign.materialTypes)
+                        ? selectedCampaign.materialTypes.join(", ")
+                        : selectedCampaign.materialTypes ||
+                          selectedCampaign.material ||
+                          selectedCampaign.itemType}
+                    </span>
+                  )}
+                </div>
+
+                {selectedCampaign.description && (
+                  <p className="text-sm mb-3 text-gray-700">
+                    {selectedCampaign.description}
+                  </p>
+                )}
+
+                {selectedCampaign.organizationName && (
+                  <p className="text-sm mb-3 text-gray-700">
+                    <span className="font-medium">Organized by:</span>{" "}
+                    {selectedCampaign.organizationName}
+                  </p>
+                )}
+
+                {/* Campaign Dates */}
+                <div className="bg-purple-50 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-purple-700">
+                    <span className="font-medium">Start Date:</span>{" "}
+                    {new Date(selectedCampaign.startDate).toLocaleDateString()}
+                  </p>
+                  {selectedCampaign.endDate && (
+                    <p className="text-xs text-purple-700 mt-1">
+                      <span className="font-medium">End Date:</span>{" "}
+                      {new Date(selectedCampaign.endDate).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Campaign Progress */}
+                {selectedCampaign.goal &&
+                  selectedCampaign.progress !== undefined && (
+                    <div className="mt-3 mb-3">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-medium text-gray-700">
+                          Progress
+                        </span>
+                        <span className="text-xs font-medium text-gray-700">
+                          {selectedCampaign.progress} / {selectedCampaign.goal}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-purple-600 h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(
+                              (selectedCampaign.progress /
+                                selectedCampaign.goal) *
+                                100,
+                              100
+                            )}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Add CTA buttons */}
+                <div className="w-full flex justify-between items-center gap-4 mt-4">
+                  <button
+                    className="mt-4 w-full bg-purple-500 text-white text-sm py-3 rounded-lg font-medium hover:bg-purple-600 transition-colors px-1"
+                    onClick={() => {
+                      if (selectedCampaign.location?.coordinates) {
+                        const [lng, lat] =
+                          selectedCampaign.location.coordinates;
+                        openDirections(lat, lng, selectedCampaign.name);
+                      }
+                    }}
+                  >
+                    Get Directions{" "}
+                    <span className="ml-2 inline-flex items-center justify-center">
+                      <FaLocationArrow className="text-white text-xs" />
+                    </span>
+                  </button>
+                  <button
+                    className="mt-4 w-full bg-black text-white text-sm py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors px-1"
+                    onClick={() => {
+                      // Determine material type for the URL
+                      const materialType = Array.isArray(
+                        selectedCampaign.materialTypes
+                      )
+                        ? selectedCampaign.materialTypes[0]
+                        : selectedCampaign.materialTypes ||
+                          selectedCampaign.material ||
+                          selectedCampaign.itemType ||
+                          "";
+
+                      navigate(
+                        `/dropoff/create?mode=campaign&campaignId=${
+                          selectedCampaign._id || selectedCampaign.id
+                        }&campaignName=${encodeURIComponent(
+                          selectedCampaign.name
+                        )}&type=${materialType}`
+                      );
+                    }}
+                  >
+                    Contribute
                   </button>
                 </div>
               </div>

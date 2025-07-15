@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import DropOffApi from "../../../api/dropOffApi";
 
 interface ICampaign {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   endDate: string;
@@ -25,9 +25,9 @@ interface ICampaign {
 }
 
 interface IDropOff {
-  _id: string;
+  id: string;
   user: {
-    _id: string;
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -59,8 +59,12 @@ const AdminCampaignDropOffs = () => {
   const [totalDropOffs, setTotalDropOffs] = useState(0);
 
   const fetchCampaign = async () => {
-    if (!campaignId) return;
+    if (!campaignId) {
+      console.log("No campaign ID provided");
+      return;
+    }
 
+    console.log("We are running here");
     try {
       const response = await CampaignApi.getCampaign(campaignId);
       setCampaign(response.data.data.campaign);
@@ -71,13 +75,16 @@ const AdminCampaignDropOffs = () => {
   };
 
   const fetchDropOffs = async () => {
-    if (!campaignId) return;
+    if (!campaignId) {
+      console.log("No campaign ID provided");
+      return;
+    }
 
     setLoading(true);
 
     try {
-      // Replace with actual API endpoint for campaign drop-offs when available
-      const response = await DropOffApi.getCampaignDropOffs(campaignId, {
+      // Use CampaignApi instead of DropOffApi for campaign dropoffs
+      const response = await CampaignApi.getDropoffsForCampaign(campaignId, {
         page,
         limit: 10,
         status: filter !== "all" ? filter : undefined,
@@ -117,18 +124,14 @@ const AdminCampaignDropOffs = () => {
     if (!campaignId) return;
 
     try {
-      // This would typically download a CSV file
-      // For now, we'll just show a success message
-      toast.info("Export functionality will be implemented soon");
-
-      // When API is available:
-      // const response = await DropOffApi.exportCampaignDropOffs(campaignId);
-      // const url = window.URL.createObjectURL(new Blob([response.data]));
-      // const link = document.createElement('a');
-      // link.href = url;
-      // link.setAttribute('download', `campaign-${campaignId}-dropoffs.csv`);
-      // document.body.appendChild(link);
-      // link.click();
+      // Use CampaignApi for exporting dropoffs
+      const response = await CampaignApi.exportCampaignDropOffs(campaignId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `campaign-${campaignId}-dropoffs.csv`);
+      document.body.appendChild(link);
+      link.click();
     } catch (error) {
       console.error("Error exporting drop-offs:", error);
       toast.error("Failed to export drop-offs");
@@ -136,6 +139,7 @@ const AdminCampaignDropOffs = () => {
   };
 
   useEffect(() => {
+    console.log(campaignId, "");
     fetchCampaign();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId]);
@@ -159,7 +163,7 @@ const AdminCampaignDropOffs = () => {
     <div className="pb-10">
       <div className="mb-6 flex items-center">
         <Link
-          to={`/admin/campaign/${campaignId}`}
+          to={`/admin/campaigns/${campaignId}`}
           className="text-purple-600 hover:text-purple-800 flex items-center mr-4"
         >
           <FaChevronLeft className="mr-1" /> Back to Campaign
@@ -265,7 +269,7 @@ const AdminCampaignDropOffs = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {dropOffs.map((dropOff) => (
-                  <tr key={dropOff._id} className="hover:bg-gray-50">
+                  <tr key={dropOff.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
@@ -339,7 +343,7 @@ const AdminCampaignDropOffs = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() =>
-                              handleUpdateStatus(dropOff._id, "verified")
+                              handleUpdateStatus(dropOff.id, "verified")
                             }
                             className="text-green-600 hover:text-green-900"
                           >
@@ -347,7 +351,7 @@ const AdminCampaignDropOffs = () => {
                           </button>
                           <button
                             onClick={() =>
-                              handleUpdateStatus(dropOff._id, "rejected")
+                              handleUpdateStatus(dropOff.id, "rejected")
                             }
                             className="text-red-600 hover:text-red-900"
                           >
@@ -356,7 +360,7 @@ const AdminCampaignDropOffs = () => {
                         </div>
                       )}
                       <Link
-                        to={`/admin/dropoffs/${dropOff._id}`}
+                        to={`/admin/dropoffs/${dropOff.id}`}
                         className="text-purple-600 hover:text-purple-900"
                       >
                         View Details

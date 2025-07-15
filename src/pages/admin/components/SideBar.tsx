@@ -75,6 +75,20 @@ const Links = [
   },
 ];
 
+// Campaign links array
+const campaignLinks = [
+  {
+    title: "All Campaigns",
+    icon: <RiMegaphoneFill size={18} />,
+    path: "/admin/campaigns",
+  },
+  {
+    title: "Campaign Drop-offs",
+    icon: <FaBox size={18} />,
+    path: "/admin/campaigns/dropoffs",
+  },
+];
+
 const thingsMatchSubLinks = [
   {
     title: "TM Dashboard",
@@ -168,10 +182,10 @@ const SideBar = () => {
           <div className="pt-2">
             <button
               onClick={() => setIsCampaignOpen(!isCampaignOpen)}
-              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-purple-400 hover:bg-slate-800 transition-colors duration-150 group"
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-sky-400 hover:bg-slate-800 transition-colors duration-150 group"
             >
               <div className="flex items-center">
-                <span className="mr-3 text-purple-400 group-hover:scale-110 transition-transform">
+                <span className="mr-3 text-sky-400 group-hover:scale-110 transition-transform">
                   <RiMegaphoneFill size={20} />
                 </span>
                 <span>Campaigns</span>
@@ -183,39 +197,26 @@ const SideBar = () => {
               )}
             </button>
             {isCampaignOpen && (
-              <div className="mt-1 pl-4 space-y-1 border-l-2 border-purple-800 ml-3">
-                <NavLink
-                  to="/admin/campaign"
-                  className={({ isActive }) =>
-                    `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
-                    ${
-                      isActive
-                        ? "bg-purple-700 text-white"
-                        : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
-                    }`
-                  }
-                >
-                  <span className="mr-2.5 group-hover:scale-110 transition-transform">
-                    <RiMegaphoneFill size={18} />
-                  </span>
-                  <span>All Campaigns</span>
-                </NavLink>
-                <NavLink
-                  to="/admin/campaign/dropoffs"
-                  className={({ isActive }) =>
-                    `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
-                    ${
-                      isActive
-                        ? "bg-purple-700 text-white"
-                        : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
-                    }`
-                  }
-                >
-                  <span className="mr-2.5 group-hover:scale-110 transition-transform">
-                    <FaBox size={18} />
-                  </span>
-                  <span>Campaign Drop-offs</span>
-                </NavLink>
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-sky-700 ml-3">
+                {campaignLinks.map((link) => (
+                  <NavLink
+                    key={link.title}
+                    to={link.path}
+                    className={({ isActive }) =>
+                      `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
+                      ${
+                        isActive
+                          ? "bg-sky-600 text-white"
+                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                      }`
+                    }
+                  >
+                    <span className="mr-2.5 group-hover:scale-110 transition-transform">
+                      {link.icon}
+                    </span>
+                    <span>{link.title}</span>
+                  </NavLink>
+                ))}
               </div>
             )}
           </div>

@@ -217,7 +217,7 @@ export interface ICampaign {
   startDate: string;
   endDate?: string;
   status: "active" | "completed" | "cancelled";
-  itemType?: string;
+  materialTypes?: string | string[];
   goal?: number;
   progress?: number;
   image?: ICampaignImage;
@@ -227,6 +227,7 @@ export interface ICampaign {
   updatedAt: string;
   // Legacy support
   material?: string;
+  itemType?: string;
 }
 
 export interface ICampaignUser {
@@ -250,7 +251,7 @@ export interface ICampaignStats {
 }
 
 export interface ICampaignDropOffRequest {
-  itemType: string;
+  materialType: string;
   dropOffQuantity: Array<{
     materialType: string;
     units: number;

@@ -15,7 +15,7 @@ const DropOffPopover = ({ id, setNotify }: DropOffPopoverProps) => {
   const handleCancel = async () => {
     try {
       // Replace with the appropriate API call and parameters
-      await DropOffApi.updateDropOffStatus(id, { status: "cancelled" });
+      await DropOffApi.updateDropOffStatus(id, "cancelled");
       toast.success("Drop-off cancelled successfully");
       setNotify(Date.now().toString());
     } catch (error) {

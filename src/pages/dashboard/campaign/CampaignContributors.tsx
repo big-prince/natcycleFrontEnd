@@ -10,7 +10,7 @@ export interface ICampaignUser {
     public_id: string;
     url: string;
   };
-  _id: string;
+  id: string;
   contributions: number;
 }
 
@@ -56,7 +56,7 @@ const CampaignContributors = () => {
               <div>
                 {data.map((user: ICampaignUser) => (
                   <div
-                    key={user._id}
+                    key={user.id}
                     className="flex items-center justify-between border-b border-gray-200 py-4"
                   >
                     <div className="flex items-center">

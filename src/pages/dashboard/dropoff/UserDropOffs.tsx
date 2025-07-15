@@ -26,7 +26,12 @@ interface IDropOff {
   dropOffQuantity: IDropOffQuantityItem[];
   pointsEarned?: number;
   status?: string;
-  itemType?: string; // Primary item type
+  itemType?: string;
+  campaign?: {
+    name: string;
+    organizationName?: string;
+    _id?: string;
+  };
 }
 
 // Unified interface for display
@@ -39,6 +44,7 @@ interface IUnifiedDropOff {
   pointsEarned: number;
   status: string;
   type: "regular" | "simple";
+  campaignName?: string;
 }
 
 const formatDateAndTime = (dateString: string): string => {
@@ -102,6 +108,7 @@ const UserDropOffs: React.FC = () => {
     pointsEarned: dropoff.pointsEarned || 0,
     status: dropoff.status || "Unknown",
     type: "regular",
+    campaignName: dropoff.campaign?.name || undefined,
   });
 
   // Helper function to convert simple dropoff to unified format
@@ -136,6 +143,7 @@ const UserDropOffs: React.FC = () => {
         .then(([regularRes, simpleRes]) => {
           // Handle regular dropoffs
           setAllDropOffs(regularRes.data.data || []);
+          console.log("🚀 ~ fetchRegularDropOffs ~ response:", allDropOffs);
 
           // Handle simple dropoffs - account for different response structures
           let simpleDropoffs = [];
@@ -294,11 +302,16 @@ const UserDropOffs: React.FC = () => {
               <div className="flex-grow">
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-lg font-semibold text-slate-700">
-                    {dropOff.locationName}
+                    {dropOff.campaignName || dropOff.locationName}
                   </h2>
                   {dropOff.type === "simple" && (
                     <span className="text-xs px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-700">
                       Quick Drop
+                    </span>
+                  )}
+                  {dropOff.campaignName && (
+                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
+                      Campaign
                     </span>
                   )}
                 </div>
@@ -327,7 +340,10 @@ const UserDropOffs: React.FC = () => {
               </div>
               <div className="ml-4 text-right flex-shrink-0">
                 <span className="bg-teal-100 text-teal-700 text-sm font-medium px-3 py-1.5 rounded-full">
-                  {Math.round(dropOff.pointsEarned)} CU
+                  {dropOff.pointsEarned % 1 === 0
+                    ? Math.floor(dropOff.pointsEarned)
+                    : dropOff.pointsEarned.toFixed(1)}{" "}
+                  CU
                 </span>
               </div>
             </div>

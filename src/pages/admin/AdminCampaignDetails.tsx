@@ -11,15 +11,16 @@ import {
 } from "react-icons/fa";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import AddCampaignModal from "./components/AddCampaignModal";
+// No longer importing modal component
 
 interface ICampaign {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   endDate: string;
   status: "active" | "completed" | "cancelled";
   material?: string;
+  materialTypes: string[];
   goal: number;
   progress: number;
   image?: {
@@ -43,7 +44,7 @@ interface ICampaign {
 }
 
 interface ICampaignUser {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -62,7 +63,7 @@ const AdminCampaignDetails = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [contributors, setContributors] = useState<ICampaignUser[]>([]);
   const [pickUpCount, setPickUpCount] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // State variables for campaign details
 
   const fetchCampaignDetails = async () => {
     if (!id) return;
@@ -71,10 +72,11 @@ const AdminCampaignDetails = () => {
 
     try {
       const res = await CampaignApi.getCampaign(id);
+      console.log("🚀 ~ fetchCampaignDetails ~ res:", res);
       setCampaignDetails(res.data.data.campaign);
 
       // After getting campaign details, fetch contributors
-      fetchContributors(res.data.data.campaign._id);
+      fetchContributors(res.data.data.campaign.id);
     } catch (err) {
       console.error("Error fetching campaign details:", err);
       toast.error("Failed to load campaign details");
@@ -86,16 +88,20 @@ const AdminCampaignDetails = () => {
   const fetchContributors = async (campaignId: string) => {
     try {
       const res = await CampaignApi.getContributors(campaignId);
-      setContributors(res.data.data.users);
-      setPickUpCount(res.data.data.pickupCount);
+      if (res.data && res.data.data) {
+        setContributors(res.data.data.contributors || []);
+        setPickUpCount(res.data.data.totalPickups || 0);
+      }
     } catch (err) {
       console.error("Error fetching contributors:", err);
       toast.error("Failed to load contributors");
+      setContributors([]);
+      setPickUpCount(0);
     }
   };
 
   const handleEditCampaign = () => {
-    setIsModalOpen(true);
+    navigate(`/admin/campaigns/edit/${id}`);
   };
 
   const calculateProgress = (goal: number, progress: number) => {
@@ -121,6 +127,7 @@ const AdminCampaignDetails = () => {
 
   useEffect(() => {
     fetchCampaignDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   if (loading) {
@@ -217,19 +224,52 @@ const AdminCampaignDetails = () => {
 
           <div className="lg:w-2/3">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold">{campaignDetails.name}</h2>{" "}
-              <button
-                onClick={handleEditCampaign}
-                className="px-3 py-1 bg-blue-600 text-white rounded-md flex items-center text-sm hover:bg-blue-700 mr-2"
-              >
-                <FaEdit className="mr-1" /> Edit
-              </button>
-              <Link
-                to={`/admin/campaign/${campaignDetails._id}/dropoffs`}
-                className="px-3 py-1 bg-amber-600 text-white rounded-md flex items-center text-sm hover:bg-amber-700"
-              >
-                <FaBox className="mr-1" /> View Drop-offs
-              </Link>
+              <div>
+                <h2 className="text-2xl font-bold">{campaignDetails.name}</h2>
+                {(campaignDetails.materialTypes &&
+                  campaignDetails.materialTypes.length > 0) ||
+                campaignDetails.material ? (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {campaignDetails.materialTypes &&
+                    campaignDetails.materialTypes.length > 0 ? (
+                      campaignDetails.materialTypes.includes("All") ? (
+                        <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                          All Materials
+                        </span>
+                      ) : (
+                        campaignDetails.materialTypes.map(
+                          (materialType, index) => (
+                            <span
+                              key={index}
+                              className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full"
+                            >
+                              {materialType}
+                            </span>
+                          )
+                        )
+                      )
+                    ) : campaignDetails.material ? (
+                      <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                        {campaignDetails.material}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <div className="flex">
+                <button
+                  onClick={handleEditCampaign}
+                  className="px-3 py-1 bg-blue-600 text-white rounded-md flex items-center text-sm hover:bg-blue-700 mr-2"
+                >
+                  <FaEdit className="mr-1" /> Edit
+                </button>
+                <Link
+                  to={`/admin/campaigns/${campaignDetails.id}/dropoffs`}
+                  className="px-3 py-1 bg-amber-600 text-white rounded-md flex items-center text-sm hover:bg-amber-700"
+                >
+                  <FaBox className="mr-1" /> View Drop-offs
+                </Link>
+              </div>
             </div>
 
             <p className="text-gray-700 mb-6 whitespace-pre-line">
@@ -277,7 +317,7 @@ const AdminCampaignDetails = () => {
                   <div>
                     <p className="text-sm text-gray-600">Contributors</p>
                     <p className="text-xl font-bold text-blue-700">
-                      {contributors.length} participants
+                      {contributors?.length} participants
                     </p>
                   </div>
                   <FaUsers className="text-blue-400 text-2xl" />
@@ -294,11 +334,27 @@ const AdminCampaignDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">
-                  Material
+                  Material Types
                 </h3>
-                <p className="font-medium">
-                  {campaignDetails.material || "Not specified"}
-                </p>
+                <div className="flex flex-wrap gap-1">
+                  {campaignDetails.materialTypes &&
+                  campaignDetails.materialTypes.length > 0 ? (
+                    campaignDetails.materialTypes.map((materialType, index) => (
+                      <span
+                        key={index}
+                        className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full"
+                      >
+                        {materialType}
+                      </span>
+                    ))
+                  ) : campaignDetails.material ? (
+                    <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                      {campaignDetails.material}
+                    </span>
+                  ) : (
+                    <p className="font-medium text-gray-600">Not specified</p>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -352,7 +408,7 @@ const AdminCampaignDetails = () => {
             <h2 className="text-xl font-bold flex items-center">
               <FaUsers className="text-gray-500 mr-2" /> Contributors
               <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-sm rounded-full">
-                {contributors.length}
+                {contributors?.length}
               </span>
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -361,7 +417,7 @@ const AdminCampaignDetails = () => {
           </div>
         </div>
 
-        {contributors.length === 0 ? (
+        {contributors?.length === 0 ? (
           <div className="text-center py-8">
             <FaAward className="text-gray-300 text-5xl mx-auto mb-3" />
             <p className="text-gray-500">No contributors yet</p>
@@ -393,7 +449,7 @@ const AdminCampaignDetails = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {contributors.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
@@ -425,7 +481,7 @@ const AdminCampaignDetails = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       <Link
-                        to={`/admin/users/${user._id}`}
+                        to={`/admin/users/${user.id}`}
                         className="text-purple-600 hover:text-purple-900 mr-3"
                       >
                         View Profile
@@ -438,13 +494,6 @@ const AdminCampaignDetails = () => {
           </div>
         )}
       </div>
-
-      <AddCampaignModal
-        isModalOpen={isModalOpen}
-        setIsModalOpen={setIsModalOpen}
-        fetchCampaigns={fetchCampaignDetails}
-        campaignToEdit={campaignDetails}
-      />
     </div>
   );
 };
