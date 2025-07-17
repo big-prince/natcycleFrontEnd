@@ -9,6 +9,7 @@ export interface SimpleDropoffLocation {
   };
   address?: string;
   materialType: string;
+  bulkMaterialTypes?: string[]; // New field for multiple material types
   acceptedSubtypes?: string[];
   organizationName?: string;
   isActive: boolean;
@@ -160,12 +161,17 @@ class SimpleDropoffApi {
     return api.get(`/simple-dropoff-locations?${searchParams}`);
   }
 
+  async adminGetLocationById(id: string) {
+    return api.get(`/simple-dropoff-locations/${id}`);
+  }
+
   async adminCreateLocation(locationData: {
     name: string;
     latitude: number;
     longitude: number;
     address: string;
     materialType: string;
+    bulkMaterialTypes?: string[];
     acceptedSubtypes?: string[];
     organizationName?: string;
     isActive: boolean;
@@ -185,6 +191,7 @@ class SimpleDropoffApi {
       longitude: number;
       address: string;
       materialType: string;
+      bulkMaterialTypes: string[];
       acceptedSubtypes: string[];
       organizationName: string;
       isActive: boolean;

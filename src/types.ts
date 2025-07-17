@@ -149,6 +149,7 @@ export interface ISimpleDropoffLocation {
   };
   address?: string;
   materialType: string;
+  bulkMaterialTypes?: string[]; // New field for multiple material types
   acceptedSubtypes?: string[];
   organizationName?: string;
   isActive: boolean;

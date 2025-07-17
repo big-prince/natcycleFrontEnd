@@ -19,34 +19,34 @@ import {
   FaTrashAlt,
   FaLocationArrow,
   FaBullhorn,
+  FaShoppingBag,
 } from "react-icons/fa";
 import { MdClose, MdCheckroom, MdRecycling } from "react-icons/md";
 import { FaBottleWater } from "react-icons/fa6";
 import { GiPaperBagFolded } from "react-icons/gi";
-import { HiOutlineTrash } from "react-icons/hi2";
 import { HiCalendar } from "react-icons/hi";
 import materialApi from "../../../api/materialApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-// Improved icon function with extra debugging for plastic
+// Improved icon function with white colors for map markers
 const getIconForMaterialType = (materialType: string): JSX.Element => {
   const lowerType = materialType.toLowerCase();
   console.log("Getting icon for material type:", lowerType);
 
   if (lowerType === "plastic" || lowerType.includes("plastic")) {
     console.log("Selected plastic icon");
-    return <FaBottleWater className="w-7 h-7 text-blue-500" />;
+    return <FaBottleWater className="w-6 h-6 text-white" />;
   }
   if (
     lowerType === "fabric" ||
     lowerType.includes("fabric") ||
     lowerType.includes("textile")
   ) {
-    return <MdCheckroom className="w-7 h-7 text-green-600" />;
+    return <MdCheckroom className="w-6 h-6 text-white" />;
   }
   if (lowerType === "glass" || lowerType.includes("glass")) {
-    return <FaWineBottle className="w-7 h-7 text-green-400" />;
+    return <FaWineBottle className="w-6 h-6 text-white" />;
   }
   if (
     lowerType === "aluminium" ||
@@ -55,17 +55,17 @@ const getIconForMaterialType = (materialType: string): JSX.Element => {
     lowerType.includes("metal") ||
     lowerType.includes("can")
   ) {
-    return <FaTrashAlt className="w-7 h-7 text-gray-500" />;
+    return <FaTrashAlt className="w-6 h-6 text-white" />;
   }
   if (lowerType === "paper" || lowerType.includes("paper")) {
-    return <GiPaperBagFolded className="w-7 h-7 text-yellow-600" />;
+    return <GiPaperBagFolded className="w-6 h-6 text-white" />;
   }
   if (lowerType === "ewaste" || lowerType.includes("ewaste")) {
-    return <MdRecycling className="w-7 h-7 text-purple-500" />;
+    return <MdRecycling className="w-6 h-6 text-white" />;
   }
 
   console.log("No specific icon found, using default");
-  return <FaRecycle className="w-7 h-7 text-teal-500" />;
+  return <FaRecycle className="w-6 h-6 text-white" />;
 };
 
 type LocationMarker = {
@@ -797,28 +797,19 @@ const Where = () => {
           }`}
         >
           <div className="relative flex items-center justify-center">
-            {/* Marker base with conditional styling for highlighted state */}
+            {/* Bigger, more prominent marker dot */}
             <div
-              className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center ${
+              className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border-2 ${
                 isHighlighted
-                  ? "bg-yellow-50 border-2 border-yellow-400 ring-4 ring-yellow-200 ring-opacity-50"
-                  : "bg-white border-2 border-gray-300"
+                  ? "bg-teal-500 border-teal-600 ring-2 ring-teal-300"
+                  : "bg-teal-400 border-teal-500"
               }`}
             >
-              {/* Icon based on material type */}
-              <div className="w-8 h-8 flex items-center justify-center">
+              {/* Bigger icon */}
+              <div className="w-6 h-6 flex items-center justify-center text-white">
                 {markerIcon}
               </div>
             </div>
-
-            {/* Bottom pointer with conditional styling */}
-            <div
-              className={`absolute top-8 w-4 h-4 transform rotate-45 translate-y-1 shadow-md ${
-                isHighlighted
-                  ? "bg-yellow-50 border-r border-b border-yellow-400"
-                  : "bg-white border-r border-b border-gray-300"
-              }`}
-            ></div>
           </div>
         </div>
       </AdvancedMarker>
@@ -846,26 +837,17 @@ const Where = () => {
           }`}
         >
           <div className="relative flex items-center justify-center">
-            {/* Simple location marker with different styling */}
+            {/* Simple location marker with bigger dot styling */}
             <div
-              className={`w-10 h-10 rounded-lg shadow-lg flex items-center justify-center ${
+              className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border-2 ${
                 isHighlighted
-                  ? "bg-orange-50 border-2 border-orange-400 ring-4 ring-orange-200 ring-opacity-50"
-                  : "bg-orange-100 border-2 border-orange-400"
+                  ? "bg-orange-500 border-orange-600 ring-2 ring-orange-300"
+                  : "bg-orange-400 border-orange-500"
               }`}
             >
-              {/* Smaller trash icon for simple locations */}
-              <HiOutlineTrash className="w-5 h-5 text-orange-600" />
+              {/* Better icon for simple locations */}
+              <FaShoppingBag className="w-6 h-6 text-white" />
             </div>
-
-            {/* Bottom pointer with orange styling */}
-            <div
-              className={`absolute top-7 w-3 h-3 transform rotate-45 translate-y-1 shadow-md ${
-                isHighlighted
-                  ? "bg-orange-50 border-r border-b border-orange-400"
-                  : "bg-orange-100 border-r border-b border-orange-400"
-              }`}
-            ></div>
           </div>
         </div>
       </AdvancedMarker>
@@ -894,31 +876,22 @@ const Where = () => {
           }`}
         >
           <div className="relative flex items-center justify-center">
-            {/* Campaign marker with event styling */}
+            {/* Campaign marker with bigger dot styling */}
             <div
-              className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center ${
+              className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center border-2 ${
                 isHighlighted
-                  ? "bg-purple-50 border-2 border-purple-400 ring-4 ring-purple-200 ring-opacity-50"
-                  : "bg-gradient-to-br from-purple-100 to-pink-100 border-2 border-purple-400"
+                  ? "bg-green-500 border-green-600 ring-2 ring-green-300"
+                  : "bg-green-400 border-green-500"
               }`}
             >
               {/* Campaign icon */}
-              <FaBullhorn className="w-6 h-6 text-purple-600" />
+              <FaBullhorn className="w-6 h-6 text-white" />
             </div>
 
             {/* Event badge indicator */}
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-white text-xs font-bold">!</span>
             </div>
-
-            {/* Bottom pointer with purple styling */}
-            <div
-              className={`absolute top-8 w-4 h-4 transform rotate-45 translate-y-1 shadow-md ${
-                isHighlighted
-                  ? "bg-purple-50 border-r border-b border-purple-400"
-                  : "bg-gradient-to-br from-purple-100 to-pink-100 border-r border-b border-purple-400"
-              }`}
-            ></div>
           </div>
         </div>
       </AdvancedMarker>
@@ -995,8 +968,9 @@ const Where = () => {
               gestureHandling="greedy"
               disableDefaultUI={true}
               mapTypeControl={false}
+              clickableIcons={false}
               styles={[
-                // AGGRESSIVE POI REMOVAL - Hide ALL POI icons and labels
+                // COMPREHENSIVE POI REMOVAL - Hide ALL POI icons and labels
                 {
                   featureType: "poi",
                   stylers: [{ visibility: "off" }],
@@ -1071,6 +1045,59 @@ const Where = () => {
                 },
                 {
                   featureType: "poi.hospital",
+                  stylers: [{ visibility: "off" }],
+                },
+                // Additional POI types to ensure complete removal
+                {
+                  featureType: "poi.store",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.church",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.mosque",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.lodging",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.food_and_drink",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.retail",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.automotive",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.beauty_and_spa",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.health_and_medical",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.entertainment",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.professional_services",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.real_estate",
+                  stylers: [{ visibility: "off" }],
+                },
+                {
+                  featureType: "poi.business.travel",
                   stylers: [{ visibility: "off" }],
                 },
                 {
@@ -1943,7 +1970,7 @@ const Where = () => {
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
         <div className="bg-white rounded-2xl shadow-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold">Filters</h2>
+            <h2 className="text-lg font-semibold">Diversion Point</h2>
 
             {/* My Location Button */}
             <button
@@ -2198,7 +2225,7 @@ const Where = () => {
               {/* Header with close button */}
               <div className="bg-orange-50 px-4 py-3 flex justify-between items-center border-b">
                 <div className="flex items-center">
-                  <HiOutlineTrash className="w-5 h-5 text-orange-600 mr-2" />
+                  <FaShoppingBag className="w-5 h-5 text-orange-600 mr-2" />
                   <h3 className="text-lg font-bold text-gray-800">
                     {selectedSimpleLocation.name}
                   </h3>
@@ -2306,18 +2333,18 @@ const Where = () => {
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 500 }}
           >
-            <div className="bg-white rounded-xl shadow-xl overflow-hidden border-l-4 border-purple-400">
+            <div className="bg-white rounded-xl shadow-xl overflow-hidden border-l-4 border-green-400">
               {/* Header with close button */}
-              <div className="bg-purple-50 px-4 py-3 flex justify-between items-center border-b">
+              <div className="bg-green-50 px-4 py-3 flex justify-between items-center border-b">
                 <div className="flex items-center">
-                  <HiCalendar className="w-5 h-5 text-purple-600 mr-2" />
+                  <HiCalendar className="w-5 h-5 text-green-600 mr-2" />
                   <h3 className="text-lg font-bold text-gray-800">
                     {selectedCampaign.name}
                   </h3>
                 </div>
                 <button
                   onClick={closeLocationDetails}
-                  className="p-1 rounded-full hover:bg-purple-100 text-gray-500"
+                  className="p-1 rounded-full hover:bg-green-100 text-gray-500"
                 >
                   <MdClose size={20} />
                 </button>
@@ -2327,13 +2354,13 @@ const Where = () => {
               <div className="p-4">
                 {selectedCampaign.address && (
                   <p className="text-sm text-gray-600 mb-3 flex items-start">
-                    <FaMapMarkerAlt className="text-purple-500 mr-2 mt-1 flex-shrink-0" />
+                    <FaMapMarkerAlt className="text-green-500 mr-2 mt-1 flex-shrink-0" />
                     <span>{selectedCampaign.address}</span>
                   </p>
                 )}
 
                 <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                     Campaign
                   </span>
                   {selectedCampaign.status && (
@@ -2368,13 +2395,13 @@ const Where = () => {
                 )}
 
                 {/* Campaign Dates */}
-                <div className="bg-purple-50 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-purple-700">
+                <div className="bg-green-50 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-green-700">
                     <span className="font-medium">Start Date:</span>{" "}
                     {new Date(selectedCampaign.startDate).toLocaleDateString()}
                   </p>
                   {selectedCampaign.endDate && (
-                    <p className="text-xs text-purple-700 mt-1">
+                    <p className="text-xs text-green-700 mt-1">
                       <span className="font-medium">End Date:</span>{" "}
                       {new Date(selectedCampaign.endDate).toLocaleDateString()}
                     </p>
@@ -2395,7 +2422,7 @@ const Where = () => {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-purple-600 h-2 rounded-full"
+                          className="bg-green-600 h-2 rounded-full"
                           style={{
                             width: `${Math.min(
                               (selectedCampaign.progress /
@@ -2412,7 +2439,7 @@ const Where = () => {
                 {/* Add CTA buttons */}
                 <div className="w-full flex justify-between items-center gap-4 mt-4">
                   <button
-                    className="mt-4 w-full bg-purple-500 text-white text-sm py-3 rounded-lg font-medium hover:bg-purple-600 transition-colors px-1"
+                    className="mt-4 w-full bg-green-500 text-white text-sm py-3 rounded-lg font-medium hover:bg-green-600 transition-colors px-1"
                     onClick={() => {
                       if (selectedCampaign.location?.coordinates) {
                         const [lng, lat] =
@@ -2476,11 +2503,11 @@ const UserLocationMarker = ({
     <AdvancedMarker position={position} onClick={onClick} title={title}>
       <div className="cursor-pointer transform transition-all duration-300 hover:scale-110">
         <div className="relative flex items-center justify-center">
-          {/* Red map pin icon */}
-          <FaMapMarkerAlt className="w-8 h-8 text-red-600 drop-shadow-lg" />
-          {/* Pulsing ring animation */}
-          <div className="absolute w-12 h-12 bg-red-600 bg-opacity-20 rounded-full animate-ping"></div>
-          <div className="absolute w-10 h-10 bg-red-600 bg-opacity-30 rounded-full animate-pulse"></div>
+          {/* Small red dot for user location */}
+          <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg"></div>
+          {/* Pulsing glow effect */}
+          <div className="absolute w-8 h-8 bg-red-500 bg-opacity-20 rounded-full animate-ping"></div>
+          <div className="absolute w-6 h-6 bg-red-500 bg-opacity-30 rounded-full animate-pulse"></div>
         </div>
       </div>
     </AdvancedMarker>

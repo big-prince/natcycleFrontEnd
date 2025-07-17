@@ -58,9 +58,11 @@ import TMItemDetails from "./pages/admin/thingsmatch/TMItemDetails";
 import TMMatches from "./pages/admin/thingsmatch/TMMatches";
 import TMMatchDetails from "./pages/admin/thingsmatch/TMMatchDetails";
 import TMBreakdown from "./pages/admin/thingsmatch/TMBreakdown";
+import TMUserDetails from "./pages/admin/thingsmatch/TMUserDetails";
 import EPantry from "./pages/admin/thingsmatch/EPantry"; // Import the new EPantry component
 import AdminSimpleDropOffs from "./pages/admin/AdminSimpleDropOffs";
 import AdminSimpleDropOffLocations from "./pages/admin/AdminSimpleDropOffLocations";
+import AddSimpleDropOffLocation from "./pages/admin/simpledropoff/AddSimpleDropOffLocation";
 import NotFound from "./pages/components/NotFound";
 
 const App = () => {
@@ -137,6 +139,14 @@ const App = () => {
               element={<AdminSimpleDropOffLocations />}
             />
             <Route
+              path="/admin/simple-dropoff-locations/add"
+              element={<AddSimpleDropOffLocation />}
+            />
+            <Route
+              path="/admin/simple-dropoff-locations/edit"
+              element={<AddSimpleDropOffLocation />}
+            />
+            <Route
               path="/admin/dropoffs/:id"
               element={<AdminDropOffDetails />}
             />
@@ -184,6 +194,10 @@ const App = () => {
             {/* ThingsMatch Routes */}
             <Route path="thingsmatch" element={<ThingsMatchDashboard />} />
             <Route path="thingsmatch/users" element={<TMUsers />} />
+            <Route
+              path="thingsmatch/users/:userId"
+              element={<TMUserDetails />}
+            />
             <Route path="thingsmatch/items" element={<TMItems />} />
             <Route
               path="thingsmatch/items/:itemId"

@@ -5,37 +5,21 @@ import SimpleDropoffApi, {
 } from "../../api/simpleDropoffApi";
 import { toast } from "react-toastify";
 import materialApi from "../../api/materialApi";
+import { useNavigate } from "react-router-dom";
 import {
   FaPlus,
   FaEdit,
   FaTrash,
   FaMapMarkerAlt,
   FaCheck,
-  FaTimes,
 } from "react-icons/fa";
 import { MdVerified, MdPending } from "react-icons/md";
 
 const AdminSimpleDropOffLocations = () => {
+  const navigate = useNavigate();
   const [locations, setLocations] = useState<SimpleDropoffLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [materialTypes, setMaterialTypes] = useState<string[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editingLocation, setEditingLocation] =
-    useState<SimpleDropoffLocation | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    latitude: "",
-    longitude: "",
-    address: "",
-    materialType: "",
-    acceptedSubtypes: "",
-    organizationName: "",
-    isActive: true,
-    verificationRequired: false,
-    maxItemsPerDropOff: "10",
-    operatingHours: "",
-    contactNumber: "",
-  });
   const [filters, setFilters] = useState({
     materialType: "",
     isActive: "",
@@ -110,6 +94,18 @@ const AdminSimpleDropOffLocations = () => {
     }
   }, [refreshKey, fetchLocations]);
 
+  // Listen for location updates from the form page
+  useEffect(() => {
+    const handleLocationUpdate = () => {
+      fetchLocations(1);
+    };
+
+    window.addEventListener("simpleLocationUpdated", handleLocationUpdate);
+    return () => {
+      window.removeEventListener("simpleLocationUpdated", handleLocationUpdate);
+    };
+  }, [fetchLocations]);
+
   // Refresh function to trigger component remount
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
@@ -123,92 +119,9 @@ const AdminSimpleDropOffLocations = () => {
     window.dispatchEvent(new CustomEvent("simpleLocationUpdated"));
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const locationData = {
-        name: formData.name,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
-        address: formData.address,
-        materialType: formData.materialType,
-        acceptedSubtypes: formData.acceptedSubtypes
-          ? formData.acceptedSubtypes
-              .split(",")
-              .map((s) => s.trim())
-              .filter((s) => s)
-          : undefined,
-        organizationName: formData.organizationName || undefined,
-        isActive: formData.isActive,
-        verificationRequired: formData.verificationRequired,
-        maxItemsPerDropOff: parseInt(formData.maxItemsPerDropOff),
-        operatingHours: formData.operatingHours || undefined,
-        contactNumber: formData.contactNumber || undefined,
-      };
-
-      if (editingLocation) {
-        await SimpleDropoffApi.adminUpdateLocation(
-          editingLocation.id,
-          locationData
-        );
-        toast.success("Location updated successfully");
-      } else {
-        await SimpleDropoffApi.adminCreateLocation(locationData);
-        toast.success("Location created successfully");
-      }
-
-      setShowModal(false);
-      resetForm();
-      triggerRefresh(); // This will refresh both this component and AdminSimpleDropOffs
-    } catch (error: any) {
-      console.error("Error saving location:", error);
-      const errorMessage =
-        error.response?.data?.errors?.[0]?.message ||
-        error.response?.data?.message ||
-        "Failed to save location";
-      toast.error(errorMessage);
-    }
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      latitude: "",
-      longitude: "",
-      address: "",
-      materialType: "",
-      acceptedSubtypes: "",
-      organizationName: "",
-      isActive: true,
-      verificationRequired: false,
-      maxItemsPerDropOff: "10",
-      operatingHours: "",
-      contactNumber: "",
-    });
-    setEditingLocation(null);
-  };
-
-  // Handle edit
+  // Handle edit - navigate to the form page
   const handleEdit = (location: SimpleDropoffLocation) => {
-    setEditingLocation(location);
-    setFormData({
-      name: location.name,
-      latitude: location.location.coordinates[1].toString(),
-      longitude: location.location.coordinates[0].toString(),
-      address: location.address || "",
-      materialType: location.materialType,
-      acceptedSubtypes: location.acceptedSubtypes?.join(", ") || "",
-      organizationName: location.organizationName || "",
-      isActive: location.isActive,
-      verificationRequired: location.verificationRequired,
-      maxItemsPerDropOff: location.maxItemsPerDropOff.toString(),
-      operatingHours: location.operatingHours || "",
-      contactNumber: location.contactNumber || "",
-    });
-    setShowModal(true);
+    navigate(`/admin/simple-dropoff-locations/edit?id=${location.id}`);
   };
 
   // Handle delete
@@ -287,10 +200,7 @@ const AdminSimpleDropOffLocations = () => {
           </p>
         </div>
         <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
+          onClick={() => navigate("/admin/simple-dropoff-locations/add")}
           className="bg-sky-600 text-white px-6 py-3 rounded-lg hover:bg-sky-700 transition-colors flex items-center shadow-lg font-medium"
         >
           <FaPlus className="mr-2" />
@@ -421,9 +331,25 @@ const AdminSimpleDropOffLocations = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-sky-100 text-sky-800">
-                      {location.materialType}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {location.bulkMaterialTypes &&
+                      location.bulkMaterialTypes.length > 0 ? (
+                        location.bulkMaterialTypes.map((type) => (
+                          <span
+                            key={type}
+                            className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-sky-100 text-sky-800"
+                          >
+                            {type === "All"
+                              ? "All Materials"
+                              : type.charAt(0).toUpperCase() + type.slice(1)}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-sky-100 text-sky-800">
+                          {location.materialType}
+                        </span>
+                      )}
+                    </div>
                     {location.acceptedSubtypes &&
                       location.acceptedSubtypes.length > 0 && (
                         <div className="text-xs text-slate-500 mt-1">
@@ -545,266 +471,6 @@ const AdminSimpleDropOffLocations = () => {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">
-                {editingLocation ? "Edit Location" : "Add New Location"}
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Location Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Material Type *
-                  </label>
-                  <select
-                    value={formData.materialType}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        materialType: e.target.value,
-                      }))
-                    }
-                    required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Type</option>
-                    {materialTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Latitude *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.latitude}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        latitude: e.target.value,
-                      }))
-                    }
-                    required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Longitude *
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.longitude}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        longitude: e.target.value,
-                      }))
-                    }
-                    required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      address: e.target.value,
-                    }))
-                  }
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Organization Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.organizationName}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        organizationName: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Items Per Drop-Off *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.maxItemsPerDropOff}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        maxItemsPerDropOff: e.target.value,
-                      }))
-                    }
-                    required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Accepted Subtypes (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={formData.acceptedSubtypes}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      acceptedSubtypes: e.target.value,
-                    }))
-                  }
-                  placeholder="e.g., bottles, containers, bags"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Operating Hours
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.operatingHours}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        operatingHours: e.target.value,
-                      }))
-                    }
-                    placeholder="e.g., 9:00 AM - 5:00 PM"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contact Number
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.contactNumber}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        contactNumber: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        isActive: e.target.checked,
-                      }))
-                    }
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Active</span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.verificationRequired}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        verificationRequired: e.target.checked,
-                      }))
-                    }
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">
-                    Verification Required
-                  </span>
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  {editingLocation ? "Update" : "Create"} Location
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
     </div>

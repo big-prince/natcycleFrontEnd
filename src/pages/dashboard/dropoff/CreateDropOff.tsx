@@ -344,12 +344,23 @@ const CreateDropOff = () => {
 
       setLoading(true);
 
+      const selectedLocation = simpleLocations.find(
+        (loc) => loc.id === selectedSimpleLocationId
+      );
+
+      // Use bulkMaterialTypes if available, otherwise fallback to materialType
+      const materialType =
+        selectedLocation?.bulkMaterialTypes &&
+        selectedLocation.bulkMaterialTypes.length > 0
+          ? selectedLocation.bulkMaterialTypes[0] === "All"
+            ? "plastic" // Default material type when "All" is selected
+            : selectedLocation.bulkMaterialTypes[0]
+          : selectedLocation?.materialType || "plastic";
+
       console.log("Submitting Simple Drop Off Data:", {
         locationId: selectedSimpleLocationId,
         itemCount: simpleDropoffForm.itemCount,
-        materialType: simpleLocations.find(
-          (loc) => loc.id === selectedSimpleLocationId
-        )?.materialType,
+        materialType: materialType,
         description: simpleDropoffForm.description,
         campaignId: campaignIdFromQuery,
         userCoords: "will be fetched",
@@ -367,7 +378,7 @@ const CreateDropOff = () => {
 
         const submitData = {
           simpleDropOffLocationId: selectedSimpleLocationId,
-          materialType: selectedLocation?.materialType || "plastic",
+          materialType: materialType,
           quantity: parseInt(simpleDropoffForm.itemCount) || 0,
           latitude: userCoords.latitude,
           longitude: userCoords.longitude,
@@ -1669,7 +1680,24 @@ const CreateDropOff = () => {
                           </p>
                           <p className="text-xs text-gray-500">{loc.address}</p>
                           <p className="text-xs text-gray-500 mt-0.5">
-                            Material: {loc.materialType}
+                            Material:{" "}
+                            {loc.bulkMaterialTypes &&
+                            loc.bulkMaterialTypes.length > 0
+                              ? loc.bulkMaterialTypes.length === 1 &&
+                                loc.bulkMaterialTypes[0] === "All"
+                                ? "All Materials"
+                                : loc.bulkMaterialTypes.map((type, index) => (
+                                    <span key={type}>
+                                      {type === "All"
+                                        ? "All Materials"
+                                        : type.charAt(0).toUpperCase() +
+                                          type.slice(1)}
+                                      {index < loc.bulkMaterialTypes!.length - 1
+                                        ? ", "
+                                        : ""}
+                                    </span>
+                                  ))
+                              : loc.materialType}
                           </p>
                           {loc.distance !== undefined && (
                             <p className="text-xs text-orange-600 mt-0.5">
