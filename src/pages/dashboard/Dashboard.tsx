@@ -189,13 +189,7 @@ const Dashboard = () => {
         <p className="text-lg font-semibold">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
-        <p className="mt-1 mb-3 text-2xl font-bold">
-          What material are you working with?
-        </p>
-        <div className="flex items-center text-xs font-medium mb-3 text-gray-600">
-          <FaChevronRight className="mr-1 text-xs" />
-          SELECT
-        </div>
+        <p className="mt-1 mb-3 text-2xl font-bold">Select Material</p>
         <div className="flex overflow-x-auto space-x-3 pb-3 px-2 mb-3 pt-5 scrollbar-hide min-h-[50px]">
           {materialsLoading ? (
             <p className="text-slate-600 text-sm italic px-3">
@@ -225,12 +219,6 @@ const Dashboard = () => {
             </p>
           )}
         </div>
-        <Link
-          to="/public/dropoff/create"
-          className="block text-xs underline text-green-700 hover:text-green-800 font-medium"
-        >
-          other item types?
-        </Link>
         {/* Action buttons container positioned to the far right */}
         <div className="absolute bottom-[-26px] right-6 w-auto">
           {selectedItemType ? (
