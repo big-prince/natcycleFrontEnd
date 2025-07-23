@@ -12,6 +12,7 @@ export interface ICampaign {
   name: string;
   description: string;
   endDate: string;
+  materialTypes?: string[];
   status: string; // Campaign status (e.g., "active", "inactive")
   material?: string; // Optional: Material associated with the campaign (if applicable)
   goal: number; // Goal amount for the fundraising campaign

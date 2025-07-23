@@ -32,6 +32,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import AdminRedeemedRewards from "./pages/admin/AdminRedeemedRewards";
 import AdminCampaign from "./pages/admin/AdminCampaign";
 import CampaignDetails from "./pages/dashboard/CampaignDetails";
+import CampaignsPage from "./pages/dashboard/campaign/CampaignsPage";
 import AdminCampaignDetails from "./pages/admin/AdminCampaignDetails";
 import CampaignContributors from "./pages/dashboard/campaign/CampaignContributors";
 import CreateDropOff from "./pages/dashboard/dropoff/CreateDropOff";
@@ -108,6 +109,7 @@ const App = () => {
             <Route path="notifications" element={<Notifications />} />
 
             <Route path="rewards" element={<UserRewards />} />
+            <Route path="campaigns" element={<CampaignsPage />} />
             <Route path="campaigns/:id" element={<CampaignDetails />} />
             <Route
               path="campaigns/:id/contributors"

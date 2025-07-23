@@ -10,6 +10,7 @@ import { FaTrophy } from "react-icons/fa6";
 import ImpactCounter from "./components/ImpactCounter";
 import { toast } from "react-toastify";
 import MaterialApi from "../../api/materialApi";
+import CampaignsList from "./components/CampaignsList";
 
 const mileStoneNumbers = [
   { level: 1, pointsRange: [0, 500], name: "Seedling" },
@@ -179,6 +180,9 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Campaigns/Drives Section */}
+      <CampaignsList />
 
       {/* Green "Action Today" Card */}
       <div className="p-6 mt-4 rounded-3xl bg-[#D4FF4F] text-slate-800 shadow-lg relative pb-14 z-10">

@@ -688,7 +688,7 @@ const Where = () => {
   // Handle marker click for campaigns
   const handleCampaignMarkerClick = (campaignId: string) => {
     const campaign = campaigns.find(
-      (c) => c._id === campaignId || c.id === campaignId
+      (c) => c.id === campaignId || c.id === campaignId
     );
     if (campaign) {
       console.log("Selected campaign:", campaign);
@@ -1928,16 +1928,16 @@ const Where = () => {
               {/* Campaign markers */}
               {campaigns.map((campaign) => (
                 <CampaignMarker
-                  key={`campaign-${campaign._id}`}
+                  key={`campaign-${campaign.id}`}
                   position={{
                     lat: campaign.location.coordinates[1],
                     lng: campaign.location.coordinates[0],
                   }}
-                  onClick={() => handleCampaignMarkerClick(campaign._id)}
+                  onClick={() => handleCampaignMarkerClick(campaign.id)}
                   title={campaign.name}
                   campaign={campaign}
-                  markerId={campaign._id}
-                  isHighlighted={selectedCampaign?._id === campaign._id}
+                  markerId={campaign.id}
+                  isHighlighted={selectedCampaign?.id === campaign.id}
                 />
               ))}
 
@@ -2468,7 +2468,7 @@ const Where = () => {
 
                       navigate(
                         `/dropoff/create?mode=campaign&campaignId=${
-                          selectedCampaign._id || selectedCampaign.id
+                          selectedCampaign.id || selectedCampaign.id
                         }&campaignName=${encodeURIComponent(
                           selectedCampaign.name
                         )}&type=${materialType}`

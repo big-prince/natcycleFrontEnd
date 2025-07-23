@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import SimpleDropoffApi from "../../../api/simpleDropoffApi";
 import CampaignApi from "../../../api/campaignApi";
@@ -11,6 +11,7 @@ import DropOffApi from "../../../api/dropOffApi";
 import MaterialApi from "../../../api/materialApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { DropoffMode, ISimpleDropoffLocation, ICampaign } from "../../../types";
+import { useCampaignSelection } from "./useCampaignSelection";
 import { motion } from "framer-motion";
 import {
   MdLocationOn,
@@ -147,7 +148,7 @@ const CreateDropOff = () => {
   >([]);
   const itemTypeButtonsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Effect to handle initial mode setup and location fetching
+  // Effect to fetch campaign details and select it when campaign ID is in URL
   useEffect(() => {
     // Set initial mode from URL params and pre-select location if provided
     if (modeFromQuery === "simple" && locationIdFromQuery) {
@@ -157,20 +158,17 @@ const CreateDropOff = () => {
     } else if (modeFromQuery === "simple") {
       setDropoffMode("simple");
       getNearestSimpleDropOffLocations();
-    } else if (modeFromQuery === "campaign" && campaignIdFromQuery) {
+    } else if (modeFromQuery === "campaign") {
       setDropoffMode("campaign");
-      // Campaign details will be fetched in the dedicated useEffect
-      // Ensure the type is passed to fetch the right campaign locations if needed
+      // Campaign details will be fetched in the dedicated hook
+      // We only need to fetch nearby campaigns for the list
       if (typeFromQuery) {
         fetchNearbyCampaigns(typeFromQuery);
       } else {
         fetchNearbyCampaigns();
       }
-    } else if (modeFromQuery === "campaign") {
-      setDropoffMode("campaign");
-      fetchNearbyCampaigns(typeFromQuery);
     }
-  }, [modeFromQuery, locationIdFromQuery, campaignIdFromQuery, typeFromQuery]);
+  }, [modeFromQuery, locationIdFromQuery]);
 
   // Effect to fetch primary material types for the filter buttons and set initial type
   useEffect(() => {
@@ -465,7 +463,7 @@ const CreateDropOff = () => {
 
         // Use the campaign-specific API endpoint with the campaign ID
         await CampaignApi.createCampaignDropOff(
-          selectedCampaign._id || selectedCampaign.id,
+          selectedCampaign.id || selectedCampaign.id,
           formData
         );
         toast.success("Campaign drop off submitted successfully");
@@ -551,49 +549,63 @@ const CreateDropOff = () => {
   const [nearbyCampaigns, setNearbyCampaigns] = useState<ICampaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
 
+  // Use the campaign selection hook to get refs and handlers
+  const { getCampaignClassName, getRefForCampaign } = useCampaignSelection({
+    campaignIdFromQuery,
+    setDropoffMode: (mode: string) => setDropoffMode(mode as DropoffMode),
+    setSelectedCampaign,
+  });
+
   // Fetch nearby campaigns based on user's location and material type
-  const fetchNearbyCampaigns = async (materialType?: string) => {
-    setLoadingCampaigns(true);
-    setNearbyCampaigns([]);
-
-    try {
-      const userCoords = await getUserLocation();
-
-      // Fetch nearby campaigns using the CampaignApi.getNearbyCampaigns method
-      const response = await CampaignApi.getNearbyCampaigns(
-        userCoords.latitude,
-        userCoords.longitude,
-        50000, // 50km radius
-        materialType || undefined
-      );
-
-      if (response.data && response.data.data) {
-        setNearbyCampaigns(response.data.data);
-
-        // If we found campaigns and none is selected yet, select the first one
-        if (
-          response.data.data.length > 0 &&
-          !selectedCampaign &&
-          !campaignIdFromQuery
-        ) {
-          setSelectedCampaign(response.data.data[0]);
-        }
-      } else {
-        setNearbyCampaigns([]);
-      }
-    } catch (error) {
-      console.error("Error fetching nearby campaigns:", error);
-      toast.error("Could not load nearby campaigns");
+  const fetchNearbyCampaigns = useCallback(
+    async (materialType?: string) => {
+      setLoadingCampaigns(true);
       setNearbyCampaigns([]);
-    } finally {
-      setLoadingCampaigns(false);
-    }
-  };
+
+      try {
+        const userCoords = await getUserLocation();
+
+        // Fetch nearby campaigns using the CampaignApi.getNearbyCampaigns method
+        const response = await CampaignApi.getNearbyCampaigns(
+          userCoords.latitude,
+          userCoords.longitude,
+          50000, // 50km radius
+          materialType || undefined
+        );
+
+        if (response.data && response.data.data) {
+          setNearbyCampaigns(response.data.data);
+
+          // If we found campaigns and none is selected yet, select the first one
+          // Only do this if we don't have a campaign ID in the URL
+          if (
+            response.data.data.length > 0 &&
+            !selectedCampaign &&
+            !campaignIdFromQuery
+          ) {
+            setSelectedCampaign(response.data.data[0]);
+          }
+        } else {
+          setNearbyCampaigns([]);
+        }
+      } catch (error) {
+        console.error("Error fetching nearby campaigns:", error);
+        toast.error("Could not load nearby campaigns");
+        setNearbyCampaigns([]);
+      } finally {
+        setLoadingCampaigns(false);
+      }
+    },
+    [campaignIdFromQuery, selectedCampaign]
+  );
 
   // Handle campaign selection
   const handleCampaignSelect = (campaign: ICampaign) => {
-    // Note: We now set the selected campaign before calling this function
-    // to fix the double-click issue, so we don't need to set it here
+    // Note: We set the selected campaign before calling this function
+    // in the onClick handler to ensure immediate UI feedback
+
+    // Get campaign ID consistently regardless of structure
+    const campaignId = campaign.id;
 
     // Update URL with the selected campaign ID and name
     const paramsToSet: {
@@ -603,29 +615,43 @@ const CreateDropOff = () => {
       type?: string;
     } = {
       mode: "campaign",
-      campaignId: campaign._id || campaign.id,
+      campaignId: campaignId,
       campaignName: campaign.name,
     };
 
-    // If there's a material type from the campaign, use it
+    // Determine material type from campaign data
+    let materialType: string | undefined;
+
+    // Check materialTypes as array first
     if (
       campaign.materialTypes &&
       Array.isArray(campaign.materialTypes) &&
       campaign.materialTypes.length > 0
     ) {
-      paramsToSet.type = campaign.materialTypes[0].toLowerCase();
-    } else if (
+      materialType = campaign.materialTypes[0].toLowerCase();
+    }
+    // Check materialTypes as string
+    else if (
       campaign.materialTypes &&
       typeof campaign.materialTypes === "string"
     ) {
-      paramsToSet.type = campaign.materialTypes.toLowerCase();
-    } else if (campaign.material) {
-      paramsToSet.type = campaign.material.toLowerCase();
-    } else if (campaign.itemType) {
-      paramsToSet.type = campaign.itemType.toLowerCase();
-    } else if (typeFromQuery) {
-      paramsToSet.type = typeFromQuery;
+      materialType = campaign.materialTypes.toLowerCase();
     }
+    // Fall back to other properties
+    else if (campaign.material) {
+      materialType = campaign.material.toLowerCase();
+    } else if (campaign.itemType) {
+      materialType = campaign.itemType.toLowerCase();
+    } else if (typeFromQuery) {
+      materialType = typeFromQuery;
+    }
+
+    if (materialType) {
+      paramsToSet.type = materialType;
+    }
+
+    // Cache selected campaign to avoid refetching
+    sessionStorage.setItem(`campaign_${campaignId}`, JSON.stringify(campaign));
 
     setSearchParams(paramsToSet);
   };
@@ -1252,34 +1278,13 @@ const CreateDropOff = () => {
     selectedLocationId,
   ]);
 
-  // Fetch campaign details when campaign ID is provided
-  useEffect(() => {
-    const fetchCampaignDetails = async () => {
-      if (!campaignIdFromQuery) return;
-
-      try {
-        const response = await CampaignApi.getCampaign(campaignIdFromQuery);
-        if (response.data && response.data.data) {
-          setSelectedCampaign(response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching campaign details:", error);
-        toast.error("Could not load campaign information");
-      }
-    };
-
-    if (dropoffMode === "campaign" && campaignIdFromQuery) {
-      fetchCampaignDetails();
-    }
-  }, [campaignIdFromQuery, dropoffMode]);
-
   // Fetch nearby campaigns when in campaign mode
   useEffect(() => {
     if (dropoffMode === "campaign" && !campaignIdFromQuery) {
       // If no specific campaign ID is provided, fetch nearby campaigns
       fetchNearbyCampaigns(typeFromQuery);
     }
-  }, [dropoffMode, typeFromQuery, campaignIdFromQuery]);
+  }, [dropoffMode, typeFromQuery, campaignIdFromQuery, fetchNearbyCampaigns]);
 
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
@@ -1449,18 +1454,17 @@ const CreateDropOff = () => {
                 {nearbyCampaigns.map((campaign) => (
                   <div
                     key={campaign.id}
+                    // Use the ref helper function from the hook for auto-scrolling
+                    ref={getRefForCampaign(campaign, selectedCampaign)}
                     onClick={(e) => {
                       e.preventDefault(); // Prevent event bubbling
-                      // Immediately set the selected campaign
+                      // Immediately set the selected campaign for UI feedback
                       setSelectedCampaign(campaign);
                       // Then update URL params and other state
                       handleCampaignSelect(campaign);
                     }}
-                    className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedCampaign && selectedCampaign.id === campaign.id
-                        ? "border-green-500 bg-green-50"
-                        : "border-gray-200 hover:border-green-300 hover:bg-green-50"
-                    }`}
+                    // Use the className helper function from the hook for consistent styling
+                    className={getCampaignClassName(campaign, selectedCampaign)}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-1">

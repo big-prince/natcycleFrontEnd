@@ -208,7 +208,6 @@ export interface ICampaignDropOffLocation {
 }
 
 export interface ICampaign {
-  _id: string;
   id: string;
   name: string;
   description: string;
