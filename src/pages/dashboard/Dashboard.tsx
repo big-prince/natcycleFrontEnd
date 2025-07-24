@@ -11,6 +11,7 @@ import ImpactCounter from "./components/ImpactCounter";
 import { toast } from "react-toastify";
 import MaterialApi from "../../api/materialApi";
 import CampaignsList from "./components/CampaignsList";
+import { MdCampaign } from "react-icons/md";
 
 const mileStoneNumbers = [
   { level: 1, pointsRange: [0, 500], name: "Seedling" },
@@ -144,7 +145,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="mb-10 p-4 bg-white rounded-3xl shadow-md">
+      <div className="mb-5 p-4 bg-white rounded-3xl shadow-md">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <FaTrophy className="text-amber-500 w-4 h-4 mr-2" />
@@ -182,14 +183,37 @@ const Dashboard = () => {
       </div>
 
       {/* Campaigns/Drives Section */}
+      {/* Original Implementation (commented out for easy restoration)
       <CampaignsList />
+      */}
+
+      {/* New Campaign Button */}
+      <div className="mt-2 mb-2">
+        <Link
+          to="/campaigns"
+          className="block w-full bg-white hover:bg-gray-50 rounded-xl shadow-lg p-3 transition-all duration-200 border border-gray-100 hover:border-green-200 hover:shadow-xl"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div>
+                <h3 className="font-semibold text-slate-800 text-sm">
+                  Campaign Events Near You
+                </h3>
+              </div>
+            </div>
+            <div className="bg-green-50 p-2 rounded-full">
+              <FaChevronRight className="text-green-600" />
+            </div>
+          </div>
+        </Link>
+      </div>
 
       {/* Green "Action Today" Card */}
       <div className="p-6 mt-4 rounded-3xl bg-[#D4FF4F] text-slate-800 shadow-lg relative pb-14 z-10">
         <p className="text-lg font-semibold">
           Good {getTimeOfDay()} {user.firstName}!
         </p>
-        <p className="mt-1 mb-3 text-2xl font-bold">Select Material</p>
+        <p className="mt-1 mb-3 text-2xl font-bold">Select Material Type</p>
         <div className="flex overflow-x-auto space-x-3 pb-3 px-2 mb-3 pt-5 scrollbar-hide min-h-[50px]">
           {materialsLoading ? (
             <p className="text-slate-600 text-sm italic px-3">
