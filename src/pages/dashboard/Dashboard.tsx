@@ -10,8 +10,8 @@ import { FaTrophy } from "react-icons/fa6";
 import ImpactCounter from "./components/ImpactCounter";
 import { toast } from "react-toastify";
 import MaterialApi from "../../api/materialApi";
-import CampaignsList from "./components/CampaignsList";
-import { MdCampaign } from "react-icons/md";
+// import CampaignsList from "./components/CampaignsList";
+// import { MdCampaign } from "react-icons/md";
 
 const mileStoneNumbers = [
   { level: 1, pointsRange: [0, 500], name: "Seedling" },
