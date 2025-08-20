@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "../../hooks/reduxHooks";
 import { useState, useEffect } from "react";
 import ProfileApi from "../../api/profile.Api";
 import { updateUser } from "../../reducers/authSlice";
-import { FaEarthAmericas } from "react-icons/fa6";
+import { FaRecycle } from "react-icons/fa6";
 import { FaTrophy } from "react-icons/fa6";
 import ImpactCounter from "./components/ImpactCounter";
 import { toast } from "react-toastify";
@@ -57,7 +57,7 @@ const Dashboard = () => {
         const response = await MaterialApi.getMaterialsCategory();
         const categories = response.data.data.primaryTypes || [];
 
-        // Take only the first 6 categories if there are more
+        // Take only the first 8 categories if there are more
         const limitedCategories = categories
           .slice(0, 8)
           .map((category: string) => category.toLowerCase());
@@ -129,8 +129,8 @@ const Dashboard = () => {
     <div className="pb-10">
       <div className="mb-6 p-4 bg-white rounded-3xl shadow-md flex justify-between items-center">
         <div className="flex items-center">
-          <div className="p-2 bg-blue-100 rounded-full mr-3">
-            <FaEarthAmericas className="text-2xl text-blue-500" />
+          <div className="p-2 bg-green-100 rounded-full mr-3">
+            <FaRecycle className="text-2xl text-green-500" />
           </div>
           <div>
             <p className="text-xs text-gray-500">Green Impact</p>
@@ -214,34 +214,36 @@ const Dashboard = () => {
           Good {getTimeOfDay()} {user.firstName}!
         </p>
         <p className="mt-1 mb-3 text-2xl font-bold">Select Material Type</p>
-        <div className="flex overflow-x-auto space-x-3 pb-3 px-2 mb-3 pt-5 scrollbar-hide min-h-[50px]">
-          {materialsLoading ? (
-            <p className="text-slate-600 text-sm italic px-3">
-              Loading items...
-            </p>
-          ) : divertItems.length > 0 ? (
-            divertItems.map((itemType) => (
-              <button
-                type="button"
-                key={itemType}
-                onClick={() => handleDivertItemClick(itemType)}
-                className={`
-                  font-medium py-3 px-5 rounded-full shadow-sm text-xs sm:text-sm text-center flex-shrink-0 min-w-[110px] transition-colors duration-150
-                  ${
-                    selectedItemType === itemType
-                      ? "bg-black text-white ring-2 ring-slate-800"
-                      : "bg-white/90 hover:bg-white text-slate-700"
-                  }
-                `}
-              >
-                {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
-              </button>
-            ))
-          ) : (
-            <p className="text-slate-600 text-sm px-3">
-              No divertable items found.
-            </p>
-          )}
+        <div className="relative">
+          <div className="flex overflow-x-auto space-x-3 pb-3 px-2 mb-3 pt-5 divert-items-scroll min-h-[50px]">
+            {materialsLoading ? (
+              <p className="text-slate-600 text-sm italic px-3">
+                Loading items...
+              </p>
+            ) : divertItems.length > 0 ? (
+              divertItems.map((itemType) => (
+                <button
+                  type="button"
+                  key={itemType}
+                  onClick={() => handleDivertItemClick(itemType)}
+                  className={`
+                    font-medium py-3 px-5 rounded-full shadow-sm text-xs sm:text-sm text-center flex-shrink-0 min-w-[110px] transition-colors duration-150
+                    ${
+                      selectedItemType === itemType
+                        ? "bg-black text-white ring-2 ring-slate-800"
+                        : "bg-white/90 hover:bg-white text-slate-700"
+                    }
+                  `}
+                >
+                  {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
+                </button>
+              ))
+            ) : (
+              <p className="text-slate-600 text-sm px-3">
+                No divertable items found.
+              </p>
+            )}
+          </div>
         </div>
         {/* Action buttons container positioned to the far right */}
         <div className="absolute bottom-[-26px] right-6 w-auto">

@@ -101,3 +101,29 @@ html {
   left: 12px;
   z-index: 1;
 }
+
+/* Custom styling for divert items scrollbar */
+.divert-items-scroll::-webkit-scrollbar {
+  height: 2px;
+  cursor: pointer;
+}
+
+.divert-items-scroll::-webkit-scrollbar-track {
+  background: rgba(203, 213, 225, 0.2); /* Very light subtle track */
+  border-radius: 10px;
+}
+
+.divert-items-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6); /* Gray-400 with transparency */
+  border-radius: 10px;
+}
+
+.divert-items-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.8); /* Gray-500 when hovered */
+}
+
+/* For Firefox */
+.divert-items-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) rgba(203, 213, 225, 0.2);
+}

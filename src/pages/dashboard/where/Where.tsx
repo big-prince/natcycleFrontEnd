@@ -2084,7 +2084,7 @@ const Where = () => {
             </div>
           )}
 
-          <p className="mt-4 text-sm text-green-700 text-center font-medium">
+          <p className="hidden mt-4 text-sm text-green-700 text-center font-medium">
             {loadingCampaigns
               ? "Loading campaigns..."
               : "Click on a marker to see more details"}

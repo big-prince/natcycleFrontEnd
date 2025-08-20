@@ -26,7 +26,6 @@ const DashLayout = () => {
     return null;
   }
 
-  //Inform user on Desktop that this is a mobile optimized app
   if (isDesktop && neglect === false) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50">
@@ -59,7 +58,7 @@ const DashLayout = () => {
       {" "}
       <div
         className={`flex justify-between items-center mt-6 mb-3 ${
-          location.pathname === "/where" ? "px-4" : ""
+          location.pathname === "/where" ? "px-4 hidden" : ""
         }`}
       >
         <Link to="/home">
