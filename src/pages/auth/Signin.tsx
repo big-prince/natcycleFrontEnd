@@ -5,7 +5,7 @@ import { useAppDispatch } from "../../hooks/reduxHooks";
 import { login } from "../../reducers/authSlice";
 import AuthApi from "../../api/authApi";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
-import Illustration from "../../assets/signup.png";
+import Illustration from "../../assets/new_illustration.svg";
 import FullLogo from "../../assets/logo/Group 202@2x.png";
 import { toast } from "react-toastify";
 
