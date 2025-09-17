@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 const Signin = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const location = useLocation(); // Add this to access location state
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);

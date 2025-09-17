@@ -907,7 +907,7 @@ const Where = () => {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     if (isMobile) {
-      const appleMapsUrl = `maps://maps.apple.com/?daddr=${lat},${lng}&dirflg=d&q=${encodedName}`;
+      const appleMapsUrl = `https://maps.apple.com/?daddr=${lat},${lng}&q=${encodedName}`;
       const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodedName}&travelmode=driving`;
 
       // Try to open in platform-specific app first
