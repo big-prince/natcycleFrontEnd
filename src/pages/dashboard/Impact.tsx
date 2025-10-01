@@ -7,18 +7,14 @@ import ReferModal from "./components/ReferModal";
 // import RewardSwiper from "./components/RewardSwiper"; // Hidden in new design
 // import Milestone from "./components/Milestone"; // Logic will be integrated
 import ProfileApi from "../../api/profile.Api";
-import { IBadge } from "../../types"; // Import needed types
+import { IBadge, IUserMaterialContribution } from "../../types"; // Import needed types
 import DropOffApi from "../../api/dropOffApi";
+import materialApi from "../../api/materialApi";
+import { calculateUserContributions } from "../../utils/materialContributions";
+import MaterialContributionCard from "../../components/MaterialContributionCard";
 
 import { FaLeaf, FaBoxesStacked, FaMapPin, FaAward } from "react-icons/fa6";
 import { IoChevronForward } from "react-icons/io5";
-
-const recyclablesWithPoints = [
-  { item: "plastic", points: 10, label: "Plastic bottles", unit: "units" },
-  { item: "fabric", points: 5, label: "Fabrics", unit: "Lbs" },
-  { item: "glass", points: 8, label: "Glass", unit: "lb" },
-  { item: "mixed", points: 2, label: "Mixed", unit: "lb" },
-];
 
 type IItemsCount = {
   fabric: number;
@@ -47,22 +43,6 @@ type IDropOff = {
   [key: string]: any;
 };
 
-const formatLargeNumber = (num: number | null | undefined): string => {
-  if (num == null) return "0";
-  if (Math.abs(num) < 1000) return num.toString();
-
-  const suffixes = ["", "K", "M", "B", "T"];
-  const i = Math.floor(Math.log10(Math.abs(num)) / 3);
-
-  const val = num / Math.pow(1000, i);
-
-  if (val % 1 === 0) {
-    return val.toFixed(0) + suffixes[i];
-  } else {
-    return val.toFixed(1) + suffixes[i];
-  }
-};
-
 const Impact = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const itemsCount: IItemsCount = localUser?.itemsCount || {
@@ -75,14 +55,10 @@ const Impact = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userDropOffs, setUserDropOffs] = useState<IDropOff[]>([]);
   const [userbadges, setUserBadges] = useState<IBadge[]>([]);
-
-  // Calculate point for each recyclable
-  const calculateCarbonUnitsForItem = (itemKey: string) => {
-    const itemData = recyclablesWithPoints.find((i) => i.item === itemKey);
-    if (!itemData) return 0;
-
-    return itemData.points;
-  };
+  const [materialContributions, setMaterialContributions] = useState<
+    IUserMaterialContribution[]
+  >([]);
+  const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
 
   const fetchUserDropOffs = async () => {
     if (!localUser?._id) return;
@@ -105,12 +81,42 @@ const Impact = () => {
       });
   };
 
+  const fetchMaterialContributions = async () => {
+    if (!localUser?._id) return;
+
+    setIsLoadingMaterials(true);
+    try {
+      // Get material categories from backend
+      const materialResponse = await materialApi.getMaterialsCategory();
+      const materialTypes = materialResponse.data.data.primaryTypes || [];
+
+      // Calculate user contributions using existing dropoffs and itemsCount
+      const contributions = await calculateUserContributions(
+        userDropOffs,
+        itemsCount,
+        materialTypes
+      );
+
+      setMaterialContributions(contributions);
+    } catch (error) {
+      console.error("Error fetching material contributions:", error);
+    } finally {
+      setIsLoadingMaterials(false);
+    }
+  };
+
   useEffect(() => {
     if (localUser?._id) {
       fetchUserDropOffs();
       fetchUserBadges();
     }
   }, [localUser?._id]);
+
+  useEffect(() => {
+    if (userDropOffs.length >= 0 && localUser) {
+      fetchMaterialContributions();
+    }
+  }, [userDropOffs, localUser]);
 
   if (!localUser) {
     return <div className="p-10 text-center">Loading user data...</div>;
@@ -214,42 +220,35 @@ const Impact = () => {
           </div>
         </div>
       )}
-      {/* Breakdown Section */}
+      {/* Material Contributions Section */}
       <div className="mt-6">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-md font-semibold text-slate-700">Breakdown</h3>
+          <h3 className="text-md font-semibold text-slate-700">
+            Material Contributions
+          </h3>
           <Link
-            to="/green-profile"
+            to="/material-contributions"
             className="text-xs text-green-600 font-medium flex items-center"
           >
-            See Green Profile <IoChevronForward className="ml-0.5" />
+            See All <IoChevronForward className="ml-0.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {recyclablesWithPoints.map((item) => (
-            <div
-              key={item.item}
-              className="bg-[#D4FF4F] p-3.5 rounded-xl shadow"
-            >
-              {" "}
-              {/* Lime green */}
-              <p className="font-semibold text-sm text-slate-800 mb-1">
-                {item.label}
-              </p>
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {formatLargeNumber(itemsCount[item.item] || 0)}
-                  </p>
-                  <p className="text-xs text-gray-700 -mt-1">{item.unit}</p>
-                </div>
-                <div className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold">
-                  {calculateCarbonUnitsForItem(item.item)} CU
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+
+        {isLoadingMaterials ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Loading material contributions...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {materialContributions.slice(0, 4).map((contribution) => (
+              <MaterialContributionCard
+                key={contribution.materialType}
+                contribution={contribution}
+                isCompact={true}
+              />
+            ))}
+          </div>
+        )}
       </div>
       {/* Badges Section - Unhidden and Styled */}
       <div className="hidden mt-8">

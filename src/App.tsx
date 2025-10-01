@@ -50,6 +50,7 @@ import Where from "./pages/dashboard/where/Where";
 import UserDropOffs from "./pages/dashboard/dropoff/UserDropOffs";
 import PublicLayout from "./pages/components/PublicLayout";
 import GreenProfile from "./pages/dashboard/GreenProfile";
+import AllMaterialContributions from "./pages/dashboard/AllMaterialContributions";
 
 // ThingsMatch Admin Pages
 import ThingsMatchDashboard from "./pages/admin/thingsmatch/ThingsMatchDashboard";
@@ -105,6 +106,10 @@ const App = () => {
             <Route path="profile/update-profile" element={<UpdateProfile />} />
 
             <Route path="impact" element={<Impact />} />
+            <Route
+              path="material-contributions"
+              element={<AllMaterialContributions />}
+            />
             <Route path="locations" element={<Locations />} />
             <Route path="notifications" element={<Notifications />} />
 

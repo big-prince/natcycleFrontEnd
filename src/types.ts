@@ -260,3 +260,27 @@ export interface ICampaignDropOffRequest {
   longitude: number;
   description?: string;
 }
+
+// Material types
+export interface IMaterialType {
+  value: string;
+  label: string;
+}
+
+export interface IMaterialCategory {
+  label: string;
+  subtypes: IMaterialType[];
+}
+
+export interface IMaterialTypeHierarchy {
+  [key: string]: IMaterialCategory;
+}
+
+export interface IUserMaterialContribution {
+  materialType: string;
+  label: string;
+  totalQuantity: number;
+  totalDropoffs: number;
+  carbonUnits: number;
+  lastDropoff?: string;
+}
