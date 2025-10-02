@@ -10,6 +10,7 @@ import { FaTrophy } from "react-icons/fa6";
 import ImpactCounter from "./components/ImpactCounter";
 import { toast } from "react-toastify";
 import MaterialApi from "../../api/materialApi";
+import SocialShareModal from "../../components/social/SocialShareModal";
 // import CampaignsList from "./components/CampaignsList";
 // import { MdCampaign } from "react-icons/md";
 
@@ -29,6 +30,12 @@ const Dashboard = () => {
   const [selectedItemType, setSelectedItemType] = useState<string | null>(null);
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [divertItems, setDivertItems] = useState<string[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState<{
+    carbonUnits: number;
+    materialType: string;
+    dropoffType: string;
+  } | null>(null);
 
   function getTimeOfDay() {
     const now = new Date();
@@ -74,6 +81,23 @@ const Dashboard = () => {
     fetchUser();
     fetchMaterialCategories();
   }, [dispatch, localUser?._id]);
+
+  // Check for dropoff success data from sessionStorage
+  useEffect(() => {
+    const dropoffSuccessData = sessionStorage.getItem("dropoffSuccess");
+    if (dropoffSuccessData) {
+      try {
+        const successInfo = JSON.parse(dropoffSuccessData);
+        setSuccessData(successInfo);
+        setShowSuccessModal(true);
+        // Clear the data so it doesn't show again
+        sessionStorage.removeItem("dropoffSuccess");
+      } catch (error) {
+        console.error("Error parsing dropoff success data:", error);
+        sessionStorage.removeItem("dropoffSuccess");
+      }
+    }
+  }, []);
 
   if (!user) {
     return <div className="p-10 text-center">Loading user data...</div>;
@@ -308,6 +332,28 @@ const Dashboard = () => {
             </div>
           </div>
         </Link>
+      )}
+
+      {/* Dropoff Success Modal */}
+      {successData && (
+        <SocialShareModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          shareData={{
+            text: `Just completed a drop-off and earned ${
+              typeof successData.carbonUnits === "number"
+                ? successData.carbonUnits.toFixed(2)
+                : parseFloat(successData.carbonUnits).toFixed(2)
+            } Carbon Units! Join me in making the world greener with NatCycle! 🌱`,
+            url: window.location.origin,
+          }}
+          title="🎉 Drop-off Successful!"
+          subtitle={`Amazing! You earned ${
+            typeof successData.carbonUnits === "number"
+              ? successData.carbonUnits.toFixed(2)
+              : parseFloat(successData.carbonUnits).toFixed(2)
+          } Carbon Units and made a positive impact!`}
+        />
       )}
     </div>
   );
