@@ -8,6 +8,8 @@ import { FaChevronLeft, FaChevronRight, FaArrowLeft } from "react-icons/fa";
 import { IDropOff } from "../../types";
 import Logo from "../../assets/logo/Group 202@2x.png";
 import { BsUpcScan } from "react-icons/bs";
+import GreenProfileShareButton from "../../components/social/GreenProfileShareButton";
+import MilestoneShareButton from "../../components/social/MilestoneShareButton";
 
 const mileStoneLevels = [
   { points: 0, name: "Novice" },
@@ -459,6 +461,25 @@ const GreenProfile: React.FC = () => {
             Level: {userLevel}
           </p>
           <p className="text-slate-500 text-sm mt-0.5">Joined {joinDate}</p>
+
+          {/* Share Button */}
+          <div className="mt-6">
+            <GreenProfileShareButton
+              userData={{
+                carbonUnits: localUser.carbonUnits || 0,
+                totalDropoffs:
+                  allDropOffsForYear.length + allSimpleDropOffsForYear.length,
+                materialsRecycled: [
+                  ...new Set(
+                    allDropOffsForYear.map((d) => d.itemType as string)
+                  ),
+                ],
+                rank: userLevel,
+                badgeCount: 0, // You can add badge count from user data
+              }}
+              className="mx-auto"
+            />
+          </div>
         </div>
 
         <div className="bg-white p-5 md:p-8 rounded-xl shadow-xl mb-8">
@@ -638,6 +659,20 @@ const GreenProfile: React.FC = () => {
               {Math.floor(localUser.carbonUnits || 0)} CU
             </span>
           </p>
+
+          {/* Milestone Share Button - Show if user has achieved meaningful milestones */}
+          {localUser.carbonUnits && localUser.carbonUnits >= 10 && (
+            <div className="mt-4 flex justify-center">
+              <MilestoneShareButton
+                milestoneData={{
+                  type: "carbon_units",
+                  value: localUser.carbonUnits,
+                  milestone: Math.floor(localUser.carbonUnits / 10) * 10, // Round down to nearest 10
+                }}
+                variant="compact"
+              />
+            </div>
+          )}
         </div>
 
         <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl text-center">

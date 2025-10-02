@@ -51,6 +51,7 @@ import UserDropOffs from "./pages/dashboard/dropoff/UserDropOffs";
 import PublicLayout from "./pages/components/PublicLayout";
 import GreenProfile from "./pages/dashboard/GreenProfile";
 import AllMaterialContributions from "./pages/dashboard/AllMaterialContributions";
+import SuccessModalManager from "./components/social/SuccessModalManager";
 
 // ThingsMatch Admin Pages
 import ThingsMatchDashboard from "./pages/admin/thingsmatch/ThingsMatchDashboard";
@@ -235,6 +236,9 @@ const App = () => {
 
           <Route path="*" element={<h1>Not Found</h1>} />
         </Routes>
+
+        {/* Global Success Modal Manager */}
+        <SuccessModalManager />
       </BrowserRouter>
     </div>
   );

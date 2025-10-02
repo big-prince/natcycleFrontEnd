@@ -8,6 +8,7 @@ import CampaignApi from "../../../api/campaignApi";
 import { useAppSelector } from "../../../hooks/reduxHooks";
 import { toast } from "react-toastify";
 import DropOffApi from "../../../api/dropOffApi";
+// Removed complex useDropoffSuccess hook for simple modal
 import MaterialApi from "../../../api/materialApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { DropoffMode, ISimpleDropoffLocation, ICampaign } from "../../../types";
@@ -25,8 +26,11 @@ import {
   MdRecycling, // Added for generic recycling
 } from "react-icons/md";
 import { FaBox, FaRecycle, FaWineBottle, FaTrashAlt } from "react-icons/fa"; // Added more icons
-import { FaBottleWater } from "react-icons/fa6";
+import { FaBottleWater, FaCircleCheck } from "react-icons/fa6";
 import { GiPaperBagFolded } from "react-icons/gi";
+import AutoDismissModal from "../../../components/ui/AutoDismissModal";
+import BreathingIcon from "../../../components/ui/BreathingIcon";
+import SocialShareModal from "../../../components/social/SocialShareModal";
 
 interface Location {
   type: string;
@@ -92,6 +96,15 @@ export const getIconForSubtype = (
 const CreateDropOff = () => {
   const localUser = useAppSelector((state) => state.auth.user);
   const navigate = useNavigate();
+
+  // Simple success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState<{
+    carbonUnits: number;
+    materialType: string;
+    dropoffType: string;
+  } | null>(null);
+  const [showSocialModal, setShowSocialModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const campaignIdFromQuery = searchParams.get("campaignId") || "";
   const campaignNameFromQuery = searchParams.get("campaignName") || "";
@@ -388,11 +401,37 @@ const CreateDropOff = () => {
           proofPicture: "[File object]",
         });
 
-        await SimpleDropoffApi.createSimpleDropoff(submitData);
-        toast.success("Simple drop off logged successfully");
+        const response = await SimpleDropoffApi.createSimpleDropoff(submitData);
+
+        // Remove session storage
         sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");
-        navigate("/home");
+
+        // Find the selected location
+        const selectedSimpleLocation = simpleLocations.find(
+          (loc) => loc.id === selectedSimpleLocationId
+        );
+
+        // Calculate carbon units earned and show success modal
+        const carbonUnitsEarned =
+          response.data?.carbonUnits ||
+          estimateCarbonUnits(
+            selectedSimpleLocation?.bulkMaterialTypes?.[0] || "plastic",
+            parseInt(simpleDropoffForm.itemCount)
+          );
+
+        setSuccessData({
+          carbonUnits: carbonUnitsEarned,
+          materialType:
+            selectedSimpleLocation?.bulkMaterialTypes?.[0] || "plastic",
+          dropoffType: "simple",
+        });
+        setShowSuccessModal(true);
+
+        // Navigate to home after 3 seconds
+        setTimeout(() => {
+          navigate("/home");
+        }, 3000);
       } catch (error: any) {
         console.log(error);
         toast.error(
@@ -462,14 +501,31 @@ const CreateDropOff = () => {
         });
 
         // Use the campaign-specific API endpoint with the campaign ID
-        await CampaignApi.createCampaignDropOff(
+        const campaignResponse = await CampaignApi.createCampaignDropOff(
           selectedCampaign.id || selectedCampaign.id,
           formData
         );
-        toast.success("Campaign drop off submitted successfully");
+
+        // Remove session storage
         sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");
-        navigate("/home");
+
+        // Show simple success modal
+        const totalCarbonUnits =
+          campaignResponse.data?.carbonUnits ||
+          calculateTotalCarbonUnits(detailedQuantities);
+
+        setSuccessData({
+          carbonUnits: totalCarbonUnits,
+          materialType: typeFromQuery || "mixed",
+          dropoffType: "campaign",
+        });
+        setShowSuccessModal(true);
+
+        // Navigate to home after 3 seconds
+        setTimeout(() => {
+          navigate("/home");
+        }, 3000);
       } catch (error: any) {
         console.error("Error submitting campaign drop off:", error);
         toast.error(
@@ -524,11 +580,28 @@ const CreateDropOff = () => {
       });
 
       try {
-        await DropOffApi.addDropOff(formData);
-        toast.success("Drop off created successfully");
+        const regularResponse = await DropOffApi.addDropOff(formData);
+
+        // Remove session storage
         sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");
-        navigate("/home");
+
+        // Show simple success modal
+        const totalCU =
+          regularResponse.data?.carbonUnits ||
+          calculateTotalCarbonUnits(detailedQuantities);
+
+        setSuccessData({
+          carbonUnits: totalCU,
+          materialType: typeFromQuery || "mixed",
+          dropoffType: "regular",
+        });
+        setShowSuccessModal(true);
+
+        // Navigate to home after 3 seconds
+        setTimeout(() => {
+          navigate("/home");
+        }, 3000);
       } catch (error: any) {
         console.log(error);
         toast.error(
@@ -1285,6 +1358,40 @@ const CreateDropOff = () => {
       fetchNearbyCampaigns(typeFromQuery);
     }
   }, [dropoffMode, typeFromQuery, campaignIdFromQuery, fetchNearbyCampaigns]);
+
+  // Helper function to estimate carbon units
+  const estimateCarbonUnits = (
+    materialType: string,
+    quantity: number
+  ): number => {
+    // Basic estimation - replace with actual calculation logic
+    const baseValues: { [key: string]: number } = {
+      plastic: 0.5,
+      organic: 0.1,
+      fabric: 0.4,
+      glass: 0.3,
+      paper: 0.2,
+      metal: 0.6,
+      ewaste: 1.0,
+      aluminium: 0.6,
+    };
+
+    return (baseValues[materialType] || 0.3) * (quantity / 2); // Using server formula
+  };
+
+  // Helper function to calculate total carbon units from quantity values
+  const calculateTotalCarbonUnits = (quantityValues: {
+    [key: string]: string;
+  }): number => {
+    let total = 0;
+    Object.entries(quantityValues).forEach(([materialType, quantity]) => {
+      const numQuantity = parseInt(quantity, 10);
+      if (numQuantity > 0) {
+        total += estimateCarbonUnits(materialType, numQuantity);
+      }
+    });
+    return total;
+  };
 
   return (
     <div className="pb-20 px-4 max-w-md mx-auto">
@@ -2174,6 +2281,94 @@ const CreateDropOff = () => {
           )}
         </button>
       </form>
+
+      {/* Success Modal */}
+      <AutoDismissModal
+        isOpen={showSuccessModal && !!successData}
+        onClose={() => setShowSuccessModal(false)}
+        autoCloseDelay={0} // Don't auto-close
+        title="Drop-off Successful!"
+        subtitle="Amazing work! You've made a positive impact on our planet."
+      >
+        <div className="p-8 text-center">
+          {/* Breathing Success Icon */}
+          <div className="mb-6">
+            <BreathingIcon
+              icon={
+                <FaCircleCheck
+                  className="text-4xl"
+                  style={{ color: "#204C27" }}
+                />
+              }
+              size="xl"
+              duration={2000}
+            />
+          </div>
+
+          <h3 className="text-2xl font-bold mb-3 text-gray-900">
+            Drop-off Successful!
+          </h3>
+
+          <p className="text-gray-600 mb-6">
+            Amazing work! You've made a positive impact on our planet.
+          </p>
+
+          {successData?.carbonUnits && (
+            <div
+              className="mb-6 p-5 rounded-2xl border-2"
+              style={{
+                background: "linear-gradient(135deg, #D3FF5D 0%, #B8E65C 100%)",
+                borderColor: "#D3FF5D",
+              }}
+            >
+              <p
+                className="text-sm font-semibold uppercase tracking-wide mb-1"
+                style={{ color: "#204C27" }}
+              >
+                Carbon Units Earned
+              </p>
+              <p className="text-3xl font-bold" style={{ color: "#204C27" }}>
+                +
+                {typeof successData.carbonUnits === "number"
+                  ? successData.carbonUnits.toFixed(2)
+                  : parseFloat(successData.carbonUnits).toFixed(2)}
+              </p>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setShowSuccessModal(false);
+              setShowSocialModal(true);
+            }}
+            className="w-full py-4 px-6 rounded-xl font-semibold text-white transition-all transform hover:scale-105"
+            style={{
+              background: "linear-gradient(135deg, #204C27 0%, #2D5A33 100%)",
+              boxShadow: "0 4px 12px rgba(32, 76, 39, 0.3)",
+            }}
+          >
+            🎉 Share Your Achievement
+          </button>
+        </div>
+      </AutoDismissModal>
+
+      {/* Social Share Modal */}
+      {successData && (
+        <SocialShareModal
+          isOpen={showSocialModal}
+          onClose={() => setShowSocialModal(false)}
+          shareData={{
+            text: `Just completed a drop-off and earned ${
+              typeof successData.carbonUnits === "number"
+                ? successData.carbonUnits.toFixed(2)
+                : parseFloat(successData.carbonUnits).toFixed(2)
+            } Carbon Units! Join me in making the world greener with NatCycle! 🌱`,
+            url: window.location.origin,
+          }}
+          title="Share Your Green Impact"
+          subtitle="Let others know about your environmental contribution!"
+        />
+      )}
     </div>
   );
 
