@@ -24,20 +24,32 @@ export const SHARE_TEMPLATES = {
   // Green Profile Templates
   profile: {
     twitter: (user: UserAchievement) =>
-      `🌿 My green impact: ${user.totalDropoffs} dropoffs, ${user.carbonUnits} Carbon Units saved! Building a sustainable future one action at a time 💚 #GreenProfile #EcoWarrior #NatCycle`,
+      `🌿 My green impact: ${user.totalDropoffs} dropoffs, ${Math.floor(
+        user.carbonUnits
+      )} Carbon Units saved! Building a sustainable future one action at a time 💚 #GreenProfile #EcoWarrior #NatCycle`,
 
     whatsapp: (user: UserAchievement) =>
       `🌱 Check out my environmental impact!\n\n✅ ${
         user.totalDropoffs
-      } eco-friendly dropoffs\n🌍 ${user.carbonUnits} Carbon Units saved\n${
+      } eco-friendly dropoffs\n🌍 ${Math.floor(
+        user.carbonUnits
+      )} Carbon Units saved\n${
         user.badgeCount ? `🏆 ${user.badgeCount} badges earned\n` : ""
       }\nJoin me on NatCycle and make a difference! 💚`,
 
     linkedin: (user: UserAchievement) =>
-      `Proud to share my environmental impact! Through NatCycle, I've completed ${user.totalDropoffs} sustainable dropoffs and saved ${user.carbonUnits} Carbon Units. Every action counts in building a greener future. #Sustainability #ClimateAction #GreenTech #NatCycle`,
+      `Proud to share my environmental impact! Through NatCycle, I've completed ${
+        user.totalDropoffs
+      } sustainable dropoffs and saved ${Math.floor(
+        user.carbonUnits
+      )} Carbon Units. Every action counts in building a greener future. #Sustainability #ClimateAction #GreenTech #NatCycle`,
 
     facebook: (user: UserAchievement) =>
-      `🌍 Making a difference, one dropoff at a time! My journey with NatCycle: ${user.totalDropoffs} dropoffs completed, ${user.carbonUnits} Carbon Units saved. Together, we can build a sustainable future! 💚 #SustainableLiving #NatCycle`,
+      `🌍 Making a difference, one dropoff at a time! My journey with NatCycle: ${
+        user.totalDropoffs
+      } dropoffs completed, ${Math.floor(
+        user.carbonUnits
+      )} Carbon Units saved. Together, we can build a sustainable future! 💚 #SustainableLiving #NatCycle`,
   },
 
   // Dropoff Success Templates
