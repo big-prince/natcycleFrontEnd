@@ -283,6 +283,14 @@ class SimpleDropoffApi {
   async adminGetLocationStats() {
     return api.get("/simple-dropoff-locations/admin/statistics");
   }
+
+  async searchLocations(params?: {
+    search?: string;
+    limit?: number;
+    page?: number;
+  }) {
+    return api.get("/simple-dropoff-locations/search", { params });
+  }
 }
 
 export default new SimpleDropoffApi();

@@ -175,6 +175,10 @@ const App = () => {
               element={<AddCampaignModal />}
             />
             <Route
+              path="/admin/campaigns/create-campaign/:id"
+              element={<AddCampaignModal />}
+            />
+            <Route
               path="/admin/campaigns/:id"
               element={<AdminCampaignDetails />}
             />

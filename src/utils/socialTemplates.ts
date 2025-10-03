@@ -126,8 +126,19 @@ export const generateDropoffTemplate = (
     : SHARE_TEMPLATES.dropoff.regular(dropoffData);
 };
 
-// Get share URL for profile
+// Get share URL for profile with better metadata
 export const getProfileShareUrl = (): string => {
-  // This would typically be a deep link to the user's profile or app
-  return `${window.location.origin}/profile/shared`;
+  // Create a shareable URL with proper metadata
+  const baseUrl = window.location.origin;
+  const shareUrl = `${baseUrl}/share/profile`;
+  return shareUrl;
+};
+
+// Get share URL for dropoff with metadata
+export const getDropoffShareUrl = (dropoffId?: string): string => {
+  const baseUrl = window.location.origin;
+  const shareUrl = dropoffId
+    ? `${baseUrl}/share/dropoff/${dropoffId}`
+    : `${baseUrl}/share/dropoff`;
+  return shareUrl;
 };

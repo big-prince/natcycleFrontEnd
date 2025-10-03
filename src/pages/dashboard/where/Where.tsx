@@ -5,11 +5,8 @@ import dropOffLocationApi from "../../../api/dropOffLocationApi";
 import SimpleDropoffApi from "../../../api/simpleDropoffApi";
 import CampaignApi from "../../../api/campaignApi";
 import { DropoffPoint } from "../dropoff/CreateDropOff";
-import {
-  LocationType,
-  ISimpleDropoffLocation,
-  ICampaign,
-} from "../../../types";
+import { ICampaign } from "../dropoff/CreateDropOff";
+import { LocationType, ISimpleDropoffLocation } from "../../../types";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import {
   FaPlus,
@@ -119,6 +116,8 @@ const Where = () => {
   const [selectedCampaign, setSelectedCampaign] = useState<ICampaign | null>(
     null
   );
+  const [selectedCampaignLocationIndex, setSelectedCampaignLocationIndex] =
+    useState<number | null>(null);
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
 
   const mapRef = useRef<any>(null);
@@ -477,22 +476,24 @@ const Where = () => {
               }
               // Check if any of the campaign's materialTypes match the selected type
               return campaignMaterialTypes.some(
-                (type) => type.toLowerCase() === materialType.toLowerCase()
+                (type: string) =>
+                  type.toLowerCase() === materialType.toLowerCase()
               );
             }
 
             // Handle string materialTypes (for backward compatibility)
             if (typeof campaignMaterialTypes === "string") {
+              const materialTypeString = campaignMaterialTypes as string;
               // If campaign materialTypes is "All", it accepts any material
-              if (campaignMaterialTypes.toLowerCase() === "all") {
+              if (materialTypeString.toLowerCase() === "all") {
                 return true;
               }
 
               // Check if string contains the materialType
               return (
-                campaignMaterialTypes.toLowerCase() ===
+                materialTypeString.toLowerCase() ===
                   materialType.toLowerCase() ||
-                campaignMaterialTypes
+                materialTypeString
                   .toLowerCase()
                   .includes(materialType.toLowerCase())
               );
@@ -507,7 +508,34 @@ const Where = () => {
           (campaign: ICampaign) => campaign.status === "active"
         );
 
-        setCampaigns(campaignsData);
+        // Filter campaigns to only include those with valid coordinates
+        const validCampaigns = campaignsData.filter((campaign: ICampaign) => {
+          // Check legacy location structure first
+          if (
+            campaign.location?.coordinates &&
+            campaign.location.coordinates.length === 2
+          ) {
+            return true;
+          }
+
+          // Check new multi-location structure
+          if (campaign.locations && campaign.locations.length > 0) {
+            return campaign.locations.some((loc) => {
+              const coords =
+                loc.simpleDropoffLocationId?.location?.coordinates ||
+                loc.dropoffLocationId?.location?.coordinates ||
+                loc.customLocation?.coordinates;
+              return coords && coords.length === 2;
+            });
+          }
+
+          return false;
+        });
+
+        console.log(
+          `Filtered ${validCampaigns.length} campaigns with valid coordinates from ${campaignsData.length} total`
+        );
+        setCampaigns(validCampaigns);
       } catch (error) {
         console.error("Failed to fetch campaigns:", error);
         toast.error("Could not load campaigns");
@@ -726,11 +754,57 @@ const Where = () => {
     }
   };
 
+  // Handle individual campaign location marker clicks - show details card
+  const handleCampaignLocationMarkerClick = (
+    campaignId: string,
+    locationIndex: number
+  ) => {
+    console.log("Campaign location marker clicked:", {
+      campaignId,
+      locationIndex,
+    });
+
+    // Get the campaign to show in details card
+    const campaign = campaigns.find((c) => c.id === campaignId);
+    if (!campaign) return;
+
+    // Set selected campaign and specific location index
+    setSelectedCampaign(campaign);
+    setSelectedCampaignLocationIndex(locationIndex);
+
+    // Clear other selections
+    setSelectedLocation(null);
+    setSelectedSimpleLocation(null);
+
+    // Center map on the selected location
+    if (campaign.locations && campaign.locations[locationIndex]) {
+      const location = campaign.locations[locationIndex];
+      let coordinates: [number, number] | null = null;
+
+      if (location.simpleDropoffLocationId?.location?.coordinates) {
+        coordinates = location.simpleDropoffLocationId.location.coordinates;
+      } else if (location.dropoffLocationId?.location?.coordinates) {
+        coordinates = location.dropoffLocationId.location.coordinates;
+      } else if (location.customLocation?.coordinates) {
+        coordinates = location.customLocation.coordinates;
+      }
+
+      if (coordinates && mapRef.current) {
+        mapRef.current.panTo({
+          lat: coordinates[1],
+          lng: coordinates[0],
+        });
+        mapRef.current.setZoom(15);
+      }
+    }
+  };
+
   // Close location details and restore previous map view
   const closeLocationDetails = () => {
     setSelectedLocation(null);
     setSelectedSimpleLocation(null);
     setSelectedCampaign(null);
+    setSelectedCampaignLocationIndex(null);
 
     // Return to previous map view if available
     if (previousMapState && mapRef.current) {
@@ -867,6 +941,8 @@ const Where = () => {
     campaign: ICampaign; // Required for typing but not used directly
     markerId: string;
     isHighlighted?: boolean;
+    locationIndex?: number;
+    locationName?: string;
   }) => {
     return (
       <AdvancedMarker position={position} onClick={onClick} title={title}>
@@ -1925,21 +2001,91 @@ const Where = () => {
                   />
                 ))}
 
-              {/* Campaign markers */}
-              {campaigns.map((campaign) => (
-                <CampaignMarker
-                  key={`campaign-${campaign.id}`}
-                  position={{
-                    lat: campaign.location.coordinates[1],
-                    lng: campaign.location.coordinates[0],
-                  }}
-                  onClick={() => handleCampaignMarkerClick(campaign.id)}
-                  title={campaign.name}
-                  campaign={campaign}
-                  markerId={campaign.id}
-                  isHighlighted={selectedCampaign?.id === campaign.id}
-                />
-              ))}
+              {/* Campaign markers - individual markers for each location */}
+              {campaigns.flatMap((campaign) => {
+                if (!campaign.locations || campaign.locations.length === 0) {
+                  // Handle legacy single location campaigns
+                  let coordinates: [number, number] | null = null;
+                  if (
+                    campaign.location?.coordinates &&
+                    campaign.location.coordinates.length === 2
+                  ) {
+                    coordinates = [
+                      campaign.location.coordinates[0],
+                      campaign.location.coordinates[1],
+                    ];
+                  }
+
+                  if (!coordinates) return [];
+
+                  return (
+                    <CampaignMarker
+                      key={`campaign-${campaign.id}-legacy`}
+                      position={{
+                        lat: coordinates[1],
+                        lng: coordinates[0],
+                      }}
+                      onClick={() => handleCampaignMarkerClick(campaign.id)}
+                      title={campaign.name}
+                      campaign={campaign}
+                      markerId={campaign.id}
+                      isHighlighted={selectedCampaign?.id === campaign.id}
+                      locationIndex={-1}
+                    />
+                  );
+                }
+
+                // Create individual markers for each location in the campaign
+                return campaign.locations
+                  .map((location, locationIndex) => {
+                    let coordinates: [number, number] | null = null;
+                    let locationName = "";
+
+                    if (
+                      location.simpleDropoffLocationId?.location?.coordinates
+                    ) {
+                      coordinates =
+                        location.simpleDropoffLocationId.location.coordinates;
+                      locationName = location.simpleDropoffLocationId.name;
+                    } else if (
+                      location.dropoffLocationId?.location?.coordinates
+                    ) {
+                      coordinates =
+                        location.dropoffLocationId.location.coordinates;
+                      locationName = location.dropoffLocationId.name;
+                    } else if (location.customLocation?.coordinates) {
+                      coordinates = location.customLocation.coordinates;
+                      locationName =
+                        location.customLocation.name ||
+                        `${campaign.name} Location`;
+                    }
+
+                    if (!coordinates || coordinates.length !== 2) return null;
+
+                    return (
+                      <CampaignMarker
+                        key={`campaign-${campaign.id}-location-${locationIndex}`}
+                        position={{
+                          lat: coordinates[1],
+                          lng: coordinates[0],
+                        }}
+                        onClick={() =>
+                          handleCampaignLocationMarkerClick(
+                            campaign.id,
+                            locationIndex
+                          )
+                        }
+                        title={`${campaign.name} - ${locationName}`}
+                        campaign={campaign}
+                        markerId={`${campaign.id}-${locationIndex}`}
+                        isHighlighted={selectedCampaign?.id === campaign.id}
+                        locationIndex={locationIndex}
+                        locationName={locationName}
+                      />
+                    );
+                  })
+                  .filter(Boolean);
+              })}
 
               {/* User location marker */}
               {userLocation && (
@@ -2359,24 +2505,31 @@ const Where = () => {
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-wrap gap-2 mb-4">
                   <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
                     Campaign
                   </span>
-                  {selectedCampaign.status && (
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                      {selectedCampaign.status === "active"
-                        ? "Active"
-                        : selectedCampaign.status}
-                    </span>
-                  )}
                   {selectedCampaign.materialTypes && (
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                      {Array.isArray(selectedCampaign.materialTypes)
-                        ? selectedCampaign.materialTypes.join(", ")
-                        : selectedCampaign.materialTypes ||
+                      {(() => {
+                        if (Array.isArray(selectedCampaign.materialTypes)) {
+                          if (
+                            selectedCampaign.materialTypes.includes("All") ||
+                            selectedCampaign.materialTypes.length > 3
+                          ) {
+                            return "All Materials";
+                          }
+                          return selectedCampaign.materialTypes.join(", ");
+                        }
+                        const materialType =
+                          selectedCampaign.materialTypes ||
                           selectedCampaign.material ||
-                          selectedCampaign.itemType}
+                          selectedCampaign.itemType ||
+                          "";
+                        return materialType === "All" || materialType === "all"
+                          ? "All Materials"
+                          : materialType;
+                      })()}
                     </span>
                   )}
                 </div>
@@ -2387,52 +2540,56 @@ const Where = () => {
                   </p>
                 )}
 
-                {selectedCampaign.organizationName && (
-                  <p className="text-sm mb-3 text-gray-700">
-                    <span className="font-medium">Organized by:</span>{" "}
-                    {selectedCampaign.organizationName}
-                  </p>
-                )}
-
-                {/* Campaign Dates */}
-                <div className="bg-green-50 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-green-700">
-                    <span className="font-medium">Start Date:</span>{" "}
-                    {new Date(selectedCampaign.startDate).toLocaleDateString()}
-                  </p>
-                  {selectedCampaign.endDate && (
-                    <p className="text-xs text-green-700 mt-1">
-                      <span className="font-medium">End Date:</span>{" "}
-                      {new Date(selectedCampaign.endDate).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-
-                {/* Campaign Progress */}
-                {selectedCampaign.goal &&
-                  selectedCampaign.progress !== undefined && (
-                    <div className="mt-3 mb-3">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-medium text-gray-700">
-                          Progress
-                        </span>
-                        <span className="text-xs font-medium text-gray-700">
-                          {selectedCampaign.progress} / {selectedCampaign.goal}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full"
-                          style={{
-                            width: `${Math.min(
-                              (selectedCampaign.progress /
-                                selectedCampaign.goal) *
-                                100,
-                              100
-                            )}%`,
-                          }}
-                        ></div>
-                      </div>
+                {/* Selected Location Info */}
+                {selectedCampaignLocationIndex !== null &&
+                  selectedCampaign.locations &&
+                  selectedCampaign.locations[selectedCampaignLocationIndex] && (
+                    <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
+                      <h4 className="text-sm font-medium text-blue-800 mb-2">
+                        Selected Location:
+                      </h4>
+                      {(() => {
+                        const location =
+                          selectedCampaign.locations[
+                            selectedCampaignLocationIndex
+                          ];
+                        if (location.simpleDropoffLocationId) {
+                          return (
+                            <div>
+                              <p className="text-sm text-blue-700 font-medium">
+                                {location.simpleDropoffLocationId.name}
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                {location.simpleDropoffLocationId.address}
+                              </p>
+                            </div>
+                          );
+                        } else if (location.dropoffLocationId) {
+                          return (
+                            <div>
+                              <p className="text-sm text-blue-700 font-medium">
+                                {location.dropoffLocationId.name}
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                {location.dropoffLocationId.address}
+                              </p>
+                            </div>
+                          );
+                        } else if (location.customLocation) {
+                          return (
+                            <div>
+                              <p className="text-sm text-blue-700 font-medium">
+                                {location.customLocation.name ||
+                                  `${selectedCampaign.name} Location`}
+                              </p>
+                              <p className="text-xs text-blue-600">
+                                {location.customLocation.address}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   )}
 
@@ -2466,16 +2623,23 @@ const Where = () => {
                           selectedCampaign.itemType ||
                           "";
 
-                      navigate(
-                        `/dropoff/create?mode=campaign&campaignId=${
-                          selectedCampaign.id || selectedCampaign.id
-                        }&campaignName=${encodeURIComponent(
-                          selectedCampaign.name
-                        )}&type=${materialType}`
-                      );
+                      // Build URL with location index if specific location was selected
+                      let url = `/dropoff/create?mode=campaign&campaignId=${
+                        selectedCampaign.id || selectedCampaign.id
+                      }&campaignName=${encodeURIComponent(
+                        selectedCampaign.name
+                      )}&type=${materialType}&from=where`;
+
+                      if (selectedCampaignLocationIndex !== null) {
+                        url += `&campaignLocationIndex=${selectedCampaignLocationIndex}`;
+                      }
+
+                      navigate(url);
                     }}
                   >
-                    Contribute
+                    {selectedCampaignLocationIndex !== null
+                      ? "Drop Off Here"
+                      : "Contribute"}
                   </button>
                 </div>
               </div>

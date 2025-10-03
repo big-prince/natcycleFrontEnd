@@ -1,32 +1,42 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import api from './api'
+import api from "./api";
 
 const dropOffLocationApi = {
   async addDropOffLocation(dropOffLocation: any) {
-    return await api.post('dropOff-location', dropOffLocation)
+    return await api.post("dropOff-location", dropOffLocation);
   },
   async getDropOffLocations() {
-    return await api.get('dropOff-location')
+    return await api.get("dropOff-location");
   },
   async adminGetDropOffLocations() {
-    return await api.get('dropOff-location/all')
+    return await api.get("dropOff-location/all");
   },
 
   async getNearestDropOffLocations(userLocation: any) {
-    return await api.get('dropOff-location/nearest/location', { params: userLocation })
+    return await api.get("dropOff-location/nearest/location", {
+      params: userLocation,
+    });
   },
 
   async getDropOffLocationById(id: string) {
-    return await api.get(`dropOff-location/${id}`)
+    return await api.get(`dropOff-location/${id}`);
   },
 
   async updateDropOffLocation(id: string, dropOffLocation: any) {
-    return await api.put(`dropOff-location/${id}`, dropOffLocation)
+    return await api.put(`dropOff-location/${id}`, dropOffLocation);
   },
 
   async deleteDropOffLocation(id: string) {
-    return await api.delete(`dropOff-location/${id}`)
-  }
-}
+    return await api.delete(`dropOff-location/${id}`);
+  },
 
-export default dropOffLocationApi
+  async searchDropOffLocations(params?: {
+    search?: string;
+    limit?: number;
+    page?: number;
+  }) {
+    return await api.get("dropOff-location/search", { params });
+  },
+};
+
+export default dropOffLocationApi;

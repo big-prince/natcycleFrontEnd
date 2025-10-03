@@ -79,7 +79,19 @@ const SocialShareButton: React.FC<SocialShareButtonProps> = ({
       }
     } else {
       const shareUrl = buildShareUrl(platform, text, url);
-      window.open(shareUrl, "_blank", "width=600,height=400");
+
+      // For Facebook and LinkedIn, use larger popup windows with better positioning
+      if (platform === "facebook" || platform === "linkedin") {
+        const left = (window.screen.width - 600) / 2;
+        const top = (window.screen.height - 600) / 2;
+        window.open(
+          shareUrl,
+          "_blank",
+          `width=600,height=600,left=${left},top=${top},scrollbars=yes,resizable=yes`
+        );
+      } else {
+        window.open(shareUrl, "_blank", "width=600,height=400");
+      }
     }
   };
 

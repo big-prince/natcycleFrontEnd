@@ -7,6 +7,14 @@ import DropOffApi from "../../../api/dropOffApi";
 import SimpleDropoffApi, { SimpleDropoff } from "../../../api/simpleDropoffApi";
 import { Link } from "react-router-dom";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { FaShareAlt } from "react-icons/fa";
+import SocialShareModal from "../../../components/social/SocialShareModal";
+import { useSocialShare } from "../../../hooks/useSocialShare";
+import { DropoffShareData } from "../../../types/social";
+import {
+  setShareMetadata,
+  createDropoffShareMetadata,
+} from "../../../utils/shareMetadata";
 
 interface IDropOffLocation {
   name: string;
@@ -88,6 +96,11 @@ const UserDropOffs: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Social sharing state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareData, setShareData] = useState<any>(null);
+  const { createDropoffShareData } = useSocialShare();
+
   const [currentDisplayDate, setCurrentDisplayDate] = useState(new Date());
 
   const selectedMonth = currentDisplayDate.getMonth();
@@ -122,6 +135,36 @@ const UserDropOffs: React.FC = () => {
     status: dropoff.isVerified ? "Verified" : "Pending",
     type: "simple",
   });
+
+  // Handle social share for dropoff
+  const handleShareDropoff = (dropOff: IUnifiedDropOff) => {
+    // Set metadata for better social sharing
+    const metadata = createDropoffShareMetadata(
+      dropOff.campaignName,
+      dropOff.items[0]?.split(" ").slice(1).join(" "),
+      dropOff.pointsEarned,
+      dropOff.locationName
+    );
+    setShareMetadata(metadata);
+
+    const shareInfo: DropoffShareData = {
+      materialType:
+        dropOff.items[0]?.split(" ").slice(1).join(" ") || "materials",
+      carbonUnitsEarned: dropOff.pointsEarned,
+      locationName: dropOff.locationName,
+      campaignName: dropOff.campaignName,
+      dropoffType:
+        dropOff.type === "simple"
+          ? "simple"
+          : dropOff.campaignName
+          ? "campaign"
+          : "regular",
+    };
+
+    const data = createDropoffShareData(shareInfo);
+    setShareData(data);
+    setIsShareModalOpen(true);
+  };
 
   useEffect(() => {
     if (localUser?._id) {
@@ -338,18 +381,34 @@ const UserDropOffs: React.FC = () => {
                   Status: {dropOff.status}
                 </p>
               </div>
-              <div className="ml-4 text-right flex-shrink-0">
+              <div className="ml-4 text-right flex-shrink-0 flex flex-col items-end gap-2">
                 <span className="bg-teal-100 text-teal-700 text-sm font-medium px-3 py-1.5 rounded-full">
                   {dropOff.pointsEarned % 1 === 0
                     ? Math.floor(dropOff.pointsEarned)
                     : dropOff.pointsEarned.toFixed(1)}{" "}
                   CU
                 </span>
+                <button
+                  onClick={() => handleShareDropoff(dropOff)}
+                  className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                  title="Share this dropoff"
+                >
+                  <FaShareAlt className="w-5 h-5" />
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        shareData={shareData}
+        title="Share Your Dropoff"
+        subtitle="Show off your environmental impact!"
+      />
     </div>
   );
 };

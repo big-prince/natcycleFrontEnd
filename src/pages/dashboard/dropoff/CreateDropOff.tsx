@@ -11,8 +11,60 @@ import DropOffApi from "../../../api/dropOffApi";
 // Removed complex useDropoffSuccess hook for simple modal
 import MaterialApi from "../../../api/materialApi";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { DropoffMode, ISimpleDropoffLocation, ICampaign } from "../../../types";
-import { useCampaignSelection } from "./useCampaignSelection";
+import { DropoffMode, ISimpleDropoffLocation } from "../../../types";
+
+// Enhanced Campaign interface to match the multi-location structure
+export interface ICampaign {
+  id: string;
+  name: string;
+  description: string;
+  endDate?: string;
+  startDate: string;
+  isIndefinite?: boolean;
+  materialTypes?: string[];
+  status: string;
+  material?: string;
+  goal: number;
+  progress: number;
+  organizationName?: string;
+  image?: {
+    url: string;
+  };
+  itemType: string;
+  locations?: Array<{
+    simpleDropoffLocationId?: {
+      _id: string;
+      name: string;
+      address: string;
+      materialType?: string;
+      location?: {
+        coordinates: [number, number];
+      };
+    };
+    dropoffLocationId?: {
+      _id: string;
+      name: string;
+      address: string;
+      primaryMaterialType?: string;
+      location?: {
+        coordinates: [number, number];
+      };
+    };
+    customLocation?: {
+      coordinates: [number, number];
+      address: string;
+      name?: string;
+    };
+  }>;
+  // Legacy fields for backward compatibility
+  location?: {
+    coordinates: [number, number];
+  };
+  address?: string;
+  // Extended fields for expanded locations
+  locationIndex?: number;
+  specificLocation?: any;
+}
 import { motion } from "framer-motion";
 import {
   MdLocationOn,
@@ -24,6 +76,9 @@ import {
   MdFlipCameraAndroid,
   MdArrowBack,
   MdRecycling, // Added for generic recycling
+  MdCampaign, // Added for campaign icon
+  MdExpandMore, // For accordion
+  MdPlace, // For location pin
 } from "react-icons/md";
 import { FaBox, FaRecycle, FaWineBottle, FaTrashAlt } from "react-icons/fa"; // Added more icons
 import { FaBottleWater } from "react-icons/fa6";
@@ -100,6 +155,8 @@ const CreateDropOff = () => {
   const typeFromQuery = searchParams.get("type") || "";
   const modeFromQuery = searchParams.get("mode") || "regular";
   const locationIdFromQuery = searchParams.get("locationId") || "";
+  const campaignLocationIndexFromQuery =
+    searchParams.get("campaignLocationIndex") || "";
 
   // Simple dropoff mode state
   const [dropoffMode, setDropoffMode] = useState<DropoffMode>(
@@ -347,15 +404,6 @@ const CreateDropOff = () => {
             : selectedLocation.bulkMaterialTypes[0]
           : selectedLocation?.materialType || "plastic";
 
-      console.log("Submitting Simple Drop Off Data:", {
-        locationId: selectedSimpleLocationId,
-        itemCount: simpleDropoffForm.itemCount,
-        materialType: materialType,
-        description: simpleDropoffForm.description,
-        campaignId: campaignIdFromQuery,
-        userCoords: "will be fetched",
-      });
-
       try {
         const userCoords = await getUserLocation();
 
@@ -422,8 +470,8 @@ const CreateDropOff = () => {
       }
     } else if ((dropoffMode as string) === "campaign") {
       // Campaign dropoff logic
-      if (!selectedCampaign) {
-        return toast.error("Please select a campaign.");
+      if (!selectedCampaign || selectedCampaignLocationIndex === null) {
+        return toast.error("Please select a campaign location.");
       }
 
       // Check if itemCount is empty or not a valid number greater than 0
@@ -445,6 +493,13 @@ const CreateDropOff = () => {
               : selectedCampaign.materialTypes[0] || "plastic"
             : selectedCampaign.materialTypes
           : selectedCampaign.itemType || selectedCampaign.material || "plastic";
+
+        // Get the selected location details
+        const selectedLocation =
+          selectedCampaign.locations?.[selectedCampaignLocationIndex];
+        if (!selectedLocation) {
+          return toast.error("Selected campaign location not found.");
+        }
 
         // Create form data for submission
         const formData = new FormData();
@@ -470,7 +525,63 @@ const CreateDropOff = () => {
         );
         formData.append("file", file as Blob);
 
-        console.log("Submitting Campaign Drop Off Data:");
+        // Add campaign location information
+        formData.append(
+          "campaignLocationIndex",
+          selectedCampaignLocationIndex.toString()
+        );
+
+        // Add specific location details based on type
+        console.log("Selected Location Debug:", selectedLocation);
+        console.log(
+          "Simple Dropoff Location ID:",
+          selectedLocation.simpleDropoffLocationId
+        );
+
+        if (selectedLocation.simpleDropoffLocationId) {
+          const locationId =
+            (selectedLocation.simpleDropoffLocationId as any).id ||
+            selectedLocation.simpleDropoffLocationId._id;
+          console.log("Simple Dropoff Location ID:", locationId);
+          formData.append("locationId", locationId);
+          formData.append("locationType", "simple");
+          if (selectedLocation.simpleDropoffLocationId.location?.coordinates) {
+            formData.append(
+              "locationCoordinates",
+              JSON.stringify(
+                selectedLocation.simpleDropoffLocationId.location.coordinates
+              )
+            );
+          }
+        } else if (selectedLocation.dropoffLocationId) {
+          const locationId =
+            (selectedLocation.dropoffLocationId as any).id ||
+            selectedLocation.dropoffLocationId._id;
+          formData.append("locationId", locationId);
+          formData.append("locationType", "centre");
+          if (selectedLocation.dropoffLocationId.location?.coordinates) {
+            formData.append(
+              "locationCoordinates",
+              JSON.stringify(
+                selectedLocation.dropoffLocationId.location.coordinates
+              )
+            );
+          }
+        } else if (selectedLocation.customLocation) {
+          formData.append("locationType", "custom");
+          formData.append(
+            "customLocationName",
+            selectedLocation.customLocation.name || "Custom Location"
+          );
+          formData.append(
+            "customLocationAddress",
+            selectedLocation.customLocation.address
+          );
+          formData.append(
+            "locationCoordinates",
+            JSON.stringify(selectedLocation.customLocation.coordinates)
+          );
+        }
         formData.forEach((value, key) => {
           if (key === "file") {
             console.log(`${key}: [File object]`);
@@ -491,11 +602,21 @@ const CreateDropOff = () => {
 
         // Store success data for homepage modal
         const totalCarbonUnits =
+          campaignResponse.data?.data?.carbonUnits ||
+          campaignResponse.data?.data?.pointsEarned ||
           campaignResponse.data?.carbonUnits ||
+          campaignResponse.data?.pointsEarned ||
           calculateTotalCarbonUnits(detailedQuantities);
+        console.log(
+          "🚀 ~ handleDropOffFormSubmit ~ totalCarbonUnits:",
+          totalCarbonUnits
+        );
 
         const successData = {
-          carbonUnits: totalCarbonUnits,
+          carbonUnits:
+            totalCarbonUnits < 1
+              ? Math.ceil(totalCarbonUnits * 10) / 10
+              : Math.floor(totalCarbonUnits),
           materialType: typeFromQuery || "mixed",
           dropoffType: "campaign",
         };
@@ -548,7 +669,6 @@ const CreateDropOff = () => {
       if (campaignIdFromQuery)
         formData.append("campaignId", campaignIdFromQuery);
 
-      console.log("Submitting Drop Off Data:");
       formData.forEach((value, key) => {
         if (key === "file") {
           console.log(`${key}: [File object]`);
@@ -598,19 +718,112 @@ const CreateDropOff = () => {
   );
   const [nearbyCampaigns, setNearbyCampaigns] = useState<ICampaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+  const [selectedCampaignLocationIndex, setSelectedCampaignLocationIndex] =
+    useState<number | null>(null);
+  // Expanded campaign locations - each location becomes a separate selectable item
+  const [expandedCampaignLocations, setExpandedCampaignLocations] = useState<
+    Array<{
+      campaignId: string;
+      campaignName: string;
+      campaignDescription: string;
+      campaignStatus: string;
+      campaignMaterialTypes: string[];
+      campaignGoal?: number;
+      campaignProgress?: number;
+      locationIndex: number;
+      locationId: string;
+      locationName: string;
+      locationAddress: string;
+      locationType: "simple" | "centre" | "custom";
+      locationCoordinates?: [number, number];
+    }>
+  >([]);
 
-  // Use the campaign selection hook to get refs and handlers
-  const { getCampaignClassName, getRefForCampaign } = useCampaignSelection({
+  // Accordion state for campaign groups
+  const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Group expanded locations by campaign
+  const groupedCampaignLocations = useMemo(() => {
+    const groups: {
+      [campaignId: string]: {
+        campaign: {
+          id: string;
+          name: string;
+          description: string;
+          status: string;
+          materialTypes: string[];
+          goal?: number;
+          progress?: number;
+        };
+        locations: typeof expandedCampaignLocations;
+      };
+    } = {};
+
+    expandedCampaignLocations.forEach((location) => {
+      if (!groups[location.campaignId]) {
+        groups[location.campaignId] = {
+          campaign: {
+            id: location.campaignId,
+            name: location.campaignName,
+            description: location.campaignDescription,
+            status: location.campaignStatus,
+            materialTypes: location.campaignMaterialTypes,
+            goal: location.campaignGoal,
+            progress: location.campaignProgress,
+          },
+          locations: [],
+        };
+      }
+      groups[location.campaignId].locations.push(location);
+    });
+
+    return groups;
+  }, [expandedCampaignLocations]);
+
+  // Toggle accordion
+  const toggleCampaignExpansion = (campaignId: string) => {
+    setExpandedCampaigns((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(campaignId)) {
+        newSet.delete(campaignId);
+      } else {
+        newSet.add(campaignId);
+      }
+      return newSet;
+    });
+  };
+
+  // Auto-expand accordion for pre-selected campaigns
+  useEffect(() => {
+    if (
+      campaignIdFromQuery &&
+      campaignLocationIndexFromQuery &&
+      expandedCampaignLocations.length > 0 &&
+      selectedCampaign?.id === campaignIdFromQuery
+    ) {
+      // Check if the selected campaign has multiple locations
+      const campaignGroup = groupedCampaignLocations[campaignIdFromQuery];
+      if (campaignGroup && campaignGroup.locations.length > 1) {
+        // Only auto-expand if there are multiple locations to choose from
+        setExpandedCampaigns((prev) => new Set([...prev, campaignIdFromQuery]));
+      }
+    }
+  }, [
     campaignIdFromQuery,
-    setDropoffMode: (mode: string) => setDropoffMode(mode as DropoffMode),
-    setSelectedCampaign,
-  });
+    campaignLocationIndexFromQuery,
+    expandedCampaignLocations,
+    selectedCampaign,
+    groupedCampaignLocations,
+  ]);
 
   // Fetch nearby campaigns based on user's location and material type
   const fetchNearbyCampaigns = useCallback(
     async (materialType?: string) => {
       setLoadingCampaigns(true);
       setNearbyCampaigns([]);
+      setExpandedCampaignLocations([]);
 
       try {
         const userCoords = await getUserLocation();
@@ -624,86 +837,188 @@ const CreateDropOff = () => {
         );
 
         if (response.data && response.data.data) {
-          setNearbyCampaigns(response.data.data);
+          const campaigns = response.data.data;
+          setNearbyCampaigns(campaigns);
 
-          // If we found campaigns and none is selected yet, select the first one
-          // Only do this if we don't have a campaign ID in the URL
-          if (
-            response.data.data.length > 0 &&
-            !selectedCampaign &&
-            !campaignIdFromQuery
-          ) {
-            setSelectedCampaign(response.data.data[0]);
+          // Expand each campaign's locations into separate selectable items
+          const expandedLocations: Array<{
+            campaignId: string;
+            campaignName: string;
+            campaignDescription: string;
+            campaignStatus: string;
+            campaignMaterialTypes: string[];
+            campaignGoal?: number;
+            campaignProgress?: number;
+            locationIndex: number;
+            locationId: string;
+            locationName: string;
+            locationAddress: string;
+            locationType: "simple" | "centre" | "custom";
+            locationCoordinates?: [number, number];
+          }> = [];
+
+          campaigns.forEach((campaign) => {
+            if (campaign.locations && campaign.locations.length > 0) {
+              // Each location becomes a separate item
+              campaign.locations.forEach((location, index) => {
+                let locationId = "";
+                let locationName = "";
+                let locationAddress = "";
+                let locationType: "simple" | "centre" | "custom" = "custom";
+                let locationCoordinates: [number, number] | undefined;
+
+                if (location.simpleDropoffLocationId) {
+                  locationId = location.simpleDropoffLocationId._id;
+                  locationName = location.simpleDropoffLocationId.name;
+                  locationAddress = location.simpleDropoffLocationId.address;
+                  locationType = "simple";
+                  locationCoordinates =
+                    location.simpleDropoffLocationId.location?.coordinates;
+                } else if (location.dropoffLocationId) {
+                  locationId = location.dropoffLocationId._id;
+                  locationName = location.dropoffLocationId.name;
+                  locationAddress = location.dropoffLocationId.address;
+                  locationType = "centre";
+                  locationCoordinates =
+                    location.dropoffLocationId.location?.coordinates;
+                } else if (location.customLocation) {
+                  locationId = `custom_${campaign.id}_${index}`;
+                  locationName =
+                    location.customLocation.name || "Custom Location";
+                  locationAddress = location.customLocation.address;
+                  locationType = "custom";
+                  locationCoordinates = location.customLocation.coordinates;
+                }
+
+                expandedLocations.push({
+                  campaignId: campaign.id,
+                  campaignName: campaign.name,
+                  campaignDescription: campaign.description,
+                  campaignStatus: campaign.status,
+                  campaignMaterialTypes: Array.isArray(campaign.materialTypes)
+                    ? campaign.materialTypes
+                    : campaign.materialTypes
+                    ? [campaign.materialTypes]
+                    : [campaign.material || campaign.itemType || "Mixed"],
+                  campaignGoal: campaign.goal,
+                  campaignProgress: campaign.progress,
+                  locationIndex: index,
+                  locationId,
+                  locationName,
+                  locationAddress,
+                  locationType,
+                  locationCoordinates,
+                });
+              });
+            } else {
+              // Legacy campaign without specific locations
+              expandedLocations.push({
+                campaignId: campaign.id,
+                campaignName: campaign.name,
+                campaignDescription: campaign.description,
+                campaignStatus: campaign.status,
+                campaignMaterialTypes: Array.isArray(campaign.materialTypes)
+                  ? campaign.materialTypes
+                  : campaign.materialTypes
+                  ? [campaign.materialTypes]
+                  : [campaign.material || campaign.itemType || "Mixed"],
+                campaignGoal: campaign.goal,
+                campaignProgress: campaign.progress,
+                locationIndex: 0,
+                locationId: "legacy",
+                locationName: "Campaign Location",
+                locationAddress: campaign.address || "Location to be confirmed",
+                locationType: "custom",
+                locationCoordinates: campaign.location?.coordinates,
+              });
+            }
+          });
+
+          setExpandedCampaignLocations(expandedLocations);
+
+          // Handle pre-selection from URL
+          if (campaignIdFromQuery && campaignLocationIndexFromQuery) {
+            const targetLocation = expandedLocations.find(
+              (loc) =>
+                loc.campaignId === campaignIdFromQuery &&
+                loc.locationIndex === parseInt(campaignLocationIndexFromQuery)
+            );
+            if (targetLocation) {
+              const targetCampaign = campaigns.find(
+                (c) => c.id === campaignIdFromQuery
+              );
+              if (targetCampaign) {
+                setSelectedCampaign(targetCampaign);
+                setSelectedCampaignLocationIndex(
+                  parseInt(campaignLocationIndexFromQuery)
+                );
+                // Auto-expand the accordion for the pre-selected campaign
+                setExpandedCampaigns(new Set([campaignIdFromQuery]));
+              }
+            }
           }
         } else {
           setNearbyCampaigns([]);
+          setExpandedCampaignLocations([]);
         }
       } catch (error) {
         console.error("Error fetching nearby campaigns:", error);
         toast.error("Could not load nearby campaigns");
         setNearbyCampaigns([]);
+        setExpandedCampaignLocations([]);
       } finally {
         setLoadingCampaigns(false);
       }
     },
-    [campaignIdFromQuery, selectedCampaign]
+    [campaignIdFromQuery, campaignLocationIndexFromQuery]
   );
 
-  // Handle campaign selection
-  const handleCampaignSelect = (campaign: ICampaign) => {
-    // Note: We set the selected campaign before calling this function
-    // in the onClick handler to ensure immediate UI feedback
+  // Handle expanded location selection (replaces handleCampaignLocationSelect)
+  const handleExpandedLocationSelect = (expandedLocation: {
+    campaignId: string;
+    campaignName: string;
+    campaignDescription: string;
+    campaignStatus: string;
+    campaignMaterialTypes: string[];
+    campaignGoal?: number;
+    campaignProgress?: number;
+    locationIndex: number;
+    locationId: string;
+    locationName: string;
+    locationAddress: string;
+    locationType: "simple" | "centre" | "custom";
+    locationCoordinates?: [number, number];
+  }) => {
+    // Find the original campaign
+    const originalCampaign = nearbyCampaigns.find(
+      (c) => c.id === expandedLocation.campaignId
+    );
+    if (originalCampaign) {
+      setSelectedCampaign(originalCampaign);
+      setSelectedCampaignLocationIndex(expandedLocation.locationIndex);
 
-    // Get campaign ID consistently regardless of structure
-    const campaignId = campaign.id;
+      // Update URL with the selected campaign and location
+      const paramsToSet: {
+        mode: string;
+        campaignId: string;
+        campaignName: string;
+        campaignLocationIndex: string;
+        type?: string;
+      } = {
+        mode: "campaign",
+        campaignId: expandedLocation.campaignId,
+        campaignName: expandedLocation.campaignName,
+        campaignLocationIndex: expandedLocation.locationIndex.toString(),
+      };
 
-    // Update URL with the selected campaign ID and name
-    const paramsToSet: {
-      mode: string;
-      campaignId: string;
-      campaignName: string;
-      type?: string;
-    } = {
-      mode: "campaign",
-      campaignId: campaignId,
-      campaignName: campaign.name,
-    };
+      // Add material type
+      if (expandedLocation.campaignMaterialTypes.length > 0) {
+        paramsToSet.type =
+          expandedLocation.campaignMaterialTypes[0].toLowerCase();
+      }
 
-    // Determine material type from campaign data
-    let materialType: string | undefined;
-
-    // Check materialTypes as array first
-    if (
-      campaign.materialTypes &&
-      Array.isArray(campaign.materialTypes) &&
-      campaign.materialTypes.length > 0
-    ) {
-      materialType = campaign.materialTypes[0].toLowerCase();
+      setSearchParams(paramsToSet);
     }
-    // Check materialTypes as string
-    else if (
-      campaign.materialTypes &&
-      typeof campaign.materialTypes === "string"
-    ) {
-      materialType = campaign.materialTypes.toLowerCase();
-    }
-    // Fall back to other properties
-    else if (campaign.material) {
-      materialType = campaign.material.toLowerCase();
-    } else if (campaign.itemType) {
-      materialType = campaign.itemType.toLowerCase();
-    } else if (typeFromQuery) {
-      materialType = typeFromQuery;
-    }
-
-    if (materialType) {
-      paramsToSet.type = materialType;
-    }
-
-    // Cache selected campaign to avoid refetching
-    sessionStorage.setItem(`campaign_${campaignId}`, JSON.stringify(campaign));
-
-    setSearchParams(paramsToSet);
   };
 
   const getUserLocation = (): Promise<{
@@ -923,12 +1238,10 @@ const CreateDropOff = () => {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [showCameraOverlay, setShowCameraOverlay] = useState(false);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">(
     "environment"
   );
-  const [shouldShakeCamera, setShouldShakeCamera] = useState(false);
 
   // Video recording states for simple dropoffs
   const [isRecording, setIsRecording] = useState(false);
@@ -957,86 +1270,116 @@ const CreateDropOff = () => {
     };
   }, [previewUrl, videoStream]);
 
-  // Update the startCamera function to ensure it properly initializes with the environment camera
+  // Update the startCamera function to ensure it properly initializes with fallback constraints
   const startCamera = async (mode: "user" | "environment") => {
     if (videoStream) {
       videoStream.getTracks().forEach((track) => track.stop());
     }
+
     try {
-      // Be more specific with constraints to ensure the rear camera is selected
-      const constraints = {
+      // Try with ideal constraints first
+      let constraints: MediaStreamConstraints = {
         video: {
-          facingMode: { exact: mode }, // Use 'exact' to be more specific
+          facingMode: mode,
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      let stream;
+      try {
+        // First attempt with ideal constraints
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        console.log("Ideal constraints failed, trying with basic constraints");
+        // Fallback to basic constraints if ideal fails
+        constraints = {
+          video: {
+            facingMode: mode,
+          },
+        } as MediaStreamConstraints;
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+
       setVideoStream(stream);
+      setIsCameraOpen(true);
+
+      // Wait for the component to update and video element to be available
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Ensure video plays when ready
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current
-            ?.play()
-            .catch((e) => console.error("Error playing video:", e));
-        };
+
+        // Force video to load
+        videoRef.current.load();
+
+        // Try to play immediately
+        try {
+          await videoRef.current.play();
+          console.log("Video started playing successfully");
+        } catch (playError) {
+          console.log("Immediate play failed, waiting for loadedmetadata");
+          // Fallback to waiting for metadata if immediate play fails
+          videoRef.current.onloadedmetadata = async () => {
+            try {
+              await videoRef.current?.play();
+              console.log("Video started playing after metadata loaded");
+            } catch (e) {
+              console.error("Error playing video after metadata:", e);
+            }
+          };
+        }
+
+        // Additional fallback - try play after a short delay
+        setTimeout(async () => {
+          if (videoRef.current && videoRef.current.paused) {
+            try {
+              await videoRef.current.play();
+              console.log("Video started playing after timeout");
+            } catch (e) {
+              console.error("Error playing video after timeout:", e);
+            }
+          }
+        }, 100);
       }
 
-      setIsCameraOpen(true);
       setPreviewUrl(null);
       setFile(null);
     } catch (err) {
       console.error("Error accessing camera:", err);
 
-      // If exact constraint fails, fall back to a simpler request
-      if (mode === "environment") {
-        try {
-          console.log("Falling back to simpler camera request");
-          const fallbackStream = await navigator.mediaDevices.getUserMedia({
-            video: true, // Just
-          });
+      // Final fallback - try any available camera
+      try {
+        console.log("Falling back to any available camera");
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
 
-          setVideoStream(fallbackStream);
-          if (videoRef.current) {
-            videoRef.current.srcObject = fallbackStream;
-            videoRef.current.onloadedmetadata = () => {
-              videoRef.current
-                ?.play()
-                .catch((e) =>
-                  console.error("Error playing fallback video:", e)
-                );
-            };
-          }
-
-          setIsCameraOpen(true);
-          return;
-        } catch (fallbackErr) {
-          console.error("Fallback camera access also failed:", fallbackErr);
+        setVideoStream(fallbackStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current
+              ?.play()
+              .catch((e) => console.error("Error playing fallback video:", e));
+          };
         }
-      }
 
-      toast.error("Could not access camera. Please check permissions.");
-      setIsCameraOpen(false);
+        setIsCameraOpen(true);
+        return;
+      } catch (fallbackErr) {
+        console.error("All camera access attempts failed:", fallbackErr);
+        toast.error("Could not access camera. Please check permissions.");
+        setIsCameraOpen(false);
+      }
     }
   };
 
-  // Update the handleOpenCamera function to explicitly use "environment" mode first
+  // Update the handleOpenCamera function to open camera cleanly without overlay
   const handleOpenCamera = () => {
-    // Always start with environment (rear) camera regardless of facingMode state
+    // Start with environment (rear) camera
     setFacingMode("environment");
-    setShowCameraOverlay(true);
     startCamera("environment");
-
-    // Hide overlay after 8 seconds and trigger shake animation
-    setTimeout(() => {
-      setShowCameraOverlay(false);
-      // Trigger shake animation to draw attention to camera switch button
-      setShouldShakeCamera(true);
-      setTimeout(() => setShouldShakeCamera(false), 1500);
-    }, 8000);
   };
 
   const handleSwitchCamera = () => {
@@ -1090,7 +1433,6 @@ const CreateDropOff = () => {
     }
     setIsCameraOpen(false);
     setVideoStream(null);
-    setShowCameraOverlay(false);
     setRecordingDuration(0);
   };
 
@@ -1524,96 +1866,163 @@ const CreateDropOff = () => {
               </p>
             )}
 
-            {!loadingCampaigns && nearbyCampaigns.length === 0 && (
-              <p className="text-center text-gray-500 py-4 bg-gray-50 rounded-md">
-                No active campaigns found nearby. Try another search or create a
-                regular drop-off.
-              </p>
-            )}
-
-            {!loadingCampaigns && nearbyCampaigns.length > 0 && (
-              <div className="space-y-3 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-1">
-                {nearbyCampaigns.map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    // Use the ref helper function from the hook for auto-scrolling
-                    ref={getRefForCampaign(campaign, selectedCampaign)}
-                    onClick={(e) => {
-                      e.preventDefault(); // Prevent event bubbling
-                      // Immediately set the selected campaign for UI feedback
-                      setSelectedCampaign(campaign);
-                      // Then update URL params and other state
-                      handleCampaignSelect(campaign);
-                    }}
-                    // Use the className helper function from the hook for consistent styling
-                    className={getCampaignClassName(campaign, selectedCampaign)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">
-                          {campaign.name}
-                        </h3>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
-                            {campaign.status}
-                          </span>
-                          {campaign.materialTypes && (
-                            <span className="text-xs text-gray-500">
-                              {Array.isArray(campaign.materialTypes)
-                                ? campaign.materialTypes.join(", ")
-                                : campaign.materialTypes ||
-                                  campaign.material ||
-                                  campaign.itemType}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                          {campaign.description}
-                        </p>
-                      </div>
-                    </div>
+            {!loadingCampaigns &&
+              Object.keys(groupedCampaignLocations).length === 0 && (
+                <div className="text-center py-8">
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <MdCampaign className="mx-auto text-4xl text-gray-400 mb-3" />
+                    <p className="text-gray-600 font-medium mb-2">
+                      No Active Campaigns Found
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      No campaigns are currently active in your area. Try
+                      adjusting your material type or create a regular drop-off.
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Campaign Locations Section */}
-        {(dropoffMode as string) === "campaign" && selectedCampaign && (
-          <div className="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
-            <h3 className="text-md font-semibold text-slate-800 mb-3">
-              Campaign Location
-            </h3>
-            {selectedCampaign.address ? (
-              <div className="flex items-start bg-white p-3 rounded-lg border border-slate-200">
-                <div className="p-3 rounded-full bg-slate-100 mr-3">
-                  <MdLocationOn className="text-slate-600 text-xl" />
                 </div>
-                <div>
-                  <p className="font-medium text-gray-800">
-                    {selectedCampaign.address}
-                  </p>
-                  {selectedCampaign.location &&
-                    selectedCampaign.location.coordinates && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        GPS:{" "}
-                        {selectedCampaign.location.coordinates[1].toFixed(6)},{" "}
-                        {selectedCampaign.location.coordinates[0].toFixed(6)}
-                      </p>
+              )}
+
+            {!loadingCampaigns &&
+              Object.keys(groupedCampaignLocations).length > 0 && (
+                <div className="space-y-4">
+                  <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 pr-2">
+                    {Object.entries(groupedCampaignLocations).map(
+                      ([campaignId, group]) => {
+                        const isExpanded = expandedCampaigns.has(campaignId);
+                        const hasMultipleLocations = group.locations.length > 1;
+
+                        return (
+                          <motion.div
+                            key={campaignId}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                          >
+                            {/* Campaign Header */}
+                            <div
+                              className={`p-4 cursor-pointer transition-colors ${
+                                hasMultipleLocations ? "hover:bg-gray-50" : ""
+                              }`}
+                              onClick={() => {
+                                if (hasMultipleLocations) {
+                                  toggleCampaignExpansion(campaignId);
+                                } else {
+                                  // Single location - select directly
+                                  handleExpandedLocationSelect(
+                                    group.locations[0]
+                                  );
+                                }
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-gradient-to-br from-green-100 to-green-200 rounded-lg">
+                                      <MdCampaign className="text-green-700 text-lg" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900 text-lg">
+                                        {group.campaign.name}
+                                      </h4>
+                                      <div className="flex items-center gap-2 mt-1"></div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Expand/Select Button */}
+                                <div className="ml-3">
+                                  {hasMultipleLocations ? (
+                                    <motion.div
+                                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                      <MdExpandMore className="text-gray-500 text-xl" />
+                                    </motion.div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                                      <MdCheckCircle className="text-sm" />
+                                      Select
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Locations List - Only show if expanded and has multiple locations */}
+                            {hasMultipleLocations && (
+                              <motion.div
+                                initial={false}
+                                animate={{
+                                  height: isExpanded ? "auto" : 0,
+                                  opacity: isExpanded ? 1 : 0,
+                                }}
+                                transition={{
+                                  duration: 0.3,
+                                  ease: "easeInOut",
+                                }}
+                                className="overflow-hidden"
+                              >
+                                <div className="border-t border-gray-100 bg-gray-50">
+                                  <div className="p-4 space-y-3">
+                                    <h5 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                      <MdPlace className="text-gray-500" />
+                                      Choose Location
+                                    </h5>
+                                    {group.locations.map((location, index) => (
+                                      <motion.div
+                                        key={`${location.campaignId}_${location.locationIndex}_${index}`}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleExpandedLocationSelect(
+                                            location
+                                          );
+                                        }}
+                                        className={`p-3 rounded-lg border transition-all cursor-pointer group ${
+                                          selectedCampaign?.id ===
+                                            location.campaignId &&
+                                          selectedCampaignLocationIndex ===
+                                            location.locationIndex
+                                            ? "bg-green-50 border-green-500 ring-2 ring-green-200"
+                                            : "bg-white border-gray-200 hover:border-green-300 hover:bg-green-25"
+                                        }`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <MdPlace className="text-green-600 text-sm" />
+                                              <h6 className="font-medium text-gray-800 text-sm">
+                                                {location.locationName}
+                                              </h6>
+                                            </div>
+                                            <p className="text-xs text-gray-500">
+                                              {location.locationAddress}
+                                            </p>
+                                          </div>
+                                          <div className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <MdArrowForward className="text-green-600 text-sm" />
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        );
+                      }
                     )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-600 bg-white p-3 rounded-lg border border-green-200">
-                No specific drop-off location provided for this campaign. Please
-                contact the campaign organizer for details.
-              </p>
-            )}
+              )}
           </div>
         )}
 
-        {/* Drop-Off Locations Section */}
+        {/* Drop-Off Locations Section - Only for regular and simple modes */}
         {dropoffMode !== "campaign" && (
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
@@ -2066,42 +2475,13 @@ const CreateDropOff = () => {
                 ref={videoRef}
                 autoPlay
                 playsInline
+                muted
                 className="w-full h-full object-cover"
                 style={{
                   transform: facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
                 }}
               />
               <canvas ref={canvasRef} className="hidden"></canvas>
-
-              {/* Camera Overlay Instructions */}
-              {showCameraOverlay && (
-                <div
-                  className="absolute inset-0 bg-black/70 flex items-center justify-center z-20 backdrop-blur-sm cursor-pointer"
-                  onClick={() => {
-                    setShowCameraOverlay(false);
-                    // Trigger shake animation to draw attention to camera switch button
-                    setShouldShakeCamera(true);
-                    setTimeout(() => setShouldShakeCamera(false), 1500);
-                  }}
-                >
-                  <div className="bg-white rounded-lg p-4 max-w-xs mx-4 text-center shadow-lg">
-                    <div className="flex items-center justify-center mb-2">
-                      <MdFlipCameraAndroid className="text-2xl text-gray-600" />
-                    </div>
-                    <p className="text-sm font-medium text-gray-800 mb-1">
-                      Camera Loading
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {dropoffMode === "simple"
-                        ? "Position the bin in view for video recording."
-                        : "Tap the switch icon to start the camera visual."}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Tap anywhere to continue.
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* Recording Progress Indicator */}
               {isRecording && (
@@ -2131,19 +2511,6 @@ const CreateDropOff = () => {
                   onClick={handleSwitchCamera}
                   className="p-3 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-sm"
                   aria-label="Switch camera"
-                  animate={
-                    shouldShakeCamera
-                      ? {
-                          x: [0, -3, 3, -3, 3, -1, 1, 0],
-                          rotate: [0, -2, 2, -2, 2, -1, 1, 0],
-                        }
-                      : {}
-                  }
-                  transition={{
-                    duration: 0.5,
-                    ease: "easeInOut",
-                    repeat: shouldShakeCamera ? 2 : 0,
-                  }}
                 >
                   <MdFlipCameraAndroid size={24} />
                 </motion.button>

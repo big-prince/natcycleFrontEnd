@@ -19,6 +19,19 @@ const CampaignApi = {
     });
   },
 
+  // Search locations for campaign creation
+  async searchDropoffLocations(search?: string, limit = 10, page = 1) {
+    return await api.get("/dropoff-locations/search", {
+      params: { search, limit, page },
+    });
+  },
+
+  async searchSimpleDropoffLocations(search?: string, limit = 10, page = 1) {
+    return await api.get("/simple-dropoff-locations/search", {
+      params: { search, limit, page },
+    });
+  },
+
   // Get a specific campaign by ID
   async getCampaign(id: string) {
     return await api.get(`/campaigns/${id}`);

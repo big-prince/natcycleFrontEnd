@@ -20,14 +20,14 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
     id: "linkedin",
     icon: "FaLinkedin",
     color: "#0077B5",
-    shareUrl: "https://www.linkedin.com/sharing/share-offsite/",
+    shareUrl: "https://www.linkedin.com/feed/update/urn:li:share:",
   },
   {
     name: "Facebook",
     id: "facebook",
     icon: "FaFacebook",
     color: "#1877F2",
-    shareUrl: "https://www.facebook.com/sharer/sharer.php",
+    shareUrl: "https://www.facebook.com/dialog/share",
   },
   {
     name: "Copy Link",
@@ -45,6 +45,8 @@ export const buildShareUrl = (
 ): string => {
   const encodedText = encodeURIComponent(text);
   const encodedUrl = url ? encodeURIComponent(url) : "";
+  const fallbackUrl = encodeURIComponent(window.location.origin);
+  const finalUrl = encodedUrl || fallbackUrl;
 
   switch (platform) {
     case "twitter":
@@ -58,10 +60,14 @@ export const buildShareUrl = (
       }`;
 
     case "linkedin":
-      return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}&summary=${encodedText}`;
+      // Modern LinkedIn sharing - opens LinkedIn with pre-filled text
+      return `https://www.linkedin.com/sharing/share-offsite/?url=${finalUrl}&summary=${encodedText}&title=${encodeURIComponent(
+        "NatCycle - Environmental Impact"
+      )}`;
 
     case "facebook":
-      return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
+      // Modern Facebook sharing - using the dialog/share endpoint
+      return `https://www.facebook.com/dialog/share?app_id=966242223397117&href=${finalUrl}&quote=${encodedText}&hashtag=%23NatCycle&display=popup`;
 
     case "copy":
       return ""; // Handled differently in component

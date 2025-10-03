@@ -7,11 +7,9 @@ import {
   FaLocationDot,
   FaFilter,
 } from "react-icons/fa6";
-import { MdCheckroom, MdForest, MdCampaign } from "react-icons/md";
+import { MdCheckroom, MdForest } from "react-icons/md";
 import { toast } from "react-toastify";
-import Loading from "../../../components/Loading";
-
-// Import from the ICampaign interface
+import Loading from "../../../components/Loading"; // Import from the ICampaign interface
 interface Campaign {
   id: string;
   name: string;
@@ -106,7 +104,6 @@ const CampaignsPage = () => {
     const fetchCampaigns = async () => {
       setLoading(true);
       try {
-        // If nearbyFilter is active, use geolocation and the nearby campaigns API
         if (nearbyFilter) {
           try {
             const position = await getUserLocation();
@@ -126,11 +123,31 @@ const CampaignsPage = () => {
                 : [];
               setCampaigns(activeCampaigns);
             }
-          } catch (error) {
+          } catch (error: unknown) {
             console.error("Error fetching nearby campaigns:", error);
-            toast.error(
-              "Failed to get your location. Showing all campaigns instead."
+
+            const errorObj = error as {
+              response?: { data?: { message?: string } };
+              message?: string;
+            };
+            console.error(
+              "Error details:",
+              errorObj.response?.data || errorObj.message
             );
+
+            // Check if it's a specific geospatial error
+            if (
+              errorObj.response?.data?.message?.includes("geoNear") ||
+              errorObj.response?.data?.message?.includes("index")
+            ) {
+              toast.info(
+                "Location-based search is currently unavailable. Showing all campaigns instead."
+              );
+            } else {
+              toast.info(
+                "Failed to get your location. Showing all campaigns instead."
+              );
+            }
             // Fall back to all campaigns if location fails
             await fetchAllCampaigns();
           }
@@ -162,7 +179,6 @@ const CampaignsPage = () => {
   }, [nearbyFilter, materialFilter]);
 
   const filteredCampaigns = campaigns.filter((campaign) => {
-    // Apply material type filter if selected
     if (materialFilter && campaign.materialTypes) {
       const materialTypes = Array.isArray(campaign.materialTypes)
         ? campaign.materialTypes
@@ -176,9 +192,6 @@ const CampaignsPage = () => {
         return false;
       }
     }
-
-    // We don't need additional filtering for nearby campaigns
-    // since we're now fetching nearby campaigns directly from the API
 
     return true;
   });
@@ -208,7 +221,7 @@ const CampaignsPage = () => {
       <div className="p-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold flex items-center">
-            <MdCampaign className="text-green-600 mr-2" /> Campaign Events
+            Campaign Events
           </h1>
         </div>
         <div className="flex justify-center mt-10">
@@ -222,7 +235,7 @@ const CampaignsPage = () => {
     <div className="p-4 pb-20">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold flex items-center">
-          <MdCampaign className="text-green-600 mr-2" /> Campaign Events
+          Campaign Events
         </h1>
         <button
           onClick={() => setFilterActive(!filterActive)}
@@ -275,7 +288,8 @@ const CampaignsPage = () => {
       {filteredCampaigns.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-gray-500">
-            No campaigns found with selected filters
+            No campaigns found with selected filters, try adjusting your
+            filters.
           </p>
           {materialFilter && (
             <button

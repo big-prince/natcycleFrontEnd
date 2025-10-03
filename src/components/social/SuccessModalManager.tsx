@@ -15,15 +15,6 @@ const SuccessModalManager: React.FC<SuccessModalManagerProps> = () => {
     closeMilestoneSuccess,
   } = useSuccessModal();
 
-  console.log("🎭 SuccessModalManager render:", {
-    dropoffSuccess: dropoffSuccess.isOpen,
-    milestoneSuccess: milestoneSuccess.isOpen,
-    dropoffData: dropoffSuccess.data,
-    milestoneData: milestoneSuccess.data,
-    dropoffDataExists: !!dropoffSuccess.data,
-    conditionalCheck: dropoffSuccess.isOpen && dropoffSuccess.data,
-  });
-
   // Additional state debugging
   React.useEffect(() => {
     console.log("🔄 SuccessModalManager state changed:", {

@@ -10,6 +10,7 @@ import {
   generateDropoffTemplate,
   generateMilestoneTemplate,
   getProfileShareUrl,
+  getDropoffShareUrl,
 } from "../utils/socialTemplates";
 
 export const useSocialShare = () => {
@@ -29,7 +30,7 @@ export const useSocialShare = () => {
     (dropoffData: DropoffShareData): ShareData => {
       return {
         text: generateDropoffTemplate(dropoffData),
-        url: getProfileShareUrl(),
+        url: getDropoffShareUrl(),
       };
     },
     []

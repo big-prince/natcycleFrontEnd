@@ -16,6 +16,24 @@ interface ICampaign {
   goal: number;
   progress: number;
   image?: Image;
+  locations?: Array<{
+    simpleDropoffLocationId?: {
+      _id: string;
+      name: string;
+      address: string;
+    };
+    dropoffLocationId?: {
+      _id: string;
+      name: string;
+      address: string;
+    };
+    customLocation?: {
+      coordinates: [number, number];
+      address: string;
+      name?: string;
+    };
+  }>;
+  // Legacy fields for backward compatibility
   dropOffLocation?: {
     id: string;
     name: string;
@@ -109,7 +127,7 @@ const AdminCampaign = () => {
   };
 
   const handleEditCampaign = (campaign: ICampaign) => {
-    navigate(`/admin/campaigns/create-campaign?id=${campaign.id}`);
+    navigate(`/admin/campaigns/edit/${campaign.id}`);
   };
 
   const calculateProgress = (goal: number, progress: number) => {
@@ -123,30 +141,30 @@ const AdminCampaign = () => {
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
         <h1 className="font-bold text-2xl mb-4">Campaign Management</h1>{" "}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-sky-50 to-sky-100 p-4 rounded-lg border border-sky-200">
-            <h3 className="text-sm text-gray-600">Total Campaigns</h3>
-            <p className="text-2xl font-bold text-sky-700">
+          <div className="bg-slate-100 p-4 rounded-lg border border-slate-200">
+            <h3 className="text-sm text-black">Total Campaigns</h3>
+            <p className="text-2xl font-bold text-black-700">
               {campaignStats.totalCampaigns || 0}
             </p>
           </div>
 
-          <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-            <h3 className="text-sm text-gray-600">Active Campaigns</h3>
-            <p className="text-2xl font-bold text-green-700">
+          <div className="bg-slate-100 p-4 rounded-lg border border-green-200">
+            <h3 className="text-sm text-black">Active Campaigns</h3>
+            <p className="text-2xl font-bold text-black-700">
               {campaignStats.activeCampaigns || 0}
             </p>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-            <h3 className="text-sm text-gray-600">Total Participants</h3>
-            <p className="text-2xl font-bold text-blue-700">
+          <div className="bg-slate-100 p-4 rounded-lg border border-blue-200">
+            <h3 className="text-sm text-black">Total Participants</h3>
+            <p className="text-2xl font-bold text-black-700">
               {campaignStats.totalParticipants || 0}
             </p>
           </div>
 
-          <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-lg border border-amber-200">
-            <h3 className="text-sm text-gray-600">Campaign Drop-offs</h3>
-            <p className="text-2xl font-bold text-amber-700">
+          <div className="bg-slate-100 p-4 rounded-lg border border-slate-200">
+            <h3 className="text-sm text-black">Campaign Drop-offs</h3>
+            <p className="text-2xl font-bold text-black-700">
               {campaignStats.totalDropOffs || 0}
             </p>
           </div>
@@ -157,7 +175,7 @@ const AdminCampaign = () => {
           <div className="flex">
             <Link
               to="/admin/campaigns/create-campaign"
-              className="flex items-center justify-center px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md cursor-pointer transition-colors"
+              className="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-md cursor-pointer transition-colors"
             >
               <FaPlus className="mr-2" />
               Add New Campaign
@@ -175,7 +193,7 @@ const AdminCampaign = () => {
           <p className="text-gray-500 mb-4">No campaigns found</p>
           <Link
             to="/admin/campaigns/create-campaign"
-            className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-md inline-flex items-center"
+            className="px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-md inline-flex items-center"
           >
             <FaPlus className="mr-2" />
             Create your first campaign
@@ -282,21 +300,21 @@ const AdminCampaign = () => {
                   <div className="flex space-x-2">
                     <Link
                       to={`/admin/campaigns/${campaign.id}`}
-                      className="px-3 py-2 bg-sky-600 text-white rounded-md flex items-center text-sm hover:bg-sky-700 transition-colors"
+                      className="px-3 py-2 bg-green-500 text-white rounded-md flex items-center text-sm hover:bg-green-700 transition-colors"
                     >
                       <FaEye className="mr-1" /> View Details
                     </Link>
 
                     <Link
                       to={`/admin/campaigns/${campaign.id}/dropoffs`}
-                      className="px-3 py-2 bg-amber-600 text-white rounded-md flex items-center text-sm hover:bg-amber-700 transition-colors"
+                      className="px-3 py-2 bg-slate-600 text-white rounded-md flex items-center text-sm hover:bg-slate-700 transition-colors"
                     >
                       <FaBox className="mr-1" /> Drop-offs
                     </Link>
 
                     <button
                       onClick={() => handleEditCampaign(campaign)}
-                      className="px-3 py-2 bg-sky-600 text-white rounded-md flex items-center text-sm hover:bg-sky-700 transition-colors"
+                      className="px-3 py-2 bg-green-500 text-white rounded-md flex items-center text-sm hover:bg-green-700 transition-colors"
                     >
                       <FaEdit className="mr-1" /> Edit
                     </button>
