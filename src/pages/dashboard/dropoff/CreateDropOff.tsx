@@ -1375,9 +1375,7 @@ const CreateDropOff = () => {
     }
   };
 
-  // Update the handleOpenCamera function to open camera cleanly without overlay
   const handleOpenCamera = () => {
-    // Start with environment (rear) camera
     setFacingMode("environment");
     startCamera("environment");
   };

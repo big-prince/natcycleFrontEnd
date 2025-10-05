@@ -522,9 +522,16 @@ const Where = () => {
           if (campaign.locations && campaign.locations.length > 0) {
             return campaign.locations.some((loc) => {
               const coords =
-                loc.simpleDropoffLocationId?.location?.coordinates ||
-                loc.dropoffLocationId?.location?.coordinates ||
-                loc.customLocation?.coordinates;
+                loc.simpleDropoffLocationId?.location?.coordinates &&
+                loc.simpleDropoffLocationId.location.coordinates.length === 2
+                  ? loc.simpleDropoffLocationId.location.coordinates
+                  : loc.dropoffLocationId?.location?.coordinates &&
+                    loc.dropoffLocationId.location.coordinates.length === 2
+                  ? loc.dropoffLocationId.location.coordinates
+                  : loc.customLocation?.coordinates &&
+                    loc.customLocation.coordinates.length === 2
+                  ? loc.customLocation.coordinates
+                  : null;
               return coords && coords.length === 2;
             });
           }
@@ -2042,18 +2049,25 @@ const Where = () => {
                     let locationName = "";
 
                     if (
-                      location.simpleDropoffLocationId?.location?.coordinates
+                      location.simpleDropoffLocationId?.location?.coordinates &&
+                      location.simpleDropoffLocationId.location.coordinates
+                        .length === 2
                     ) {
                       coordinates =
                         location.simpleDropoffLocationId.location.coordinates;
                       locationName = location.simpleDropoffLocationId.name;
                     } else if (
-                      location.dropoffLocationId?.location?.coordinates
+                      location.dropoffLocationId?.location?.coordinates &&
+                      location.dropoffLocationId.location.coordinates.length ===
+                        2
                     ) {
                       coordinates =
                         location.dropoffLocationId.location.coordinates;
                       locationName = location.dropoffLocationId.name;
-                    } else if (location.customLocation?.coordinates) {
+                    } else if (
+                      location.customLocation?.coordinates &&
+                      location.customLocation.coordinates.length === 2
+                    ) {
                       coordinates = location.customLocation.coordinates;
                       locationName =
                         location.customLocation.name ||
