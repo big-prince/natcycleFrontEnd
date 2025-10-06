@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from "../../../hooks/reduxHooks";
 import { SlBadge } from "react-icons/sl";
 import { TiAnchorOutline, TiGift } from "react-icons/ti";
 import { RiMegaphoneFill } from "react-icons/ri";
-import { FaBox, FaShapes } from "react-icons/fa";
+import { FaBox, FaShapes, FaMapMarkerAlt } from "react-icons/fa";
 import { LuNetwork } from "react-icons/lu";
 import {
   FiChevronDown,
@@ -19,6 +19,8 @@ import {
   FiShuffle,
   FiPieChart,
   FiClipboard,
+  FiMapPin,
+  FiPackage,
 } from "react-icons/fi";
 import { useState } from "react";
 
@@ -34,44 +36,56 @@ const Links = [
     path: "/admin/pickups",
   },
   {
-    title: "Drop Offs",
-    icon: <FaBox size={18} />,
-    path: "/admin/dropoffs",
-  },
-  {
-    title: "Simple Drop Offs",
-    icon: <FaBox size={18} />,
-    path: "/admin/simple-dropoffs",
-  },
-  {
-    title: "Dropoff Locations",
-    icon: <FaBox size={18} />,
-    path: "/admin/dropoff-locations",
-  },
-  {
-    title: "Simple Dropoff Locations",
-    icon: <FaBox size={18} />,
-    path: "/admin/simple-dropoff-locations",
-  },
-  {
     title: "Badges",
     icon: <SlBadge size={20} />,
     path: "/admin/badges",
   },
   {
+    title: "Materials",
+    icon: <FaShapes size={19} />,
+    path: "/admin/materials",
+  },
+];
+
+// Rewards links array
+const rewardsLinks = [
+  {
     title: "Rewards",
-    icon: <TiGift size={20} />,
+    icon: <TiGift size={18} />,
     path: "/admin/rewards",
   },
   {
     title: "Redeemed Rewards",
-    icon: <TiAnchorOutline size={20} />,
+    icon: <TiAnchorOutline size={18} />,
     path: "/admin/redeemed",
   },
+];
+
+// Regular Dropoff links array
+const dropoffLinks = [
   {
-    title: "Materials", // New Link
-    icon: <FaShapes size={19} />, // New Icon
-    path: "/admin/materials", // New Path
+    title: "Drop Offs",
+    icon: <FaBox size={18} />,
+    path: "/admin/dropoffs",
+  },
+  {
+    title: "Dropoff Locations",
+    icon: <FiMapPin size={18} />,
+    path: "/admin/dropoff-locations",
+  },
+];
+
+// Simple Dropoff links array
+const simpleDropoffLinks = [
+  {
+    title: "Simple Drop Offs",
+    icon: <FiPackage size={18} />,
+    path: "/admin/simple-dropoffs",
+  },
+  {
+    title: "Simple Dropoff Locations",
+    icon: <FaMapMarkerAlt size={18} />,
+    path: "/admin/simple-dropoff-locations",
   },
 ];
 
@@ -129,6 +143,9 @@ const SideBar = () => {
   const user = useAppSelector((state) => state.auth.user);
   const [isThingsMatchOpen, setIsThingsMatchOpen] = useState(false); // State for ThingsMatch dropdown
   const [isCampaignOpen, setIsCampaignOpen] = useState(false); // State for Campaign dropdown
+  const [isDropoffOpen, setIsDropoffOpen] = useState(false); // State for Dropoff dropdown
+  const [isSimpleDropoffOpen, setIsSimpleDropoffOpen] = useState(false); // State for Simple Dropoff dropdown
+  const [isRewardsOpen, setIsRewardsOpen] = useState(false); // State for Rewards dropdown
 
   // Redirect to login if user is not authenticated
   // This should ideally be handled by a protected route component wrapping admin pages
@@ -164,7 +181,7 @@ const SideBar = () => {
                 `flex items-center py-2.5 px-3 rounded-sm text-sm font-medium transition-colors duration-150 group
                 ${
                   isActive
-                    ? "bg-sky-600 text-white shadow-md"
+                    ? "bg-slate-600 text-white shadow-md"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`
               }
@@ -177,15 +194,105 @@ const SideBar = () => {
           ) : null
         )}
 
+        {/* Regular Dropoff Section */}
+        {user && (
+          <div className="pt-2">
+            <button
+              onClick={() => setIsDropoffOpen(!isDropoffOpen)}
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors duration-150 group"
+            >
+              <div className="flex items-center">
+                <span className="mr-3 text-slate-400 group-hover:scale-110 transition-transform">
+                  <FaBox size={20} />
+                </span>
+                <span>Drop Offs</span>
+              </div>
+              {isDropoffOpen ? (
+                <FiChevronDown size={18} className="text-slate-400" />
+              ) : (
+                <FiChevronRight size={18} className="text-slate-400" />
+              )}
+            </button>
+            {isDropoffOpen && (
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-blue-700 ml-3">
+                {dropoffLinks.map((link) => (
+                  <NavLink
+                    key={link.title}
+                    to={link.path}
+                    className={({ isActive }) =>
+                      `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
+                      ${
+                        isActive
+                          ? "bg-slate-600 text-white"
+                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                      }`
+                    }
+                  >
+                    <span className="mr-2.5 group-hover:scale-110 transition-transform">
+                      {link.icon}
+                    </span>
+                    <span>{link.title}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Simple Dropoff Section */}
+        {user && (
+          <div className="pt-2">
+            <button
+              onClick={() => setIsSimpleDropoffOpen(!isSimpleDropoffOpen)}
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors duration-150 group"
+            >
+              <div className="flex items-center">
+                <span className="mr-3 text-slate-400 group-hover:scale-110 transition-transform">
+                  <FiPackage size={20} />
+                </span>
+                <span>Simple Drop Offs</span>
+              </div>
+              {isSimpleDropoffOpen ? (
+                <FiChevronDown size={18} className="text-slate-400" />
+              ) : (
+                <FiChevronRight size={18} className="text-slate-400" />
+              )}
+            </button>
+            {isSimpleDropoffOpen && (
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-orange-700 ml-3">
+                {simpleDropoffLinks.map((link) => (
+                  <NavLink
+                    key={link.title}
+                    to={link.path}
+                    className={({ isActive }) =>
+                      `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
+                      ${
+                        isActive
+                          ? "bg-slate-600 text-white"
+                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                      }`
+                    }
+                  >
+                    <span className="mr-2.5 group-hover:scale-110 transition-transform">
+                      {link.icon}
+                    </span>
+                    <span>{link.title}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Campaigns Section */}
         {user && (
           <div className="pt-2">
             <button
               onClick={() => setIsCampaignOpen(!isCampaignOpen)}
-              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-sky-400 hover:bg-slate-800 transition-colors duration-150 group"
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors duration-150 group"
             >
               <div className="flex items-center">
-                <span className="mr-3 text-sky-400 group-hover:scale-110 transition-transform">
+                <span className="mr-3 text-slate-400 group-hover:scale-110 transition-transform">
                   <RiMegaphoneFill size={20} />
                 </span>
                 <span>Campaigns</span>
@@ -197,7 +304,7 @@ const SideBar = () => {
               )}
             </button>
             {isCampaignOpen && (
-              <div className="mt-1 pl-4 space-y-1 border-l-2 border-sky-700 ml-3">
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-slate-600 ml-3">
                 {campaignLinks.map((link) => (
                   <NavLink
                     key={link.title}
@@ -206,7 +313,7 @@ const SideBar = () => {
                       `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
                       ${
                         isActive
-                          ? "bg-sky-600 text-white"
+                          ? "bg-slate-600 text-white"
                           : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
                       }`
                     }
@@ -227,10 +334,10 @@ const SideBar = () => {
           <div className="pt-2">
             <button
               onClick={() => setIsThingsMatchOpen(!isThingsMatchOpen)}
-              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-amber-400 hover:bg-slate-800 transition-colors duration-150 group"
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors duration-150 group"
             >
               <div className="flex items-center">
-                <span className="mr-3 text-amber-400 group-hover:scale-110 transition-transform">
+                <span className="mr-3 text-slate-400 group-hover:scale-110 transition-transform">
                   <LuNetwork size={18} /> {/* Updated Icon for ThingsMatch */}
                 </span>
                 <span>ThingsMatch</span>
@@ -242,7 +349,7 @@ const SideBar = () => {
               )}
             </button>
             {isThingsMatchOpen && (
-              <div className="mt-1 pl-4 space-y-1 border-l-2 border-amber-700 ml-3">
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-slate-600 ml-3">
                 {thingsMatchSubLinks.map((subLink) => (
                   <NavLink
                     key={subLink.title}
@@ -251,7 +358,7 @@ const SideBar = () => {
                       `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
                       ${
                         isActive
-                          ? "bg-amber-600 text-white"
+                          ? "bg-slate-600 text-white"
                           : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
                       }`
                     }
@@ -266,13 +373,58 @@ const SideBar = () => {
             )}
           </div>
         )}
+
+        {/* Rewards Section */}
+        {user && (
+          <div className="pt-2">
+            <button
+              onClick={() => setIsRewardsOpen(!isRewardsOpen)}
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-sm text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors duration-150 group"
+            >
+              <div className="flex items-center">
+                <span className="mr-3 text-slate-400 group-hover:scale-110 transition-transform">
+                  <TiGift size={20} />
+                </span>
+                <span>Rewards</span>
+              </div>
+              {isRewardsOpen ? (
+                <FiChevronDown size={18} className="text-slate-400" />
+              ) : (
+                <FiChevronRight size={18} className="text-slate-400" />
+              )}
+            </button>
+            {isRewardsOpen && (
+              <div className="mt-1 pl-4 space-y-1 border-l-2 border-slate-600 ml-3">
+                {rewardsLinks.map((link) => (
+                  <NavLink
+                    key={link.title}
+                    to={link.path}
+                    className={({ isActive }) =>
+                      `flex items-center py-2 px-3 rounded-sm text-xs font-medium transition-colors duration-150 group
+                      ${
+                        isActive
+                          ? "bg-slate-600 text-white"
+                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                      }`
+                    }
+                  >
+                    <span className="mr-2.5 group-hover:scale-110 transition-transform">
+                      {link.icon}
+                    </span>
+                    <span>{link.title}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* User Profile & Logout Section */}
       <div className="mt-auto pt-4 border-t border-slate-700/50">
         <div className="flex items-center p-2 rounded-lg hover:bg-slate-800 transition-colors group">
           <img
-            className="w-9 h-9 object-cover rounded-full mr-3 border-2 border-slate-600 group-hover:border-sky-500 transition-colors"
+            className="w-9 h-9 object-cover rounded-full mr-3 border-2 border-slate-600 group-hover:border-slate-400 transition-colors"
             src={
               user?.profilePicture?.url ||
               `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=random&color=fff`

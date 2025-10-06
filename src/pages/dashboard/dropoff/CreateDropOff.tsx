@@ -1578,11 +1578,11 @@ const CreateDropOff = () => {
         toast.info(
           "Some of your previous dropoff information has been restored. Please re-select location and receipt."
         );
-        sessionStorage.removeItem("pendingDropoff"); // Clear after attempting restore
+        sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");
       } catch (error) {
         console.error("Error restoring dropoff data:", error);
-        sessionStorage.removeItem("pendingDropoff"); // Clear if corrupt
+        sessionStorage.removeItem("pendingDropoff");
         sessionStorage.removeItem("pendingDropoffFile");
       }
     }
