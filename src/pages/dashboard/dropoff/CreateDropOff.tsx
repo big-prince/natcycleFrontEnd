@@ -36,7 +36,6 @@ export interface ICampaign {
       _id: string;
       name: string;
       address: string;
-      materialType?: string;
       location?: {
         coordinates: [number, number];
       };
@@ -402,7 +401,7 @@ const CreateDropOff = () => {
           ? selectedLocation.bulkMaterialTypes[0] === "All"
             ? "plastic"
             : selectedLocation.bulkMaterialTypes[0]
-          : selectedLocation?.materialType || "plastic";
+          : "plastic";
 
       try {
         const userCoords = await getUserLocation();
@@ -2190,7 +2189,7 @@ const CreateDropOff = () => {
                                         : ""}
                                     </span>
                                   ))
-                              : loc.materialType}
+                              : "No materials listed"}
                           </p>
                           {loc.distance !== undefined && (
                             <p className="text-xs text-orange-600 mt-0.5">
@@ -2203,7 +2202,14 @@ const CreateDropOff = () => {
                             <MdCheckCircle className="text-orange-500 text-2xl flex-shrink-0 ml-2" />
                           )}
                           <div className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-100 mt-1">
-                            {getIconForSubtype(loc.materialType)}
+                            {getIconForSubtype(
+                              loc.bulkMaterialTypes &&
+                                loc.bulkMaterialTypes.length > 0
+                                ? loc.bulkMaterialTypes[0] === "All"
+                                  ? "plastic"
+                                  : loc.bulkMaterialTypes[0]
+                                : "plastic"
+                            )}
                           </div>
                         </div>
                       </div>
