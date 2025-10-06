@@ -345,8 +345,8 @@ const AdminSimpleDropOffLocations = () => {
                           </span>
                         ))
                       ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-sky-100 text-sky-800">
-                          {location.materialType}
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          No Materials Listed
                         </span>
                       )}
                     </div>

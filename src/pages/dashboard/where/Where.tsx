@@ -2412,9 +2412,39 @@ const Where = () => {
                   <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
                     Quick Drop Point
                   </span>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                    {selectedSimpleLocation.materialType}
-                  </span>
+                  {selectedSimpleLocation.bulkMaterialTypes &&
+                  selectedSimpleLocation.bulkMaterialTypes.length > 0 ? (
+                    selectedSimpleLocation.bulkMaterialTypes.length === 1 &&
+                    selectedSimpleLocation.bulkMaterialTypes[0] === "All" ? (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                        All Materials
+                      </span>
+                    ) : (
+                      selectedSimpleLocation.bulkMaterialTypes
+                        .slice(0, 3)
+                        .map((type) => (
+                          <span
+                            key={type}
+                            className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full"
+                          >
+                            {type === "All"
+                              ? "All Materials"
+                              : type.charAt(0).toUpperCase() + type.slice(1)}
+                          </span>
+                        ))
+                    )
+                  ) : (
+                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                      No Materials Listed
+                    </span>
+                  )}
+                  {selectedSimpleLocation.bulkMaterialTypes &&
+                    selectedSimpleLocation.bulkMaterialTypes.length > 3 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                        +{selectedSimpleLocation.bulkMaterialTypes.length - 3}{" "}
+                        more
+                      </span>
+                    )}
                 </div>
 
                 {selectedSimpleLocation.organizationName && (
@@ -2470,11 +2500,19 @@ const Where = () => {
                   </button>
                   <button
                     className="mt-4 w-full bg-black text-white text-sm py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors px-1"
-                    onClick={() =>
+                    onClick={() => {
+                      const materialType =
+                        selectedSimpleLocation.bulkMaterialTypes &&
+                        selectedSimpleLocation.bulkMaterialTypes.length > 0
+                          ? selectedSimpleLocation.bulkMaterialTypes[0] ===
+                            "All"
+                            ? "plastic" // Default to plastic if "All" is selected
+                            : selectedSimpleLocation.bulkMaterialTypes[0]
+                          : "plastic"; // Default fallback
                       navigate(
-                        `/dropoff/create?type=${selectedSimpleLocation.materialType}&mode=simple&locationId=${selectedSimpleLocation.id}`
-                      )
-                    }
+                        `/dropoff/create?type=${materialType}&mode=simple&locationId=${selectedSimpleLocation.id}`
+                      );
+                    }}
                   >
                     Quick Drop
                   </button>

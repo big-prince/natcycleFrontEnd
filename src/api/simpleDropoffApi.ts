@@ -8,8 +8,7 @@ export interface SimpleDropoffLocation {
     coordinates: [number, number]; // [longitude, latitude]
   };
   address?: string;
-  materialType: string;
-  bulkMaterialTypes?: string[]; // New field for multiple material types
+  bulkMaterialTypes: string[]; // Multiple material types array
   acceptedSubtypes?: string[];
   organizationName?: string;
   isActive: boolean;
@@ -99,7 +98,7 @@ class SimpleDropoffApi {
     formData.append("quantity", params.quantity.toString());
     formData.append("latitude", params.latitude.toString());
     formData.append("longitude", params.longitude.toString());
-    formData.append("file", params.proofPicture); // Changed from "proofPicture" to "file"
+    formData.append("file", params.proofPicture);
 
     return api.post("/simple-dropoffs", formData, {
       headers: {
@@ -170,8 +169,7 @@ class SimpleDropoffApi {
     latitude: number;
     longitude: number;
     address: string;
-    materialType: string;
-    bulkMaterialTypes?: string[];
+    bulkMaterialTypes: string[];
     acceptedSubtypes?: string[];
     organizationName?: string;
     isActive: boolean;
@@ -190,7 +188,6 @@ class SimpleDropoffApi {
       latitude: number;
       longitude: number;
       address: string;
-      materialType: string;
       bulkMaterialTypes: string[];
       acceptedSubtypes: string[];
       organizationName: string;

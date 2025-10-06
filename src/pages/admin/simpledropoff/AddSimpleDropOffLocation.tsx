@@ -11,7 +11,6 @@ interface LocationFormData {
   latitude: string;
   longitude: string;
   address: string;
-  materialType: string;
   bulkMaterialTypes: string[];
   acceptedSubtypes: string;
   organizationName: string;
@@ -31,7 +30,6 @@ const AddSimpleDropOffLocation = () => {
     latitude: "",
     longitude: "",
     address: "",
-    materialType: "",
     bulkMaterialTypes: [],
     acceptedSubtypes: "",
     organizationName: "",
@@ -92,7 +90,6 @@ const AddSimpleDropOffLocation = () => {
             latitude: data.location?.coordinates[1]?.toString() || "",
             longitude: data.location?.coordinates[0]?.toString() || "",
             address: data.address || "",
-            materialType: data.materialType || "",
             bulkMaterialTypes: bulkMaterialTypes,
             acceptedSubtypes: data.acceptedSubtypes?.join(", ") || "",
             organizationName: data.organizationName || "",
@@ -123,14 +120,12 @@ const AddSimpleDropOffLocation = () => {
         setFormData({
           ...formData,
           bulkMaterialTypes: [],
-          materialType: "", // Clear legacy field when deselecting all
         });
       } else {
         // Select only "All"
         setFormData({
           ...formData,
           bulkMaterialTypes: ["All"],
-          materialType: "All", // Set legacy field for backward compatibility
         });
       }
     } else {
@@ -156,9 +151,6 @@ const AddSimpleDropOffLocation = () => {
       setFormData({
         ...formData,
         bulkMaterialTypes: newBulkMaterialTypes,
-        // Set legacy field to first selected material type for backward compatibility
-        materialType:
-          newBulkMaterialTypes.length > 0 ? newBulkMaterialTypes[0] : "",
       });
     }
   };
@@ -180,7 +172,10 @@ const AddSimpleDropOffLocation = () => {
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         address: formData.address,
-        materialType: formData.materialType, // Legacy field for backward compatibility
+        materialType:
+          formData.bulkMaterialTypes.length > 0
+            ? formData.bulkMaterialTypes[0]
+            : "plastic", // Set to first bulk material type or default
         bulkMaterialTypes: formData.bulkMaterialTypes, // New bulk material types array
         acceptedSubtypes: formData.acceptedSubtypes
           ? formData.acceptedSubtypes
@@ -376,30 +371,6 @@ const AddSimpleDropOffLocation = () => {
                 Material Types
               </h3>
               <div className="space-y-4">
-                {/* Legacy Material Type (for backward compatibility) */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Primary Material Type (Legacy)
-                  </label>
-                  <select
-                    value={formData.materialType}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        materialType: e.target.value,
-                      }))
-                    }
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
-                  >
-                    <option value="">Select primary type</option>
-                    {materialTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* Bulk Material Types Selection */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">

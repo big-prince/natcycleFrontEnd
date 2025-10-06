@@ -148,8 +148,7 @@ export interface ISimpleDropoffLocation {
     coordinates: [number, number]; // [longitude, latitude]
   };
   address?: string;
-  materialType: string;
-  bulkMaterialTypes?: string[]; // New field for multiple material types
+  bulkMaterialTypes: string[]; // Multiple material types array
   acceptedSubtypes?: string[];
   organizationName?: string;
   isActive: boolean;
